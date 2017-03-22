@@ -1,0 +1,30 @@
+language: java
+
+cache:
+ directories:
+   - $HOME/.m2
+
+sudo: false
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
+
+jdk:
+  - oraclejdk8
+
+os:
+  - linux
+
+deploy:
+  provider: releases
+  api_key: "$GH_TOKEN"
+  file_glob: true
+  file:
+    - "$TRAVIS_BUILD_DIR/PalletTown-gui/target/PalletTown-gui-*.jar"
+    - "$TRAVIS_BUILD_DIR/PalletTown-mail/target/PalletTown-mail-*.jar"
+    - "$TRAVIS_BUILD_DIR/PalletTown-core/target/PalletTown-core-*.jar"
+    - "$TRAVIS_BUILD_DIR/PalletTown-core/target/PalletTown-core-*.zip"
+  skip_cleanup: true
+  on:
+    tags: true

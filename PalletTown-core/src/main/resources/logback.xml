@@ -1,0 +1,13 @@
+<configuration>
+
+	<appender name="CLI" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="INFO" additivity="false">
+		<appender-ref ref="CLI" />
+	</root>
+
+</configuration>
