@@ -12,8 +12,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.core.captcha.CaptchaProvider;
-import com.kinancity.core.captcha.TwoCaptchaService;
 import com.kinancity.core.creation.PtcAccountCreator;
 import com.kinancity.core.creation.PtcCreationResult;
 import com.kinancity.core.creation.PtcCreationSummary;
@@ -53,6 +51,7 @@ public class KinanCityCli {
 			CommandLine cmd = parser.parse(options, args);
 
 			Configuration config = Configuration.getInstance();
+			
 			if(cmd.hasOption(CliOptions.DRY_RUN.shortName)){
 				config.setDryRun(true);
 			}			
@@ -62,9 +61,8 @@ public class KinanCityCli {
 			}
 
 			if (config.checkConfiguration()) {
-
-				CaptchaProvider captchaProvider = new TwoCaptchaService(config);
-				PtcAccountCreator creator = new PtcAccountCreator(config, captchaProvider);
+				
+				PtcAccountCreator creator = new PtcAccountCreator(config);
 
 				if (cmd.hasOption(CliOptions.SINGLE_EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.SINGLE_PASSWORD.shortName)) {
 					LOGGER.info("Create a single account");
@@ -77,8 +75,10 @@ public class KinanCityCli {
 					try {
 						PtcCreationResult result = creator.createAccount(account);
 						LOGGER.info("DONE, success : {} {}", result.isSuccess(), result.getMessage());
+						System.exit(0);
 					} catch (AccountCreationException e) {
 						LOGGER.error("\n Account Creation Error : {}",e.getMessage());
+						System.exit(1);
 					}
 				} else if (cmd.hasOption(CliOptions.MULTIPLE_ACCOUNTS.shortName)) {
 					String accountFileName = cmd.getOptionValue(CliOptions.MULTIPLE_ACCOUNTS.shortName);
@@ -86,6 +86,7 @@ public class KinanCityCli {
 					PtcCreationSummary summary = creator.createAccounts(accountFileName);
 					
 					LOGGER.info(" All creations DONE : {}",summary);
+					System.exit(0);
 
 				} else {
 
@@ -100,13 +101,16 @@ public class KinanCityCli {
 
 					String usage = out.toString();
 					LOGGER.error(usage);
+					System.exit(0);
 				}
 
 			} else {
 				LOGGER.error("Account creation failed, missing configuration");
+				System.exit(1);
 			}
 		} catch (ParseException e) {
 			LOGGER.error("Command line cannot be parsed");
+			System.exit(1);
 		}
 
 	}

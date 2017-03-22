@@ -24,34 +24,26 @@ public class PtcAccountCreationTask implements Callable<PtcCreationResult> {
 
 	private PtcWebClient client;
 
-	private Configuration config;
-
 	private CaptchaProvider captchaProvider;
 
-	// Dry Run
-	private boolean dryRun;
-
-	public PtcAccountCreationTask(AccountData account, Configuration config, CaptchaProvider captchaProvider) {
+	public PtcAccountCreationTask(AccountData account, Configuration config) {
 		super();
 		this.client = new PtcWebClient(config);
-		this.config = config;
-		this.captchaProvider = captchaProvider;
-		this.dryRun = config.isDryRun();
+		this.captchaProvider = config.getCaptchaProvider();
 		this.account = account;
 	}
-
 
 	@Override
 	public PtcCreationResult call() throws AccountCreationException {
 		logger.info("Create account with username {}", account);
 
-		// 0. password and name check ?
+		// 1. password and name check ?
 		if (!client.validateAccount(account)) {
 			logger.info("Invalid account will be skipped");
 			return new PtcCreationResult(false, "Invalid account", null);
 		}
 
-		// 1. Grab a CRSF token
+		// 2. Grab a CRSF token
 		String crsfToken = client.sendAgeCheckAndGrabCrsfToken();
 		if (crsfToken == null) {
 			AccountCreationException error = new AccountCreationException("Could not grab CRSF token. pokemon-trainer-club website may be unavailable");

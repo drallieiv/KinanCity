@@ -32,14 +32,11 @@ public class PtcAccountCreator {
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private Configuration config;
-
-	private CaptchaProvider captchaProvider;
 	
 	private final ExecutorService pool;
 
 
-	public PtcAccountCreator(Configuration config, CaptchaProvider captchaProvider) {
-		this.captchaProvider = captchaProvider;
+	public PtcAccountCreator(Configuration config) {
 		this.config = config;
 		
 		ThreadFactory threadFactory = new PtcAccountCreatorThreadFactory();
@@ -48,7 +45,7 @@ public class PtcAccountCreator {
 
 	// Create an account
 	public PtcCreationResult createAccount(AccountData account) throws AccountCreationException {
-		return (new PtcAccountCreationTask(account, config, captchaProvider)).call();
+		return (new PtcAccountCreationTask(account, config)).call();
 	}
 
 	/**
@@ -113,7 +110,7 @@ public class PtcAccountCreator {
 		// add all accounts to pool
 		List<Future<PtcCreationResult>> futures = new ArrayList<>();
 		for (AccountData accountData : accountsToCreate) {
-			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config, captchaProvider)));
+			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config)));
 		}
 		
 		PtcCreationSummary summary = new PtcCreationSummary();

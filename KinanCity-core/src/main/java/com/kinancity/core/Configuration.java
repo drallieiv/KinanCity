@@ -8,6 +8,11 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.captcha.CaptchaProvider;
+import com.kinancity.core.captcha.TwoCaptchaService;
+import com.kinancity.core.errors.AccountCreationException;
+import com.kinancity.core.errors.ConfigurationException;
+
 import lombok.Data;
 
 @Data
@@ -25,6 +30,10 @@ public class Configuration {
 	
 	private int nbThreads = 5;
 	
+	private CaptchaProvider captchaProvider;
+	
+	private boolean initDone = false;
+	
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 
@@ -37,13 +46,27 @@ public class Configuration {
 		return instance;
 	}
 
+	public void init() throws ConfigurationException{
+		captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
+		initDone = true;
+	}
+	
 	/**
 	 * Check if all config are OK
 	 * 
 	 * @return
 	 */
 	public boolean checkConfiguration() {
-		if (twoCaptchaApiKey == null || twoCaptchaApiKey.isEmpty()) {
+		if(!initDone){
+			try {
+				init();
+			} catch (ConfigurationException e) {
+				logger.error("Configuration Init Failed", e);
+				return false;
+			}
+		}
+		
+		if (captchaProvider == null) {
 			return false;
 		}
 

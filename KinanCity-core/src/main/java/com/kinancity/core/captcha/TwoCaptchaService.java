@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.core.Configuration;
+import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.CaptchaSolvingException;
+import com.kinancity.core.errors.ConfigurationException;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -59,18 +61,27 @@ public class TwoCaptchaService implements CaptchaProvider {
 
 	private OkHttpClient captchaClient;
 
-	public TwoCaptchaService(Configuration config) {
-		this(config.getTwoCaptchaApiKey(), config.isDryRun());
-	}
-
-	public TwoCaptchaService(String apiKey, boolean dryRun) {
+	public TwoCaptchaService(String apiKey, boolean dryRun) throws ConfigurationException {
 		this.apiKey = apiKey;
 		this.dryRun = dryRun;
 		this.captchaClient = new OkHttpClient();
+		
+		if(!dryRun && !checkApiKeyValidity()){
+			throw new ConfigurationException("2Captcha cannot be used with given key. Check key and balance");
+		}
+	}
+	
+	private boolean checkApiKeyValidity(){
+		// TODO call 2 captcha to check if key is valid and maybe balance too
+		return true;
 	}
 
 	@Override
 	public String getCaptcha() throws CaptchaSolvingException {
+		
+		if(this.apiKey == null || this.apiKey.isEmpty()){
+			throw new CaptchaSolvingException("Missing 2captcha API key");
+		}
 
 		if (dryRun) {
 			logger.info("Dry-Run : Send Captcha solve request to 2captcha");
