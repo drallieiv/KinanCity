@@ -23,6 +23,8 @@ public class Configuration {
 
 	private String mailHost;
 	
+	private int nbThreads = 5;
+	
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 

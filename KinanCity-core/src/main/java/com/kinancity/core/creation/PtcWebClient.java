@@ -1,4 +1,4 @@
-package com.kinancity.core;
+package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +20,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.Configuration;
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
@@ -34,7 +35,7 @@ import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 
 // Web client that will create a PTC account
-public class PTCWebClient {
+public class PtcWebClient {
 
 	private static final String FIELD_MISSING = "This field is required.";
 
@@ -59,7 +60,7 @@ public class PTCWebClient {
 	 */
 	private boolean dryRun;
 
-	public PTCWebClient(Configuration config) {
+	public PtcWebClient(Configuration config) {
 		this.dryRun = config.isDryRun();
 		
 		// Initialize Http Client

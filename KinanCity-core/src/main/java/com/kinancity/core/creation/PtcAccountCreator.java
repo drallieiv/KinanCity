@@ -1,4 +1,4 @@
-package com.kinancity.core;
+package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,16 +8,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.Configuration;
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.csv.CsvHeaderConstants;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 
-public class PTCAccountCreator {
+public class PtcAccountCreator {
 
 	private static final String CSV_COMMENT_PREFIX = "#";
 
@@ -25,45 +29,24 @@ public class PTCAccountCreator {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	private PTCWebClient client;
+	private Configuration config;
 
 	private CaptchaProvider captchaProvider;
 	
-	/**
-	 * Dry Run
-	 */
-	private boolean dryRun;
+	private final ExecutorService pool;
 
-	public PTCAccountCreator(Configuration config, CaptchaProvider captchaProvider) {
-		dryRun = config.isDryRun();
-		client = new PTCWebClient(config);
+
+	public PtcAccountCreator(Configuration config, CaptchaProvider captchaProvider) {
 		this.captchaProvider = captchaProvider;
+		this.config = config;
+		
+		ThreadFactory threadFactory = new PtcAccountCreatorThreadFactory();
+		pool = Executors.newFixedThreadPool(config.getNbThreads(), threadFactory);
 	}
 
 	// Create an account
-	public void createAccount(AccountData account) throws AccountCreationException {
-
-		logger.info("Create account with username {}", account);
-
-		// 0. password and name check ?
-		if (!client.validateAccount(account)) {
-			logger.info("Invalid account will be skipped");
-			return;
-		}
-
-		// 1. Grab a CRSF token
-		String crsfToken = client.sendAgeCheckAndGrabCrsfToken();
-		if (crsfToken == null) {
-			throw new AccountCreationException("Could not grab CRSF token. pokemon-trainer-club website may be unavailable");
-		}
-		logger.debug("CRSF token found : {}", crsfToken);
-
-		// 3. Captcha
-		String captcha = captchaProvider.getCaptcha();
-
-		// 4. Account Creation
-		client.createAccount(account, crsfToken, captcha);
-
+	public PtcCreationResult createAccount(AccountData account) throws AccountCreationException {
+		return (new PtcAccountCreationTask(account, config, captchaProvider)).call();
 	}
 
 	/**
@@ -79,13 +62,11 @@ public class PTCAccountCreator {
 			logger.error("Cannot open file {}. Abort", accountFileName);
 		}
 
-		try {
+		try (Scanner scanner = new Scanner(accountFile)){
 
 			List<AccountData> accountsToCreate = new ArrayList<>();
-
 			List<String> headers = null;
-
-			Scanner scanner = new Scanner(accountFile);
+			
 			while (scanner.hasNext()) {
 				String line = scanner.nextLine();
 
@@ -106,7 +87,6 @@ public class PTCAccountCreator {
 					accountsToCreate.add(buildAccountDataFromCsv(line, headers));
 				}
 			}
-
 			createAccounts(accountsToCreate);
 
 		} catch (FileNotFoundException e) {
@@ -125,9 +105,9 @@ public class PTCAccountCreator {
 	private void createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
 		logger.info("Start creating {} account in batch loaded from csv");
 		
-		// TODO add a threaded pool
+		// add all accounts to pool
 		for (AccountData accountData : accountsToCreate) {
-			createAccount(accountData);
+			pool.submit(new PtcAccountCreationTask(accountData, config, captchaProvider));
 		}
 	}
 

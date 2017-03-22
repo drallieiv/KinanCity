@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.TwoCaptchaService;
+import com.kinancity.core.creation.PtcAccountCreator;
+import com.kinancity.core.creation.PtcCreationResult;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 
@@ -23,6 +25,9 @@ public class KinanCityCli {
 
 	public static void main(String[] args) {
 
+		Thread t = Thread.currentThread();
+		t.setName("Kinan City");
+		
 		try {
 			LOGGER.info(" -- Start Kinan City CLI -- ");
 
@@ -58,7 +63,7 @@ public class KinanCityCli {
 			if (config.checkConfiguration()) {
 
 				CaptchaProvider captchaProvider = new TwoCaptchaService(config);
-				PTCAccountCreator creator = new PTCAccountCreator(config, captchaProvider);
+				PtcAccountCreator creator = new PtcAccountCreator(config, captchaProvider);
 
 				if (cmd.hasOption(CliOptions.SINGLE_EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.SINGLE_PASSWORD.shortName)) {
 					LOGGER.info("Create a single account");
@@ -69,10 +74,10 @@ public class KinanCityCli {
 					account.setPassword(cmd.getOptionValue(CliOptions.SINGLE_PASSWORD.shortName));
 
 					try {
-						creator.createAccount(account);
-						LOGGER.info("DONE");
+						PtcCreationResult result = creator.createAccount(account);
+						LOGGER.info("DONE, success : {} {}", result.isSuccess(), result.getMessage());
 					} catch (AccountCreationException e) {
-						LOGGER.error("\n Account Creation Failed : {}",e.getMessage());
+						LOGGER.error("\n Account Creation Error : {}",e.getMessage());
 					}
 				} else if (cmd.hasOption(CliOptions.MULTIPLE_ACCOUNTS.shortName)) {
 					String accountFileName = cmd.getOptionValue(CliOptions.MULTIPLE_ACCOUNTS.shortName);
