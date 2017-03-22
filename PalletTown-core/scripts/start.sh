@@ -1,1 +1,0 @@
-java -jar PalletTown-core-${project.version}.jar
