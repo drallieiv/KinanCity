@@ -23,6 +23,7 @@ public class PtcAccountCreatorThreadFactory implements ThreadFactory {
 			position = RandomUtils.nextInt(trainerNames.size());
 			Collections.shuffle(trainerNames);
 		}
+		position = position % trainerNames.size();
 		
 		return trainerNames.get(position++);
 	}

@@ -8,8 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
 import org.slf4j.Logger;
@@ -53,8 +55,9 @@ public class PtcAccountCreator {
 	 * Create accounts listed in a csv file
 	 * 
 	 * @param accountFileName
+	 * @return 
 	 */
-	public void createAccounts(String accountFileName) {
+	public PtcCreationSummary createAccounts(String accountFileName) {
 		logger.info("Creating all accounts defined in file {}", accountFileName);
 
 		File accountFile = new File(accountFileName);
@@ -74,41 +77,56 @@ public class PtcAccountCreator {
 					headers = Arrays.asList(line.replace(CSV_COMMENT_PREFIX, "").split(CSV_SPLITTER));
 
 					if (!headers.containsAll(Arrays.asList(CsvHeaderConstants.USERNAME, CsvHeaderConstants.PASSWORD, CsvHeaderConstants.EMAIL))) {
-						logger.error("CSV file is missing either username, password or email fields. Abort");
-						return;
+						return new PtcCreationSummary("CSV file is missing either username, password or email fields. Aborted");
 					}
 
 				} else {
 					if (headers == null) {
-						logger.error("CSV file is missing header line");
-						return;
+						return new PtcCreationSummary("CSV file is missing header line");
 					}
 
 					accountsToCreate.add(buildAccountDataFromCsv(line, headers));
 				}
 			}
-			createAccounts(accountsToCreate);
+			return createAccounts(accountsToCreate);
 
 		} catch (FileNotFoundException e) {
-			logger.error("Cannot open file {}. Abort", accountFileName);
+			logger.error("Cannot open file {}", accountFileName, e);
+			return new PtcCreationSummary("Cannot open file");
 		} catch (AccountCreationException e) {
-			logger.error("creation failed : {}", e.getMessage());
+			logger.error("creation failed", e);
+			return new PtcCreationSummary("Creation Failed");
 		}
+		
 	}
 
 	/**
 	 * Create multiple accounts as once
 	 * 
 	 * @param accountsToCreate
+	 * @return 
 	 * @throws AccountCreationException
 	 */
-	private void createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
+	private PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
 		logger.info("Start creating {} account in batch loaded from csv");
-		
+
 		// add all accounts to pool
+		List<Future<PtcCreationResult>> futures = new ArrayList<>();
 		for (AccountData accountData : accountsToCreate) {
-			pool.submit(new PtcAccountCreationTask(accountData, config, captchaProvider));
+			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config, captchaProvider)));
 		}
+		
+		PtcCreationSummary summary = new PtcCreationSummary();
+		
+		for(Future<PtcCreationResult> future : futures){
+		    try {
+		    	summary.add(future.get());
+			} catch (InterruptedException | ExecutionException e) {
+				throw new AccountCreationException(e);
+			}
+		}
+		
+		return summary;
 	}
 
 	/**

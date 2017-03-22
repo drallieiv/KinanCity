@@ -16,6 +16,7 @@ import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.TwoCaptchaService;
 import com.kinancity.core.creation.PtcAccountCreator;
 import com.kinancity.core.creation.PtcCreationResult;
+import com.kinancity.core.creation.PtcCreationSummary;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 
@@ -82,7 +83,9 @@ public class KinanCityCli {
 				} else if (cmd.hasOption(CliOptions.MULTIPLE_ACCOUNTS.shortName)) {
 					String accountFileName = cmd.getOptionValue(CliOptions.MULTIPLE_ACCOUNTS.shortName);
 
-					creator.createAccounts(accountFileName);
+					PtcCreationSummary summary = creator.createAccounts(accountFileName);
+					
+					LOGGER.info(" All creations DONE : {}",summary);
 
 				} else {
 
