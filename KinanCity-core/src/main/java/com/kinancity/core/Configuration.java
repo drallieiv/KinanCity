@@ -19,9 +19,12 @@ public class Configuration {
 
 	private static Configuration instance;
 
-	public String twoCaptchaApiKey;
+	private String twoCaptchaApiKey;
 
-	public String mailHost;
+	private String mailHost;
+	
+	// If true, everything will be mocked
+	private boolean dryRun = false;
 
 	public static Configuration getInstance() {
 		if (instance == null) {

@@ -1,6 +1,5 @@
 package com.kinancity.core;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
@@ -30,6 +29,9 @@ public class KinanCityCli {
 			// CLI Options
 			Options options = new Options();
 
+			// Dry Run Mode
+			options.addOption(CliOptions.DRY_RUN.asOption());
+			
 			// Creates only 1 account
 			options.addOption(CliOptions.SINGLE_EMAIL.asOption());
 			options.addOption(CliOptions.SINGLE_USERNAME.asOption());
@@ -45,6 +47,9 @@ public class KinanCityCli {
 			CommandLine cmd = parser.parse(options, args);
 
 			Configuration config = Configuration.getInstance();
+			if(cmd.hasOption(CliOptions.DRY_RUN.shortName)){
+				config.setDryRun(true);
+			}			
 
 			if (cmd.hasOption(CliOptions.CK.shortName)) {
 				config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
@@ -52,8 +57,8 @@ public class KinanCityCli {
 
 			if (config.checkConfiguration()) {
 
-				CaptchaProvider captchaProvider = new TwoCaptchaService(config.getTwoCaptchaApiKey());
-				PTCAccountCreator creator = new PTCAccountCreator(captchaProvider);
+				CaptchaProvider captchaProvider = new TwoCaptchaService(config);
+				PTCAccountCreator creator = new PTCAccountCreator(config, captchaProvider);
 
 				if (cmd.hasOption(CliOptions.SINGLE_EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.SINGLE_PASSWORD.shortName)) {
 					LOGGER.info("Create a single account");

@@ -1,14 +1,13 @@
 package com.kinancity.core.captcha;
 
 import java.io.IOException;
-import java.net.CookieManager;
 
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.Configuration;
 import com.kinancity.core.errors.CaptchaSolvingException;
-import com.squareup.okhttp.Call;
 import com.squareup.okhttp.HttpUrl;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -21,7 +20,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 	private static final String OK_RESPONSE_PREFIX = "OK|";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
-	
+
 	/**
 	 * The URL where the recaptcha is placed. For example:
 	 * https://www.google.com/recaptcha/api2/demo
@@ -32,17 +31,22 @@ public class TwoCaptchaService implements CaptchaProvider {
 	 * Captcha API key
 	 */
 	private String apiKey;
-	
+
+	/**
+	 * Dry Run
+	 */
+	private boolean dryRun;
+
 	/**
 	 * How many time should we wait in seconds
 	 */
 	private int maxTotalTime = 60;
-	
+
 	/**
 	 * Delay between requests in ms
 	 */
 	private int spleepTime = 1000;
-	
+
 	/**
 	 * Google Site key
 	 */
@@ -55,76 +59,82 @@ public class TwoCaptchaService implements CaptchaProvider {
 
 	private OkHttpClient captchaClient;
 
-	public TwoCaptchaService(String apiKey) {
+	public TwoCaptchaService(Configuration config) {
+		this(config.getTwoCaptchaApiKey(), config.isDryRun());
+	}
+
+	public TwoCaptchaService(String apiKey, boolean dryRun) {
 		this.apiKey = apiKey;
+		this.dryRun = dryRun;
 		this.captchaClient = new OkHttpClient();
 	}
 
 	@Override
-	public String getCaptcha() throws CaptchaSolvingException {	
-		
-		if(this.apiKey.equals("mock")){
-			return "mockCaptcha";
-		}
-		
-		Request sendRequest = buildSendCaptchaRequest();
+	public String getCaptcha() throws CaptchaSolvingException {
 
-		try {
-			Response sendResponse = captchaClient.newCall(sendRequest).execute();
-			String body = sendResponse.body().string();
-			sendResponse.body().close();
-			if(body != null && body.startsWith(OK_RESPONSE_PREFIX)){
-				
-				String captchaId = body.substring(OK_RESPONSE_PREFIX.length());
-								
-				Request resolveRequest = buildReceiveCaptchaRequest(captchaId);
-				
-				logger.info("Captcha sent to 2captcha, id: {}. Waiting for a response", captchaId);
-				StopWatch time = new StopWatch();
-				time.start();
-				
-				int spinnerCount = 0;
-				
-				while(time != null && time.getTime() < maxTotalTime * 1000){
-					Response solveResponse = captchaClient.newCall(resolveRequest).execute();
-					String solution = solveResponse.body().string();
-					solveResponse.body().close();
-										
-					if(solution.contains(NOT_READY)){
-						// Keep Waiting
-						spinnerCount++;
-						if(spinnerCount % 10 == 9){
-							logger.info("...");
-						}						
-						Thread.sleep(spleepTime);
-					}else{
-						// Stop loop
-						time.stop();
-						logger.debug("Response received from 2captcha in {}s", time.getTime()/1000);
-						
-						if(solution.startsWith(OK_RESPONSE_PREFIX)){
-							return solution.substring(OK_RESPONSE_PREFIX.length());
+		if (dryRun) {
+			logger.info("Dry-Run : Send Captcha solve request to 2captcha");
+			return "mockedCaptcha";
+		} else {
+
+			try {
+				Request sendRequest = buildSendCaptchaRequest();
+				Response sendResponse = captchaClient.newCall(sendRequest).execute();
+				String body = sendResponse.body().string();
+				sendResponse.body().close();
+				if (body != null && body.startsWith(OK_RESPONSE_PREFIX)) {
+
+					String captchaId = body.substring(OK_RESPONSE_PREFIX.length());
+
+					Request resolveRequest = buildReceiveCaptchaRequest(captchaId);
+
+					logger.info("Captcha sent to 2captcha, id: {}. Waiting for a response", captchaId);
+
+					StopWatch time = new StopWatch();
+					time.start();
+
+					int spinnerCount = 0;
+
+					while (time != null && time.getTime() < maxTotalTime * 1000) {
+						Response solveResponse = captchaClient.newCall(resolveRequest).execute();
+						String solution = solveResponse.body().string();
+						solveResponse.body().close();
+
+						if (solution.contains(NOT_READY)) {
+							// Keep Waiting
+							spinnerCount++;
+							if (spinnerCount % 10 == 9) {
+								logger.info("...");
+							}
+							Thread.sleep(spleepTime);
+						} else {
+							// Stop loop
+							time.stop();
+							logger.debug("Response received from 2captcha in {}s", time.getTime() / 1000);
+
+							if (solution.startsWith(OK_RESPONSE_PREFIX)) {
+								return solution.substring(OK_RESPONSE_PREFIX.length());
+							}
+
+							throw new CaptchaSolvingException("2 Captcha Error, solution not OK : " + solution);
 						}
-						
-						throw new CaptchaSolvingException("2 Captcha Error, solution not OK : " + solution);
 					}
+				} else {
+					throw new CaptchaSolvingException("2 Captcha Error : " + body);
 				}
-				
-				
-			}else {
-				throw new CaptchaSolvingException("2 Captcha Error : " + body);
+			} catch (IOException e) {
+				throw new CaptchaSolvingException(e);
+			} catch (InterruptedException e) {
+				throw new CaptchaSolvingException(e);
 			}
-		} catch (IOException e) {
-			throw new CaptchaSolvingException(e);
-		} catch (InterruptedException e) {
-			throw new CaptchaSolvingException(e);
+			return null;
 		}
-
-		return null;
+		
 	}
 
 	/**
 	 * Send Captcha Request
+	 * 
 	 * @return
 	 */
 	private Request buildSendCaptchaRequest() {
@@ -140,11 +150,11 @@ public class TwoCaptchaService implements CaptchaProvider {
 				.build();
 		return request;
 	}
-	
 
 	/**
 	 * Receive Captcha Request
-	 * @param catpchaId 
+	 * 
+	 * @param catpchaId
 	 * @return
 	 */
 	private Request buildReceiveCaptchaRequest(String catpchaId) {

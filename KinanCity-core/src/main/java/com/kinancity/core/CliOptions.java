@@ -7,6 +7,8 @@ import lombok.Getter;
 @Getter
 public enum CliOptions {
 
+	DRY_RUN("dryrun", "dryrun", false, "Dry-Run"),
+	
 	CK("ck", "captchaKey", true, "2 captcha API Key"),
 
 	SINGLE_EMAIL("m", "mail", true, "account email address"),

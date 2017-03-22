@@ -28,9 +28,15 @@ public class PTCAccountCreator {
 	private PTCWebClient client;
 
 	private CaptchaProvider captchaProvider;
+	
+	/**
+	 * Dry Run
+	 */
+	private boolean dryRun;
 
-	public PTCAccountCreator(CaptchaProvider captchaProvider) {
-		client = new PTCWebClient();
+	public PTCAccountCreator(Configuration config, CaptchaProvider captchaProvider) {
+		dryRun = config.isDryRun();
+		client = new PTCWebClient(config);
 		this.captchaProvider = captchaProvider;
 	}
 

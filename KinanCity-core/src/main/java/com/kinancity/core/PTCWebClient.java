@@ -54,8 +54,14 @@ public class PTCWebClient {
 
 	private CookieManager cookieManager;
 
-	public PTCWebClient() {
+	/**
+	 * Dry Run
+	 */
+	private boolean dryRun;
 
+	public PTCWebClient(Configuration config) {
+		this.dryRun = config.isDryRun();
+		
 		// Initialize Http Client
 		client = new OkHttpClient();
 		cookieManager = new CookieManager();
@@ -64,6 +70,12 @@ public class PTCWebClient {
 
 	// Simulate new account creation age check and dump CRSF token
 	public String sendAgeCheckAndGrabCrsfToken() throws AccountCreationException {
+		
+		if(dryRun){
+			logger.info("Dry-Run : Grab CRSF token from PTC web");
+			return "mockCrsfToken";
+		}
+		
 		try {
 			Response response = client.newCall(buildAgeCheckRequest()).execute();
 
@@ -95,6 +107,12 @@ public class PTCWebClient {
 	 * could be skipped by manually adding the dod cookie ?
 	 */
 	public void sendAgeCheck(String crsfToken) throws AccountCreationException {
+		
+		if(dryRun){
+			logger.info("Dry-Run : Pass age validation");
+			return;
+		}
+		
 		try {
 			// Create Request
 			Request request = this.buildAgeCheckSubmitRequest(crsfToken);
@@ -121,9 +139,13 @@ public class PTCWebClient {
 	 */
 	public boolean validateAccount(AccountData account) {
 		
+		if(dryRun){
+			logger.info("Dry-Run : Check if username and password are okay");
+			return true;
+		}
+
 		String password = account.getPassword();
 		String username = account.getUsername();
-		
 
 		// Check password validity
 		if (!Pattern.matches(PTC_PWD_EXPREG, password)) {
@@ -131,35 +153,34 @@ public class PTCWebClient {
 			return false;
 		}
 
-
 		// Check username validity
 		String payload = Json.createObjectBuilder().add("name", username).build().toString();
 		RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), payload);
-		
+
 		Request request = new Request.Builder()
 				.url(url_verify_api)
 				.method("POST", body)
 				.build();
-		
+
 		try {
 			Response response = client.newCall(request).execute();
 			if (response.isSuccessful()) {
-				
+
 				JsonObject jsonResponse = Json.createReader(response.body().byteStream()).readObject();
-				
-				if(! jsonResponse.getBoolean("valid")){
+
+				if (!jsonResponse.getBoolean("valid")) {
 					logger.error("Given username '{}' is not valid", username);
 					return false;
 				}
-				
-				if(jsonResponse.getBoolean("inuse")){
+
+				if (jsonResponse.getBoolean("inuse")) {
 					logger.error("Given username '{}' is already used, suggestions are {}", username, jsonResponse.getString("suggestions"));
 					return false;
-				}				
-				
+				}
+
 				// All passed and went OK
 				return true;
-				
+
 			} else {
 				logger.error("Validation API dit not respond. Assume the username is available anyway");
 				return true;
@@ -176,6 +197,12 @@ public class PTCWebClient {
 	 * The account creation itself
 	 */
 	public void createAccount(AccountData account, String crsfToken, String captcha) throws AccountCreationException {
+		
+		if(dryRun){
+			logger.info("Dry-Run : Send creation request for account [{}]", account);
+			return;
+		}
+		
 		try {
 			// Create Request
 			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
@@ -244,7 +271,7 @@ public class PTCWebClient {
 			throw new AccountCreationException(e);
 		}
 	}
-
+	
 	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
 
 		RequestBody body = new FormEncodingBuilder()
