@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.generator.AccountGenerator;
+import com.kinancity.core.generator.EmailGenerator;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +15,7 @@ import lombok.Setter;
 @Getter
 public class SequenceAccountGenerator implements AccountGenerator {
 
-	private PlusTrickEmailGenerator plusTrickEmailGenerator = new PlusTrickEmailGenerator();
+	private EmailGenerator emailGenerator = new PlusTrickEmailGenerator();
 
 	private static final Pattern FORMAT_PATTERN = Pattern.compile("^[^*]*([*]+)[^*]*$");
 
@@ -79,7 +80,7 @@ public class SequenceAccountGenerator implements AccountGenerator {
 		AccountData data = new AccountData();
 		String userName = generateUsername();		
 		data.setUsername(userName);
-		data.setEmail(plusTrickEmailGenerator.generateEmail(baseEmail, userName));
+		data.setEmail(emailGenerator.generateEmail(baseEmail, userName));
 		data.setPassword(staticPassword);
 
 		count++;
