@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,15 +114,35 @@ public class PtcAccountCreator {
 			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config)));
 		}
 		
-		PtcCreationSummary summary = new PtcCreationSummary();
+		try {
+			// Show live progress
+			long nbTotal = futures.size();
+			long nbDone = 0;
+			long prev = 0;
+			while((nbDone = futures.stream().filter(future -> future.isDone()).count()) < nbTotal){
+				if(nbDone != prev){
+					logger.info("Batch creation progress : {}/{}",nbDone,nbTotal);
+					prev = nbDone;
+				}
+				Thread.sleep(10000);
+			}
+		} catch (InterruptedException e) {
+			throw new AccountCreationException(e);
+		}
+
+		logger.info("Start writing summary");
 		
+		// Generate final Summary
+		PtcCreationSummary summary = new PtcCreationSummary();
 		for(Future<PtcCreationResult> future : futures){
 		    try {
 		    	summary.add(future.get());
 			} catch (InterruptedException | ExecutionException e) {
-				throw new AccountCreationException(e);
+				summary.add(new PtcCreationResult(false, "failed", new AccountCreationException(e)));
 			}
 		}
+		
+		logger.info("Batch summary : {}", summary);
 		
 		config.getResultLogWriter().close();
 		

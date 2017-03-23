@@ -19,6 +19,8 @@ public enum CliOptions {
 	SEQ_ACCOUNTS_START("s", "startnum", true, "number of the first one"),
 	SEQ_ACCOUNTS_FORMAT("f", "format", true, "format of the username : prefix*****suffix with enough *"),
 	
+	PROXIES("p", "proxies", true, "single proxy or list of [proxy1,proxy2]"),
+	
 	MULTIPLE_ACCOUNTS("a", "accounts", true, "name of an account file");
 	
 

@@ -30,6 +30,18 @@ public class HttpProxy implements HttpProxyProvider {
 
 	// Proxy auth password
 	private String pass;
+	
+	public HttpProxy(String host, int port, String login, String pass) {
+		this.host = host;
+		this.port = port;
+		this.login = login;
+		this.pass = pass;
+	}
+
+	public HttpProxy(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
 
 	@Override
 	public OkHttpClient getClient() {

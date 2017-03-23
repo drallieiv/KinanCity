@@ -53,15 +53,19 @@ public class PtcAccountCreationTask implements Callable<PtcCreationResult> {
 					proxyInfo = proxyManager.getEligibleProxy();
 				}
 			}
+			
+			ProxyInfo usingProxy = proxyInfo.get();
 
-			logger.debug("Use proxy : {}", proxyInfo.get());
+			logger.debug("Use proxy : {}", usingProxy);
 					
-			PtcWebClient client = new PtcWebClient(config, proxyInfo.get());
+			PtcWebClient client = new PtcWebClient(config, usingProxy);
 					
 			logger.info("Create account with {}", account);
 			
 			// 1. password and name check ?
 			if (!client.validateAccount(account)) {
+				// As it would not count in the limit we can remove one
+				usingProxy.freeOneTry();
 				return new PtcCreationResult(false, "Invalid username or already taken", null);
 			}
 
@@ -69,6 +73,8 @@ public class PtcAccountCreationTask implements Callable<PtcCreationResult> {
 			String crsfToken = client.sendAgeCheckAndGrabCrsfToken();
 			if (crsfToken == null) {
 				AccountCreationException error = new AccountCreationException("Could not grab CRSF token. pokemon-trainer-club website may be unavailable");
+				// As it would not count in the limit we can remove one
+				usingProxy.freeOneTry();
 				return new PtcCreationResult(false, "CRSF failed", error);
 			}
 			logger.debug("CRSF token found : {}", crsfToken);

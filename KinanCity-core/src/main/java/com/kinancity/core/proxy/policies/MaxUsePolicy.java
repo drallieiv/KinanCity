@@ -21,8 +21,13 @@ public class MaxUsePolicy implements ProxyPolicy {
 	}
 
 	@Override
-	public void markUsed() {
+	public synchronized void markUsed() {
 		nbUses++;
+	}
+	
+	@Override
+	public synchronized void freeOneTry() {
+		nbUses--;
 	}
 
 	@Override
@@ -36,7 +41,13 @@ public class MaxUsePolicy implements ProxyPolicy {
 	}
 	
 	public String toString(){
-		return nbUses+"/"+maxUses+" Max";
+		return maxUses+" Max";
 	}
+
+	@Override
+	public MaxUsePolicy clone() {
+		return new MaxUsePolicy(this.getMaxUses());
+	}
+
 
 }

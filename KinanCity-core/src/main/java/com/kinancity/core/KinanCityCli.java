@@ -88,7 +88,7 @@ public class KinanCityCli {
 						accountsToCreate.add(account);
 					}
 
-					try {
+					try { 
 						PtcCreationSummary summary = creator.createAccounts(accountsToCreate);
 
 						LOGGER.info(" All creations DONE : {}", summary);
