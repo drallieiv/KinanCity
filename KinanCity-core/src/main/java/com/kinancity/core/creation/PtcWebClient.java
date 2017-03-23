@@ -80,8 +80,7 @@ public class PtcWebClient {
 			return "mockCrsfToken";
 		}
 
-		try {
-			Response response = client.newCall(buildAgeCheckRequest()).execute();
+		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 
 			if (response.isSuccessful()) {
 				Document doc = Jsoup.parse(response.body().byteStream(), "UTF-8", "");
@@ -123,13 +122,13 @@ public class PtcWebClient {
 
 			// Send Request
 			logger.debug("Sending age check request");
-			Response response = client.newCall(request).execute();
 
-			// Parse Response
-			if (response.isSuccessful()) {
-				logger.debug("Cookies are now : {}", cookieJar.getCookies());
+			try (Response response = client.newCall(request).execute()) {
+				// Parse Response
+				if (response.isSuccessful()) {
+					logger.debug("Cookies are now : {}", cookieJar.getCookies());
+				}
 			}
-
 		} catch (IOException e) {
 			throw new AccountCreationException(e);
 		}
@@ -166,11 +165,11 @@ public class PtcWebClient {
 				.method("POST", body)
 				.build();
 
-		try {
-			Response response = client.newCall(request).execute();
+		try (Response response = client.newCall(request).execute()) {
 			if (response.isSuccessful()) {
 
 				JsonObject jsonResponse = Json.createReader(response.body().byteStream()).readObject();
+				response.body().close();
 
 				if (!jsonResponse.getBoolean("valid")) {
 					logger.error("Given username '{}' is not valid", username);
@@ -213,71 +212,71 @@ public class PtcWebClient {
 
 			// Send Request
 			logger.debug("Sending creation request");
-			
+
 			logger.debug("cookies : {}", client.cookieJar().toString());
 
-			
-			Response response = client.newCall(request).execute();
+			try (Response response = client.newCall(request).execute()) {
 
-			// Parse Response
-			if (response.isSuccessful()) {
+				// Parse Response
+				if (response.isSuccessful()) {
 
-				String strResponse = response.body().string();
-				Document doc = Jsoup.parse(strResponse);
-				response.body().close();
+					String strResponse = response.body().string();
+					Document doc = Jsoup.parse(strResponse);
+					response.body().close();
 
-				if (dumpError) {
-					File debugFile = new File("debug.html");
-					debugFile.delete();
-					logger.debug("Saving response to {}", debugFile.toPath());
-					try (OutputStream out = Files.newOutputStream(debugFile.toPath())) {
-						out.write(doc.select(".container").outerHtml().getBytes());
-					}
-				}
-
-				Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
-				if (!accessDenied.isEmpty()) {
-					logger.error("Access Denied");
-					throw new AccountCreationException("Access Denied");
-				}
-				
-				Elements errors = doc.select(".errorlist");
-
-				if (!errors.isEmpty()) {
-
-					if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals(FIELD_MISSING)) {
-						logger.error("Invalid or missing Captcha");
-						// Try Again maybe ?
-						throw new AccountCreationException("Captcha failed");
-					} else {
-						logger.error("{} error(s) found creating account {} :", errors.size() - 1, account.username);
-						for (int i = 0; i < errors.size() - 1; i++) {
-							Element error = errors.get(i);
-							logger.error("- {}", error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim());
+					if (dumpError) {
+						File debugFile = new File("debug.html");
+						debugFile.delete();
+						logger.debug("Saving response to {}", debugFile.toPath());
+						try (OutputStream out = Files.newOutputStream(debugFile.toPath())) {
+							out.write(doc.select(".container").outerHtml().getBytes());
 						}
 					}
-				}
 
-				if (!errors.isEmpty()) {
-					String firstErrorTxt = errors.get(0).toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
-
-					if (firstErrorTxt.contains("username already exists")) {
-						throw new AccountDuplicateException(firstErrorTxt);
-					} else if (firstErrorTxt.contains("exceed")) {
-						
-						// Mark the Proxy
-						proxyInfo.getProxyPolicy().markOverLimit();
-						
-						throw new AccountRateLimitExceededException(firstErrorTxt);
-					} else {
-						throw new AccountCreationException("Unknown creation error : " + firstErrorTxt);
+					Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
+					if (!accessDenied.isEmpty()) {
+						logger.error("Access Denied");
+						throw new AccountCreationException("Access Denied");
 					}
+
+					Elements errors = doc.select(".errorlist");
+
+					if (!errors.isEmpty()) {
+
+						if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals(FIELD_MISSING)) {
+							logger.error("Invalid or missing Captcha");
+							// Try Again maybe ?
+							throw new AccountCreationException("Captcha failed");
+						} else {
+							logger.error("{} error(s) found creating account {} :", errors.size() - 1, account.username);
+							for (int i = 0; i < errors.size() - 1; i++) {
+								Element error = errors.get(i);
+								logger.error("- {}", error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim());
+							}
+						}
+					}
+
+					if (!errors.isEmpty()) {
+						String firstErrorTxt = errors.get(0).toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
+
+						if (firstErrorTxt.contains("username already exists")) {
+							throw new AccountDuplicateException(firstErrorTxt);
+						} else if (firstErrorTxt.contains("exceed")) {
+
+							// Mark the Proxy
+							proxyInfo.getProxyPolicy().markOverLimit();
+
+							throw new AccountRateLimitExceededException(firstErrorTxt);
+						} else {
+							throw new AccountCreationException("Unknown creation error : " + firstErrorTxt);
+						}
+					}
+
+					logger.debug("SUCCESS : Account created");
+
+				} else {
+					throw new AccountCreationException("PTC server bad response, HTTP " + response.code());
 				}
-
-				logger.debug("SUCCESS : Account created");
-
-			} else {
-				throw new AccountCreationException("PTC server bad response, HTTP " + response.code());
 			}
 
 		} catch (IOException e) {
