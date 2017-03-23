@@ -50,6 +50,8 @@ public class Configuration {
 	private PrintWriter resultLogWriter;
 
 	private boolean initDone = false;
+	
+	private boolean skipProxyTest = false;
 
 	// If true, everything will be mocked
 	private boolean dryRun = false;
@@ -105,22 +107,28 @@ public class Configuration {
 			return false;
 		}
 
-		logger.info("Validating given proxies");
-
-		ProxyTester proxyTester = new ProxyTester();
-		List<ProxyInfo> invalidProxies = new ArrayList<>();
-		for (ProxyInfo proxy : proxyManager.getProxies()) {
-			if (!proxyTester.testProxy(proxy.getProvider())) {
-				logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
-				invalidProxies.add(proxy);
+		if(!skipProxyTest){
+			logger.info("Validating given proxies");
+	
+			ProxyTester proxyTester = new ProxyTester();
+			List<ProxyInfo> invalidProxies = new ArrayList<>();
+			for (ProxyInfo proxy : proxyManager.getProxies()) {
+				if (!proxyTester.testProxy(proxy.getProvider())) {
+					logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
+					invalidProxies.add(proxy);
+				}
+			}
+			if(invalidProxies.isEmpty()){
+				logger.info("All proxies are valid");
+			}else{
+				proxyManager.getProxies().removeAll(invalidProxies);
+			}
+			if (proxyManager.getProxies().isEmpty()) {
+				logger.error("No valid proxy given");
+				return false;
 			}
 		}
-		proxyManager.getProxies().removeAll(invalidProxies);
-		if (proxyManager.getProxies().isEmpty()) {
-			logger.error("All given connections are invalid");
-			return false;
-		}
-
+		
 		return true;
 	}
 
@@ -153,9 +161,12 @@ public class Configuration {
 
 	}
 
-	private void loadProxies(String proxiesConfig) {
+	public void loadProxies(String proxiesConfig) {
 
 		if (proxiesConfig != null) {
+			
+			proxiesConfig = proxiesConfig.replaceAll("[\\[\\]]", "");
+			
 			proxyManager = new ProxyManager();
 
 			String[] proxyDefs = proxiesConfig.split("[,;]");

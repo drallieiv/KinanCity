@@ -54,6 +54,10 @@ public class KinanCityCli {
 
 			// Captcha key given at commandLine
 			options.addOption(CliOptions.CK.asOption());
+			
+			// Proxies
+			options.addOption(CliOptions.PROXIES.asOption());
+			
 
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cmd = parser.parse(options, args);
@@ -66,6 +70,10 @@ public class KinanCityCli {
 
 			if (cmd.hasOption(CliOptions.CK.shortName)) {
 				config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
+			}
+			
+			if (cmd.hasOption(CliOptions.PROXIES.shortName)) {
+				config.loadProxies(cmd.getOptionValue(CliOptions.PROXIES.shortName));
 			}
 
 			if (config.checkConfiguration()) {
