@@ -2,6 +2,7 @@ package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -106,6 +107,8 @@ public class PtcAccountCreator {
 	 * @throws AccountCreationException
 	 */
 	public PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
+		
+		LocalTime startTime = LocalTime.now();
 		logger.info("Start creating {} account in batch loaded from csv");
 
 		// add all accounts to pool
@@ -141,6 +144,9 @@ public class PtcAccountCreator {
 				summary.add(new PtcCreationResult(false, "failed", new AccountCreationException(e)));
 			}
 		}
+		
+		LocalTime endTime = LocalTime.now();
+		summary.setDuration(startTime, endTime);
 		
 		logger.info("Batch summary : {}", summary);
 		
