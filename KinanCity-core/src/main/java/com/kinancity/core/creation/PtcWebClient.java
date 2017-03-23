@@ -24,7 +24,6 @@ import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.AccountDuplicateException;
 import com.kinancity.core.errors.AccountRateLimitExceededException;
-import com.kinancity.core.proxy.HttpProxyProvider;
 import com.kinancity.core.proxy.ProxyInfo;
 
 import okhttp3.FormBody;
