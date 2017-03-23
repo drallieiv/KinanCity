@@ -60,7 +60,7 @@ public class PtcCreationSummary {
 		long nbSeconds = duration % 60;
 		sb.append(nbSeconds).append("s ");
 
-		return null;
+		return sb.toString();
 	}
 
 	public void setDuration(LocalTime startTime, LocalTime endTime) {
