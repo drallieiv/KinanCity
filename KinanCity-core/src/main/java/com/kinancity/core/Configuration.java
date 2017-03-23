@@ -12,6 +12,14 @@ import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.TwoCaptchaService;
 import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.ConfigurationException;
+import com.kinancity.core.proxy.ProxyInfo;
+import com.kinancity.core.proxy.ProxyManager;
+import com.kinancity.core.proxy.impl.NoProxy;
+import com.kinancity.core.proxy.policies.MaxUsePolicy;
+import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
+import com.kinancity.core.proxy.policies.ProxyPolicy;
+import com.kinancity.core.proxy.policies.TimeLimitPolicy;
+import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
 
 import lombok.Data;
 
@@ -32,6 +40,8 @@ public class Configuration {
 	
 	private CaptchaProvider captchaProvider;
 	
+	private ProxyManager proxyManager;
+	
 	private boolean initDone = false;
 	
 	// If true, everything will be mocked
@@ -47,7 +57,14 @@ public class Configuration {
 	}
 
 	public void init() throws ConfigurationException{
-		captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
+		if(captchaProvider == null){
+			captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
+		}
+		if(proxyManager == null){
+			proxyManager = new ProxyManager();
+			// Add Direct connection
+			proxyManager.addProxy(new ProxyInfo(new NintendoTimeLimitPolicy(), new NoProxy()));
+		}
 		initDone = true;
 	}
 	

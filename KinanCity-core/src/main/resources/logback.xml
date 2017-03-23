@@ -5,6 +5,11 @@
 			<pattern>[%thread] %msg%n</pattern>
 		</encoder>
 	</appender>
+	
+	<logger name="com.kinancity.core.creation.PtcAccountCreationTask" level="DEBUG" additivity="false">
+		<appender-ref ref="CLI" />
+	</logger>
+	
 
 	<root level="INFO" additivity="false">
 		<appender-ref ref="CLI" />

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.CookieManager;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,18 +20,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.core.Configuration;
-import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.AccountDuplicateException;
 import com.kinancity.core.errors.AccountRateLimitExceededException;
-import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.Headers;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.kinancity.core.proxy.HttpProxyProvider;
+import com.kinancity.core.proxy.ProxyInfo;
+
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 // Web client that will create a PTC account
 public class PtcWebClient {
@@ -53,30 +54,33 @@ public class PtcWebClient {
 
 	private OkHttpClient client;
 
-	private CookieManager cookieManager;
+	private SaveAllCookieJar cookieJar;
 
+	private ProxyInfo proxyInfo;
+	
 	/**
 	 * Dry Run
 	 */
 	private boolean dryRun;
 
-	public PtcWebClient(Configuration config) {
+	public PtcWebClient(Configuration config, ProxyInfo proxyInfo) {
 		this.dryRun = config.isDryRun();
 		
 		// Initialize Http Client
-		client = new OkHttpClient();
-		cookieManager = new CookieManager();
-		client.setCookieHandler(cookieManager);
+		cookieJar = new SaveAllCookieJar();
+		client = proxyInfo.getProvider().getClient();
+		client = client.newBuilder().cookieJar(cookieJar).build();
+
 	}
 
 	// Simulate new account creation age check and dump CRSF token
 	public String sendAgeCheckAndGrabCrsfToken() throws AccountCreationException {
-		
-		if(dryRun){
+
+		if (dryRun) {
 			logger.info("Dry-Run : Grab CRSF token from PTC web");
 			return "mockCrsfToken";
 		}
-		
+
 		try {
 			Response response = client.newCall(buildAgeCheckRequest()).execute();
 
@@ -84,7 +88,7 @@ public class PtcWebClient {
 				Document doc = Jsoup.parse(response.body().byteStream(), "UTF-8", "");
 				response.body().close();
 
-				logger.debug("Cookies are now  : {}", cookieManager.getCookieStore().getCookies());
+				logger.debug("Cookies are now  : {}", cookieJar.getCookies());
 
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
@@ -108,12 +112,12 @@ public class PtcWebClient {
 	 * could be skipped by manually adding the dod cookie ?
 	 */
 	public void sendAgeCheck(String crsfToken) throws AccountCreationException {
-		
-		if(dryRun){
+
+		if (dryRun) {
 			logger.info("Dry-Run : Pass age validation");
 			return;
 		}
-		
+
 		try {
 			// Create Request
 			Request request = this.buildAgeCheckSubmitRequest(crsfToken);
@@ -124,7 +128,7 @@ public class PtcWebClient {
 
 			// Parse Response
 			if (response.isSuccessful()) {
-				logger.debug("Cookies are now : {}", cookieManager.getCookieStore().getCookies());
+				logger.debug("Cookies are now : {}", cookieJar.getCookies());
 			}
 
 		} catch (IOException e) {
@@ -139,8 +143,8 @@ public class PtcWebClient {
 	 * @return
 	 */
 	public boolean validateAccount(AccountData account) {
-		
-		if(dryRun){
+
+		if (dryRun) {
 			logger.info("Dry-Run : Check if username and password are okay");
 			return true;
 		}
@@ -175,7 +179,7 @@ public class PtcWebClient {
 				}
 
 				if (jsonResponse.getBoolean("inuse")) {
-					logger.error("Given username '{}' is already used, suggestions are {}", username, jsonResponse.getString("suggestions"));
+					logger.error("Given username '{}' is already used, suggestions are {}", username, jsonResponse.getJsonArray("suggestions"));
 					return false;
 				}
 
@@ -198,12 +202,12 @@ public class PtcWebClient {
 	 * The account creation itself
 	 */
 	public void createAccount(AccountData account, String crsfToken, String captcha) throws AccountCreationException {
-		
-		if(dryRun){
+
+		if (dryRun) {
 			logger.info("Dry-Run : Send creation request for account [{}]", account);
 			return;
 		}
-		
+
 		try {
 			// Create Request
 			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
@@ -256,6 +260,10 @@ public class PtcWebClient {
 					if (firstErrorTxt.contains("username already exists")) {
 						throw new AccountDuplicateException(firstErrorTxt);
 					} else if (firstErrorTxt.contains("exceed")) {
+						
+						// Mark the Proxy
+						proxyInfo.getProxyPolicy().markOverLimit();
+						
 						throw new AccountRateLimitExceededException(firstErrorTxt);
 					} else {
 						throw new AccountCreationException("Unknown creation error : " + firstErrorTxt);
@@ -272,10 +280,10 @@ public class PtcWebClient {
 			throw new AccountCreationException(e);
 		}
 	}
-	
+
 	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
 
-		RequestBody body = new FormEncodingBuilder()
+		RequestBody body = new FormBody.Builder()
 				// Given login and password
 				.add("username", account.username)
 				.add("email", account.email)
@@ -308,7 +316,7 @@ public class PtcWebClient {
 
 	private Request buildAgeCheckSubmitRequest(String csrfToken) throws UnsupportedEncodingException {
 
-		RequestBody body = new FormEncodingBuilder()
+		RequestBody body = new FormBody.Builder()
 				.add("dob", "1985-01-16")
 				.add("country", "US")
 				.add("csrfmiddlewaretoken", csrfToken)

@@ -6,14 +6,14 @@ import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.core.Configuration;
-import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.CaptchaSolvingException;
 import com.kinancity.core.errors.ConfigurationException;
-import com.squareup.okhttp.HttpUrl;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 
 public class TwoCaptchaService implements CaptchaProvider {
 
@@ -130,6 +130,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 							throw new CaptchaSolvingException("2 Captcha Error, solution not OK : " + solution);
 						}
 					}
+					throw new CaptchaSolvingException("2 Captcha Error, timeout reached");
 				} else {
 					throw new CaptchaSolvingException("2 Captcha Error : " + body);
 				}
@@ -138,7 +139,6 @@ public class TwoCaptchaService implements CaptchaProvider {
 			} catch (InterruptedException e) {
 				throw new CaptchaSolvingException(e);
 			}
-			return null;
 		}
 		
 	}

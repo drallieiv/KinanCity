@@ -40,7 +40,7 @@ public class PtcAccountCreator {
 		this.config = config;
 		
 		ThreadFactory threadFactory = new PtcAccountCreatorThreadFactory();
-		pool = Executors.newFixedThreadPool(config.getNbThreads(), threadFactory);
+		pool = Executors.newFixedThreadPool(config.getNbThreads(), threadFactory);		
 	}
 
 	// Create an account

@@ -74,10 +74,10 @@ public class KinanCityCli {
 
 					try {
 						PtcCreationResult result = creator.createAccount(account);
-						LOGGER.info("DONE, success : {} {}", result.isSuccess(), result.getMessage());
+						LOGGER.info("DONE : {}", result.getMessage());
 						System.exit(0);
 					} catch (AccountCreationException e) {
-						LOGGER.error("\n Account Creation Error : {}",e.getMessage());
+						LOGGER.error("Account Creation Error : {}", e.getMessage());
 						System.exit(1);
 					}
 				} else if (cmd.hasOption(CliOptions.MULTIPLE_ACCOUNTS.shortName)) {

@@ -1,5 +1,6 @@
 package com.kinancity.core.creation;
 
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
@@ -9,6 +10,9 @@ import com.kinancity.core.Configuration;
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
+import com.kinancity.core.proxy.HttpProxyProvider;
+import com.kinancity.core.proxy.ProxyInfo;
+import com.kinancity.core.proxy.ProxyManager;
 
 /**
  * Runnable account creation task
@@ -22,42 +26,63 @@ public class PtcAccountCreationTask implements Callable<PtcCreationResult> {
 
 	private AccountData account;
 
-	private PtcWebClient client;
-
 	private CaptchaProvider captchaProvider;
+	
+	private ProxyManager proxyManager;
+	
+	private Configuration config;
 
 	public PtcAccountCreationTask(AccountData account, Configuration config) {
 		super();
-		this.client = new PtcWebClient(config);
+		this.config = config;
+		this.proxyManager = config.getProxyManager();
 		this.captchaProvider = config.getCaptchaProvider();
 		this.account = account;
 	}
 
 	@Override
 	public PtcCreationResult call() throws AccountCreationException {
-		logger.info("Create account with username {}", account);
 
-		// 1. password and name check ?
-		if (!client.validateAccount(account)) {
-			logger.info("Invalid account will be skipped");
-			return new PtcCreationResult(false, "Invalid account", null);
+		try {
+			// Try to get an available proxy
+			Optional<ProxyInfo> proxyInfo = proxyManager.getEligibleProxy();
+			if(!proxyInfo.isPresent()){
+				logger.info("No proxy available for now. Start waiting for one.");
+				while (! proxyInfo.isPresent()){
+					Thread.sleep(proxyManager.getPollingRate());
+					proxyInfo = proxyManager.getEligibleProxy();
+				}
+			}
+
+			logger.debug("Use proxy : {}", proxyInfo.get());
+					
+			PtcWebClient client = new PtcWebClient(config, proxyInfo.get());
+					
+			logger.info("Create account with {}", account);
+			
+			// 1. password and name check ?
+			if (!client.validateAccount(account)) {
+				return new PtcCreationResult(false, "Invalid username or already taken", null);
+			}
+
+			// 2. Grab a CRSF token
+			String crsfToken = client.sendAgeCheckAndGrabCrsfToken();
+			if (crsfToken == null) {
+				AccountCreationException error = new AccountCreationException("Could not grab CRSF token. pokemon-trainer-club website may be unavailable");
+				return new PtcCreationResult(false, "CRSF failed", error);
+			}
+			logger.debug("CRSF token found : {}", crsfToken);
+
+			// 3. Captcha
+			String captcha = captchaProvider.getCaptcha();
+
+			// 4. Account Creation
+			client.createAccount(account, crsfToken, captcha);
+			
+			return new PtcCreationResult(true, "Account created", null);
+		} catch (InterruptedException e) {
+			throw new AccountCreationException(e);
 		}
-
-		// 2. Grab a CRSF token
-		String crsfToken = client.sendAgeCheckAndGrabCrsfToken();
-		if (crsfToken == null) {
-			AccountCreationException error = new AccountCreationException("Could not grab CRSF token. pokemon-trainer-club website may be unavailable");
-			return new PtcCreationResult(false, "CRSF failed", error);
-		}
-		logger.debug("CRSF token found : {}", crsfToken);
-
-		// 3. Captcha
-		String captcha = captchaProvider.getCaptcha();
-
-		// 4. Account Creation
-		client.createAccount(account, crsfToken, captcha);
-		
-		return new PtcCreationResult(true, "Account created", null);
 	}
 
 }
