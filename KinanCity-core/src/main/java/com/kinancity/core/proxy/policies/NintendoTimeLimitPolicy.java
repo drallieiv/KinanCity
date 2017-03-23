@@ -24,4 +24,10 @@ public class NintendoTimeLimitPolicy extends TimeLimitPolicy {
 	public String toString() {
 		return super.toString();
 	}
+
+	@Override
+	public NintendoTimeLimitPolicy clone() {
+		return new NintendoTimeLimitPolicy();
+	}
+
 }

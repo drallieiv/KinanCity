@@ -38,5 +38,9 @@ public class ProxyInfo {
 		sb.append(proxyPolicy);
 		return sb.toString();
 	}
+
+	public void freeOneTry() {
+		proxyPolicy.freeOneTry();
+	}
 		
 }

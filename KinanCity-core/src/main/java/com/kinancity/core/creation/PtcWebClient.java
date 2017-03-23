@@ -50,7 +50,7 @@ public class PtcWebClient {
 
 	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}";
 
-	private boolean dumpError = false;
+	private boolean dumpError = true;
 
 	private OkHttpClient client;
 
@@ -214,6 +214,10 @@ public class PtcWebClient {
 
 			// Send Request
 			logger.debug("Sending creation request");
+			
+			logger.debug("cookies : {}", client.cookieJar().toString());
+
+			
 			Response response = client.newCall(request).execute();
 
 			// Parse Response
@@ -222,11 +226,6 @@ public class PtcWebClient {
 				String strResponse = response.body().string();
 				Document doc = Jsoup.parse(strResponse);
 				response.body().close();
-
-				Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
-				if (!accessDenied.isEmpty()) {
-					throw new AccountCreationException("Access Denied");
-				}
 
 				if (dumpError) {
 					File debugFile = new File("debug.html");
@@ -237,6 +236,12 @@ public class PtcWebClient {
 					}
 				}
 
+				Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
+				if (!accessDenied.isEmpty()) {
+					logger.error("Access Denied");
+					throw new AccountCreationException("Access Denied");
+				}
+				
 				Elements errors = doc.select(".errorlist");
 
 				if (!errors.isEmpty()) {
@@ -344,7 +349,7 @@ public class PtcWebClient {
 		// CORS
 		headersMap.put("Origin", "https://club.pokemon.com");
 		headersMap.put("Referer", "https://club.pokemon.com/us/pokemon-trainer-club/parents/sign-up");
-		headersMap.put("Upgrade-Insecure-Requests", "https://club.pokemon.com");
+		headersMap.put("Upgrade-Insecure-Requests", "1");
 
 		headersMap.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
 		headersMap.put("DNT", "1");
