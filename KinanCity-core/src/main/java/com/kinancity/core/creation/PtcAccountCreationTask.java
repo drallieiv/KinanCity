@@ -78,6 +78,9 @@ public class PtcAccountCreationTask implements Callable<PtcCreationResult> {
 
 			// 4. Account Creation
 			client.createAccount(account, crsfToken, captcha);
+					
+			config.getResultLogWriter().println(account.toCsv());
+			config.getResultLogWriter().flush();
 			
 			return new PtcCreationResult(true, "Account created", null);
 		} catch (InterruptedException e) {

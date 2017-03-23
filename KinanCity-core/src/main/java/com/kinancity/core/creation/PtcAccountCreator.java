@@ -123,6 +123,8 @@ public class PtcAccountCreator {
 			}
 		}
 		
+		config.getResultLogWriter().close();
+		
 		return summary;
 	}
 

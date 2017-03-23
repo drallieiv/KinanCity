@@ -5,3 +5,4 @@ src/main/resources/accounts.csv
 
 dependency-reduced-pom.xml
 debug.html
+result.csv
