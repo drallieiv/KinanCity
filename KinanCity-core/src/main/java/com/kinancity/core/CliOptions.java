@@ -11,9 +11,13 @@ public enum CliOptions {
 	
 	CK("ck", "captchaKey", true, "2 captcha API Key"),
 
-	SINGLE_EMAIL("m", "mail", true, "account email address"),
+	EMAIL("m", "mail", true, "account email address"),
 	SINGLE_USERNAME("u", "username", true, "account username/login"),
-	SINGLE_PASSWORD("p", "password", true, "account password"),
+	PASSWORD("p", "password", true, "account password"),
+	
+	SEQ_ACCOUNTS_COUNT("c", "count", true, "number of accounts to generate"),
+	SEQ_ACCOUNTS_START("s", "startnum", true, "number of the first one"),
+	SEQ_ACCOUNTS_FORMAT("f", "format", true, "format of the username : prefix*****suffix with enough *"),
 	
 	MULTIPLE_ACCOUNTS("a", "accounts", true, "name of an account file");
 	
