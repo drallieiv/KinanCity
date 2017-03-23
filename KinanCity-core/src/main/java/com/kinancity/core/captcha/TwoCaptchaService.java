@@ -115,7 +115,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 							// Keep Waiting
 							spinnerCount++;
 							if (spinnerCount % 10 == 9) {
-								logger.info("...");
+								logger.info("waiting for captcha response ...");
 							}
 							Thread.sleep(spleepTime);
 						} else {
