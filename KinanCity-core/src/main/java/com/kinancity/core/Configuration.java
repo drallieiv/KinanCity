@@ -1,6 +1,8 @@
 package com.kinancity.core;
 
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,19 +34,19 @@ public class Configuration {
 	private String twoCaptchaApiKey;
 
 	private String mailHost;
-	
+
 	private int nbThreads = 5;
-	
+
 	private CaptchaProvider captchaProvider;
-	
+
 	private ProxyManager proxyManager;
-	
+
 	private String resultLogFilename = "result.csv";
-	
+
 	private PrintWriter resultLogWriter;
-	
+
 	private boolean initDone = false;
-	
+
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 
@@ -57,34 +59,34 @@ public class Configuration {
 		return instance;
 	}
 
-	public void init() throws ConfigurationException{
-		
+	public void init() throws ConfigurationException {
+
 		try {
-			if(captchaProvider == null){
+			if (captchaProvider == null) {
 				captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
 			}
-			
-			if(proxyManager == null){
+
+			if (proxyManager == null) {
 				proxyManager = new ProxyManager();
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(new NintendoTimeLimitPolicy(), new NoProxy()));
 			}
-			
+
 			resultLogWriter = new PrintWriter(new FileWriter(resultLogFilename, true));
 		} catch (IOException e) {
 			throw new ConfigurationException(e);
 		}
-		
+
 		initDone = true;
 	}
-	
+
 	/**
 	 * Check if all config are OK
 	 * 
 	 * @return
 	 */
 	public boolean checkConfiguration() {
-		if(!initDone){
+		if (!initDone) {
 			try {
 				init();
 			} catch (ConfigurationException e) {
@@ -92,27 +94,30 @@ public class Configuration {
 				return false;
 			}
 		}
-		
+
 		if (captchaProvider == null) {
 			return false;
 		}
 
 		return true;
 	}
-	
+
 	/**
 	 * Load config from prop file
 	 * 
-	 * @param configFile
+	 * @param configFilePath
 	 */
-	private void load(String configFile) {
+	private void load(String configFilePath) {
 		try {
 			Properties prop = new Properties();
-			InputStream in = getClass().getResourceAsStream("/" + CONFIG_FILE);
-			if (in == null) {
+			File configFile = new File(CONFIG_FILE);
+
+			if (!configFile.exists()) {
 				logger.warn("Skipping loading configuration file, you may copy config.example.properties as config.properties and edit your configuration");
 				return;
 			}
+
+			InputStream in = new FileInputStream(configFile);
 			prop.load(in);
 			in.close();
 

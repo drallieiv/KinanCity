@@ -104,7 +104,7 @@ public class PtcAccountCreator {
 	 * @return 
 	 * @throws AccountCreationException
 	 */
-	private PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
+	public PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
 		logger.info("Start creating {} account in batch loaded from csv");
 
 		// add all accounts to pool

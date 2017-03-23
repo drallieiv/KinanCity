@@ -2,6 +2,8 @@ package com.kinancity.core;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -17,6 +19,7 @@ import com.kinancity.core.creation.PtcCreationResult;
 import com.kinancity.core.creation.PtcCreationSummary;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
+import com.kinancity.core.generator.impl.SequenceAccountGenerator;
 
 public class KinanCityCli {
 
@@ -26,7 +29,7 @@ public class KinanCityCli {
 
 		Thread t = Thread.currentThread();
 		t.setName("Kinan City");
-		
+
 		try {
 			LOGGER.info(" -- Start Kinan City CLI -- ");
 
@@ -35,14 +38,19 @@ public class KinanCityCli {
 
 			// Dry Run Mode
 			options.addOption(CliOptions.DRY_RUN.asOption());
-			
+
 			// Creates only 1 account
-			options.addOption(CliOptions.SINGLE_EMAIL.asOption());
+			options.addOption(CliOptions.EMAIL.asOption());
 			options.addOption(CliOptions.SINGLE_USERNAME.asOption());
-			options.addOption(CliOptions.SINGLE_PASSWORD.asOption());
+			options.addOption(CliOptions.PASSWORD.asOption());
 
 			// Create Multiple accounts
 			options.addOption(CliOptions.MULTIPLE_ACCOUNTS.asOption());
+
+			// Create a Sequence of accounts
+			options.addOption(CliOptions.SEQ_ACCOUNTS_COUNT.asOption());
+			options.addOption(CliOptions.SEQ_ACCOUNTS_FORMAT.asOption());
+			options.addOption(CliOptions.SEQ_ACCOUNTS_START.asOption());
 
 			// Captcha key given at commandLine
 			options.addOption(CliOptions.CK.asOption());
@@ -51,26 +59,52 @@ public class KinanCityCli {
 			CommandLine cmd = parser.parse(options, args);
 
 			Configuration config = Configuration.getInstance();
-			
-			if(cmd.hasOption(CliOptions.DRY_RUN.shortName)){
+
+			if (cmd.hasOption(CliOptions.DRY_RUN.shortName)) {
 				config.setDryRun(true);
-			}			
+			}
 
 			if (cmd.hasOption(CliOptions.CK.shortName)) {
 				config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
 			}
 
 			if (config.checkConfiguration()) {
-				
+
 				PtcAccountCreator creator = new PtcAccountCreator(config);
 
-				if (cmd.hasOption(CliOptions.SINGLE_EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.SINGLE_PASSWORD.shortName)) {
+				if (cmd.hasOption(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName) && cmd.hasOption(CliOptions.SEQ_ACCOUNTS_COUNT.shortName) && cmd.hasOption(CliOptions.EMAIL.shortName) && cmd.hasOption(CliOptions.PASSWORD.shortName)) {
+
+					SequenceAccountGenerator generator = new SequenceAccountGenerator();
+					generator.setBaseEmail(cmd.getOptionValue(CliOptions.EMAIL.shortName));
+					generator.setStaticPassword(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
+					
+					generator.setUsernamePattern(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName));
+					generator.setNbAccounts(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_COUNT.shortName)));
+					generator.setStartFrom(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_START.shortName, "0")));
+					
+					List<AccountData> accountsToCreate = new ArrayList<>();
+					AccountData account;
+					while ((account = generator.nextAccountData()) != null) {
+						accountsToCreate.add(account);
+					}
+
+					try {
+						PtcCreationSummary summary = creator.createAccounts(accountsToCreate);
+
+						LOGGER.info(" All creations DONE : {}", summary);
+						System.exit(0);
+					} catch (AccountCreationException e) {
+						LOGGER.error("\n Account Creation Error : {}", e.getMessage());
+						System.exit(1);
+					}
+
+				} else if (cmd.hasOption(CliOptions.EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.PASSWORD.shortName)) {
 					LOGGER.info("Create a single account");
 
 					AccountData account = new AccountData();
-					account.setEmail(cmd.getOptionValue(CliOptions.SINGLE_EMAIL.shortName));
+					account.setEmail(cmd.getOptionValue(CliOptions.EMAIL.shortName));
 					account.setUsername(cmd.getOptionValue(CliOptions.SINGLE_USERNAME.shortName));
-					account.setPassword(cmd.getOptionValue(CliOptions.SINGLE_PASSWORD.shortName));
+					account.setPassword(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
 
 					try {
 						PtcCreationResult result = creator.createAccount(account);
@@ -84,23 +118,26 @@ public class KinanCityCli {
 					String accountFileName = cmd.getOptionValue(CliOptions.MULTIPLE_ACCOUNTS.shortName);
 
 					PtcCreationSummary summary = creator.createAccounts(accountFileName);
-					
-					LOGGER.info(" All creations DONE : {}",summary);
+
+					LOGGER.info(" All creations DONE : {}", summary);
 					System.exit(0);
 
 				} else {
 
-					LOGGER.error("\ninvalid arguments\n");
+					LOGGER.error("invalid arguments\n");
 
 					HelpFormatter formatter = new HelpFormatter();
 					StringWriter out = new StringWriter();
 					PrintWriter writer = new PrintWriter(out);
 
-					String cmdLineSyntax = " (-m <email>  -u <username> -p <password>) (-a <accounts.csv> ) [-ck <captchakey>]";
+					String cmdLineSyntax = " one of \n"
+							+ "  -m <email>  -u <username> -p <password> \n"
+							+ "  -a <accounts.csv> \n"
+							+ "  -m <email> -c <#ofAccounts> -f <format**> -p <password> (-s <first#>)\n"
+							+ " and optional : -ck <captchakey> \n\n";
+					formatter.setWidth(180);
 					formatter.printHelp(cmdLineSyntax, options);
 
-					String usage = out.toString();
-					LOGGER.error(usage);
 					System.exit(0);
 				}
 
