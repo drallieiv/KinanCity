@@ -2,10 +2,10 @@ package com.kinancity.core.proxy.policies;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Policy that limits to a number of account per period of time.
@@ -30,10 +30,16 @@ public class TimeLimitPolicy implements ProxyPolicy {
 		this.maxPerPeriod = maxPerPeriod;
 		this.periodInSeconds = periodInSeconds;
 	}
+
+	@Override
+	public synchronized void markUsed() {
+		lastCalls.add(LocalDateTime.now());
+	}
 	
 	@Override
-	public void markUsed() {
-		lastCalls.add(LocalDateTime.now());
+	public synchronized void freeOneTry() {
+		// pop the last one
+		lastCalls.remove(lastCalls.size() -1);
 	}
 
 	@Override
@@ -59,6 +65,11 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	}
 
 	public String toString() {
-		return lastCalls.size() + "/" + maxPerPeriod + " over " + periodInSeconds + " seconds";
+		return "max " + maxPerPeriod + " / " + Math.round(periodInSeconds/60) + " min";
+	}
+
+	@Override
+	public TimeLimitPolicy clone() {
+		return new TimeLimitPolicy(this.getMaxPerPeriod(), this.getPeriodInSeconds());
 	}
 }

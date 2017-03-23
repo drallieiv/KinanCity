@@ -2,6 +2,7 @@ package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,6 +107,8 @@ public class PtcAccountCreator {
 	 * @throws AccountCreationException
 	 */
 	public PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
+		
+		LocalTime startTime = LocalTime.now();
 		logger.info("Start creating {} account in batch loaded from csv");
 
 		// add all accounts to pool
@@ -113,15 +117,38 @@ public class PtcAccountCreator {
 			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config)));
 		}
 		
-		PtcCreationSummary summary = new PtcCreationSummary();
+		try {
+			// Show live progress
+			long nbTotal = futures.size();
+			long nbDone = 0;
+			long prev = 0;
+			while((nbDone = futures.stream().filter(future -> future.isDone()).count()) < nbTotal){
+				if(nbDone != prev){
+					logger.info("Batch creation progress : {}/{}",nbDone,nbTotal);
+					prev = nbDone;
+				}
+				Thread.sleep(10000);
+			}
+		} catch (InterruptedException e) {
+			throw new AccountCreationException(e);
+		}
+
+		logger.info("Start writing summary");
 		
+		// Generate final Summary
+		PtcCreationSummary summary = new PtcCreationSummary();
 		for(Future<PtcCreationResult> future : futures){
 		    try {
 		    	summary.add(future.get());
 			} catch (InterruptedException | ExecutionException e) {
-				throw new AccountCreationException(e);
+				summary.add(new PtcCreationResult(false, "failed", new AccountCreationException(e)));
 			}
 		}
+		
+		LocalTime endTime = LocalTime.now();
+		summary.setDuration(startTime, endTime);
+		
+		logger.info("Batch summary : {}", summary);
 		
 		config.getResultLogWriter().close();
 		

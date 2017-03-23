@@ -5,7 +5,7 @@ package com.kinancity.core.proxy.policies;
  * @author drallieiv
  *
  */
-public interface ProxyPolicy {
+public interface ProxyPolicy extends Cloneable {
 	
 	// Triggered each time the proxy is used to get a HttpClient
 	void markUsed();
@@ -14,4 +14,8 @@ public interface ProxyPolicy {
 	void markOverLimit();
 	
 	boolean isAvailable();
+	
+	ProxyPolicy clone();
+
+	void freeOneTry();
 }
