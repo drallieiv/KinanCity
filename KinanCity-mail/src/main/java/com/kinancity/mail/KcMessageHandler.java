@@ -60,10 +60,11 @@ public class KcMessageHandler implements MessageHandler {
 	@Override
 	public void data(InputStream data) throws RejectException, TooMuchDataException, IOException {
 
-		logger.debug("Received email from {} to {}", from, recipient);
-
 		// Only accept pokemon mails
 		if (from.endsWith(POKEMON_DOMAIN)) {
+
+			logger.debug("Received email from {} to {}", from, recipient);
+
 			try {
 				Session session = Session.getDefaultInstance(new Properties());
 				MimeMessage message = new MimeMessage(session, data);
