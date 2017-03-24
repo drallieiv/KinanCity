@@ -38,8 +38,6 @@ public class PtcAccountCreator {
 	private final ExecutorService pool;
 
 	private List<Future<PtcCreationResult>> futures;
-	
-	private int nbRetry = 0;
 
 	public PtcAccountCreator(Configuration config) {
 		this.config = config;

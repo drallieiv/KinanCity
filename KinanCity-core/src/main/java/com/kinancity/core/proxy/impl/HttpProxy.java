@@ -59,7 +59,7 @@ public class HttpProxy implements HttpProxyProvider {
 	}
 	
 	public String toString(){
-		return String.format(host+":"+port);
+		return host+":"+port;
 	}
 
 }

@@ -12,8 +12,8 @@
 		</encoder>
 	</appender>
 	
-	<logger name="com.kinancity.core" level="DEBUG" additivity="false">
-		<appender-ref ref="DETAILED" />
+	<logger name="com.kinancity.core" level="INFO" additivity="false">
+		<appender-ref ref="CLI" />
 	</logger>
 
 	<root level="INFO" additivity="false">
