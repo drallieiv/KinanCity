@@ -61,6 +61,7 @@ public class KinanCityCli {
 			// Proxies
 			options.addOption(CliOptions.PROXIES.asOption());
 			options.addOption(CliOptions.NO_PROXY_CHECK.asOption());
+			options.addOption(CliOptions.NO_LIMIT.asOption());
 
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cmd = parser.parse(options, args);
@@ -86,6 +87,10 @@ public class KinanCityCli {
 			}
 
 			if (cmd.hasOption(CliOptions.NO_PROXY_CHECK.shortName)) {
+				config.setSkipProxyTest(true);
+			}
+			
+			if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
 				config.setSkipProxyTest(true);
 			}
 
