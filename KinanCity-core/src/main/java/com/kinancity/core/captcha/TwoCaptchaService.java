@@ -14,7 +14,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-
 public class TwoCaptchaService implements CaptchaProvider {
 
 	private static final String NOT_READY = "NOT_READY";
@@ -65,21 +64,21 @@ public class TwoCaptchaService implements CaptchaProvider {
 		this.apiKey = apiKey;
 		this.dryRun = dryRun;
 		this.captchaClient = new OkHttpClient();
-		
-		if(!dryRun && !checkApiKeyValidity()){
+
+		if (!dryRun && !checkApiKeyValidity()) {
 			throw new ConfigurationException("2Captcha cannot be used with given key. Check key and balance");
 		}
 	}
-	
-	private boolean checkApiKeyValidity(){
+
+	private boolean checkApiKeyValidity() {
 		// TODO call 2 captcha to check if key is valid and maybe balance too
 		return true;
 	}
 
 	@Override
 	public String getCaptcha() throws CaptchaSolvingException {
-		
-		if(this.apiKey == null || this.apiKey.isEmpty()){
+
+		if (this.apiKey == null || this.apiKey.isEmpty()) {
 			throw new CaptchaSolvingException("Missing 2captcha API key");
 		}
 
@@ -88,11 +87,10 @@ public class TwoCaptchaService implements CaptchaProvider {
 			return "mockedCaptcha";
 		} else {
 
-			try {
-				Request sendRequest = buildSendCaptchaRequest();
-				Response sendResponse = captchaClient.newCall(sendRequest).execute();
+			Request sendRequest = buildSendCaptchaRequest();
+			try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
 				String body = sendResponse.body().string();
-				sendResponse.body().close();
+
 				if (body != null && body.startsWith(OK_RESPONSE_PREFIX)) {
 
 					String captchaId = body.substring(OK_RESPONSE_PREFIX.length());
@@ -107,27 +105,27 @@ public class TwoCaptchaService implements CaptchaProvider {
 					int spinnerCount = 0;
 
 					while (time != null && time.getTime() < maxTotalTime * 1000) {
-						Response solveResponse = captchaClient.newCall(resolveRequest).execute();
-						String solution = solveResponse.body().string();
-						solveResponse.body().close();
+						try (Response solveResponse = captchaClient.newCall(resolveRequest).execute()) {
+							String solution = solveResponse.body().string();
+	
+							if (solution.contains(NOT_READY)) {
+								// Keep Waiting
+								spinnerCount++;
+								if (spinnerCount % 10 == 9) {
+									logger.info("waiting for captcha response ...");
+								}
+								Thread.sleep(spleepTime);
+							} else {
+								// Stop loop
+								time.stop();
+								logger.debug("Response received from 2captcha in {}s", time.getTime() / 1000);
 
-						if (solution.contains(NOT_READY)) {
-							// Keep Waiting
-							spinnerCount++;
-							if (spinnerCount % 10 == 9) {
-								logger.info("waiting for captcha response ...");
+								if (solution.startsWith(OK_RESPONSE_PREFIX)) {
+									return solution.substring(OK_RESPONSE_PREFIX.length());
+								}
+
+								throw new CaptchaSolvingException("2 Captcha Error, solution not OK : " + solution);
 							}
-							Thread.sleep(spleepTime);
-						} else {
-							// Stop loop
-							time.stop();
-							logger.debug("Response received from 2captcha in {}s", time.getTime() / 1000);
-
-							if (solution.startsWith(OK_RESPONSE_PREFIX)) {
-								return solution.substring(OK_RESPONSE_PREFIX.length());
-							}
-
-							throw new CaptchaSolvingException("2 Captcha Error, solution not OK : " + solution);
 						}
 					}
 					throw new CaptchaSolvingException("2 Captcha Error, timeout reached");
@@ -140,7 +138,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 				throw new CaptchaSolvingException(e);
 			}
 		}
-		
+
 	}
 
 	/**

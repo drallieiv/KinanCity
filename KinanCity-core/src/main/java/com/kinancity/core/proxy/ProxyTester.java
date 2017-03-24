@@ -23,13 +23,12 @@ public class ProxyTester {
 			Request testrequest = new Request.Builder().url(url_ptc).get().build();
 
 			OkHttpClient client = provider.getClient().newBuilder().connectTimeout(20, TimeUnit.SECONDS).build();
-			Response response = client.newCall(testrequest).execute();
-
-			if (!response.isSuccessful()) {
-				logger.error("Error, received HTTP {}", response.code());
-				return false;
+			try (Response response = client.newCall(testrequest).execute()) {
+				if (!response.isSuccessful()) {
+					logger.error("Error, received HTTP {}", response.code());
+					return false;
+				}
 			}
-
 			// Else the test is a success
 			return true;
 		} catch (SocketTimeoutException e) {

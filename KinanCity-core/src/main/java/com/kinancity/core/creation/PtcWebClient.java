@@ -2,6 +2,7 @@ package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
@@ -83,8 +84,7 @@ public class PtcWebClient {
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 
 			if (response.isSuccessful()) {
-				Document doc = Jsoup.parse(response.body().byteStream(), "UTF-8", "");
-				response.body().close();
+				Document doc = Jsoup.parse(response.body().string());
 
 				logger.debug("Cookies are now  : {}", cookieJar.getCookies());
 
@@ -99,6 +99,7 @@ public class PtcWebClient {
 				}
 				logger.error("CSRF Token not found");
 			}
+
 		} catch (IOException e) {
 			logger.error("Technical error getting CSRF Token", e);
 		}
@@ -220,8 +221,7 @@ public class PtcWebClient {
 				// Parse Response
 				if (response.isSuccessful()) {
 
-					String strResponse = response.body().string();
-					Document doc = Jsoup.parse(strResponse);
+					Document doc = Jsoup.parse(response.body().string());
 					response.body().close();
 
 					if (dumpError) {
