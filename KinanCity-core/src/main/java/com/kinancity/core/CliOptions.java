@@ -23,6 +23,9 @@ public enum CliOptions {
 	
 	OUTPUT("o", "output", true, "output csv file path where the result should be saved"),
 	
+	NO_PROXY_CHECK("npc", "noProxyCheck", false, "Skip Proxy Checking"),
+	NB_THREADS("t", "thread", true, "Number of parallel threads"),
+	
 	MULTIPLE_ACCOUNTS("a", "accounts", true, "name of an account file");
 	
 

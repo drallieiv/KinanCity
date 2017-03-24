@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.core.captcha.CaptchaProvider;
+import com.kinancity.core.captcha.MockCaptchaService;
 import com.kinancity.core.captcha.TwoCaptchaService;
 import com.kinancity.core.errors.ConfigurationException;
 import com.kinancity.core.proxy.ProxyInfo;
@@ -52,6 +53,9 @@ public class Configuration {
 	private boolean initDone = false;
 	
 	private boolean skipProxyTest = false;
+	
+	private int maxRetry = 3;
+	
 
 	// If true, everything will be mocked
 	private boolean dryRun = false;
@@ -68,6 +72,7 @@ public class Configuration {
 	public void init() throws ConfigurationException {
 
 		try {
+			
 			if (captchaProvider == null) {
 				captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
 			}

@@ -6,7 +6,7 @@ package com.kinancity.core.errors;
  * @author drallieiv
  *
  */
-public class AccountDuplicateException extends AccountCreationException {
+public class AccountDuplicateException extends FatalException {
 
 	private static final long serialVersionUID = -3151934623808680405L;
 

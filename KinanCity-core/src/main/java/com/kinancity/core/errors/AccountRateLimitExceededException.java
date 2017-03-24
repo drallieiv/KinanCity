@@ -6,7 +6,7 @@ package com.kinancity.core.errors;
  * @author drallieiv
  *
  */
-public class AccountRateLimitExceededException extends AccountCreationException {
+public class AccountRateLimitExceededException extends TechnicalException {
 
 	private static final long serialVersionUID = -3151934623808680405L;
 

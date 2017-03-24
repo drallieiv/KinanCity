@@ -33,7 +33,7 @@ public class PtcCreationSummary {
 	}
 
 	public long getNbCreations() {
-		return results.size();
+		return results.stream().filter(r -> ! r.isRescheduled()).count();
 	}
 
 	public String toString() {

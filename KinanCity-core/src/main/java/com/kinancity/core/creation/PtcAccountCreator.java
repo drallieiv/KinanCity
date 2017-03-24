@@ -34,27 +34,30 @@ public class PtcAccountCreator {
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private Configuration config;
-	
+
 	private final ExecutorService pool;
 
+	private List<Future<PtcCreationResult>> futures;
+	
+	private int nbRetry = 0;
 
 	public PtcAccountCreator(Configuration config) {
 		this.config = config;
-		
+
 		ThreadFactory threadFactory = new PtcAccountCreatorThreadFactory();
-		pool = Executors.newFixedThreadPool(config.getNbThreads(), threadFactory);		
+		pool = Executors.newFixedThreadPool(config.getNbThreads(), threadFactory);
 	}
 
 	// Create an account
 	public PtcCreationResult createAccount(AccountData account) throws AccountCreationException {
-		return (new PtcAccountCreationTask(account, config)).call();
+		return (new PtcAccountCreationTask(account, config, this)).call();
 	}
 
 	/**
 	 * Create accounts listed in a csv file
 	 * 
 	 * @param accountFileName
-	 * @return 
+	 * @return
 	 */
 	public PtcCreationSummary createAccounts(String accountFileName) {
 		logger.info("Creating all accounts defined in file {}", accountFileName);
@@ -64,11 +67,11 @@ public class PtcAccountCreator {
 			logger.error("Cannot open file {}. Abort", accountFileName);
 		}
 
-		try (Scanner scanner = new Scanner(accountFile)){
+		try (Scanner scanner = new Scanner(accountFile)) {
 
 			List<AccountData> accountsToCreate = new ArrayList<>();
 			List<String> headers = null;
-			
+
 			while (scanner.hasNext()) {
 				String line = scanner.nextLine();
 
@@ -96,62 +99,67 @@ public class PtcAccountCreator {
 			logger.error("creation failed", e);
 			return new PtcCreationSummary("Creation Failed");
 		}
-		
+
 	}
 
 	/**
 	 * Create multiple accounts as once
 	 * 
 	 * @param accountsToCreate
-	 * @return 
+	 * @return
 	 * @throws AccountCreationException
 	 */
 	public PtcCreationSummary createAccounts(List<AccountData> accountsToCreate) throws AccountCreationException {
-		
+
 		LocalTime startTime = LocalTime.now();
 		logger.info("Start creating {} account in batch loaded from csv");
 
 		// add all accounts to pool
-		List<Future<PtcCreationResult>> futures = new ArrayList<>();
+		futures = new ArrayList<>();
+
+		long nbTotal = accountsToCreate.size();
 		for (AccountData accountData : accountsToCreate) {
-			futures.add(pool.submit(new PtcAccountCreationTask(accountData, config)));
+			this.schedule(new PtcAccountCreationTask(accountData, config, this));
 		}
-		
+
 		try {
 			// Show live progress
-			long nbTotal = futures.size();
-			long nbDone = 0;
-			long prev = 0;
-			while((nbDone = futures.stream().filter(future -> future.isDone()).count()) < nbTotal){
-				if(nbDone != prev){
-					logger.info("Batch creation progress : {}/{}",nbDone,nbTotal);
-					prev = nbDone;
+			long lastRunning = 0;
+			long nbRunning = nbTotal;
+
+			while (nbRunning > 0) {
+				nbRunning = nbRunning();
+				if (nbRunning != lastRunning) {
+					logger.info("Batch creation progress : {}/{}", nbTotal - nbRunning, nbTotal);
+					lastRunning = nbRunning;
 				}
-				Thread.sleep(10000);
+				if (nbRunning > 0) {
+					Thread.sleep(10000);
+				}
 			}
 		} catch (InterruptedException e) {
 			throw new AccountCreationException(e);
 		}
 
 		logger.info("Start writing summary");
-		
+
 		// Generate final Summary
 		PtcCreationSummary summary = new PtcCreationSummary();
-		for(Future<PtcCreationResult> future : futures){
-		    try {
-		    	summary.add(future.get());
+		for (Future<PtcCreationResult> future : futures) {
+			try {
+				summary.add(future.get());
 			} catch (InterruptedException | ExecutionException e) {
 				summary.add(new PtcCreationResult(false, "failed", new AccountCreationException(e)));
 			}
 		}
-		
+
 		LocalTime endTime = LocalTime.now();
 		summary.setDuration(startTime, endTime);
-		
+
 		logger.info("Batch summary : {}", summary);
-		
+
 		config.getResultLogWriter().close();
-		
+
 		return summary;
 	}
 
@@ -185,5 +193,20 @@ public class PtcAccountCreator {
 		account.setEmail(fieldMap.get(CsvHeaderConstants.EMAIL));
 		return account;
 	}
+
+	public void reschedule(PtcAccountCreationTask origine) {
+		this.schedule(origine.getRetry());
+		logger.debug("There is now {} futures in queue with {} running", futures.size(), nbRunning());
+	}
+	
+	public void schedule(PtcAccountCreationTask ptcAccountCreationTask) {
+		futures.add(pool.submit(ptcAccountCreationTask));	
+	}
+
+	public long nbRunning() {
+		return futures.stream().filter(future -> !future.isDone()).count();
+	}
+
+
 
 }

@@ -54,13 +54,18 @@ public class KinanCityCli {
 
 			// Captcha key given at commandLine
 			options.addOption(CliOptions.CK.asOption());
-			
+
+			// Number of Threads
+			options.addOption(CliOptions.NB_THREADS.asOption());
+
 			// Proxies
 			options.addOption(CliOptions.PROXIES.asOption());
-			
+			options.addOption(CliOptions.NO_PROXY_CHECK.asOption());
 
 			CommandLineParser parser = new DefaultParser();
 			CommandLine cmd = parser.parse(options, args);
+
+			// Load Config Options
 
 			Configuration config = Configuration.getInstance();
 
@@ -71,13 +76,21 @@ public class KinanCityCli {
 			if (cmd.hasOption(CliOptions.CK.shortName)) {
 				config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
 			}
-			
+
 			if (cmd.hasOption(CliOptions.PROXIES.shortName)) {
 				config.loadProxies(cmd.getOptionValue(CliOptions.PROXIES.shortName));
 			}
-			
+
 			if (cmd.hasOption(CliOptions.OUTPUT.shortName)) {
 				config.setResultLogFilename(cmd.getOptionValue(CliOptions.OUTPUT.shortName));
+			}
+
+			if (cmd.hasOption(CliOptions.NO_PROXY_CHECK.shortName)) {
+				config.setSkipProxyTest(true);
+			}
+
+			if (cmd.hasOption(CliOptions.NB_THREADS.shortName)) {
+				config.setNbThreads(Integer.valueOf(cmd.getOptionValue(CliOptions.NB_THREADS.shortName)));
 			}
 
 			if (config.checkConfiguration()) {
@@ -89,18 +102,18 @@ public class KinanCityCli {
 					SequenceAccountGenerator generator = new SequenceAccountGenerator();
 					generator.setBaseEmail(cmd.getOptionValue(CliOptions.EMAIL.shortName));
 					generator.setStaticPassword(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
-					
+
 					generator.setUsernamePattern(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName));
 					generator.setNbAccounts(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_COUNT.shortName)));
 					generator.setStartFrom(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_START.shortName, "0")));
-					
+
 					List<AccountData> accountsToCreate = new ArrayList<>();
 					AccountData account;
 					while ((account = generator.nextAccountData()) != null) {
 						accountsToCreate.add(account);
 					}
 
-					try { 
+					try {
 						PtcCreationSummary summary = creator.createAccounts(accountsToCreate);
 
 						LOGGER.info(" All creations DONE : {}", summary);
@@ -158,7 +171,7 @@ public class KinanCityCli {
 				System.exit(1);
 			}
 		} catch (ParseException e) {
-			LOGGER.error("Command line cannot be parsed");
+			LOGGER.error("Command line cannot be parsed {}", e.getMessage());
 			System.exit(1);
 		}
 

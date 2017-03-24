@@ -12,16 +12,9 @@
 		</encoder>
 	</appender>
 	
-	<logger name="com.kinancity.core.creation.PtcAccountCreationTask" level="INFO" additivity="false">
-		<appender-ref ref="CLI" />
-	</logger>
-	
-	<logger name="okhttp3.OkHttpClient" level="FINE" additivity="false">
+	<logger name="com.kinancity.core" level="DEBUG" additivity="false">
 		<appender-ref ref="DETAILED" />
 	</logger>
-	
-	
-	
 
 	<root level="INFO" additivity="false">
 		<appender-ref ref="CLI" />

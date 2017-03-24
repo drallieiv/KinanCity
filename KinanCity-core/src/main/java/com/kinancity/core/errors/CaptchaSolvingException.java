@@ -1,14 +1,12 @@
 package com.kinancity.core.errors;
 
-import java.io.IOException;
-
 /**
  * Error when solving captcha
  * 
  * @author drallieiv
  *
  */
-public class CaptchaSolvingException extends AccountCreationException {
+public class CaptchaSolvingException extends TechnicalException {
 
 	private static final long serialVersionUID = -1173353148853930289L;
 

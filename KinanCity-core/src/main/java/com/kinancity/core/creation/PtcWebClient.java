@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.AccountDuplicateException;
 import com.kinancity.core.errors.AccountRateLimitExceededException;
+import com.kinancity.core.errors.TechnicalException;
 import com.kinancity.core.proxy.ProxyInfo;
 
 import okhttp3.FormBody;
@@ -57,7 +59,7 @@ public class PtcWebClient {
 	private SaveAllCookieJar cookieJar;
 
 	private ProxyInfo proxyInfo;
-	
+
 	/**
 	 * Dry Run
 	 */
@@ -65,16 +67,20 @@ public class PtcWebClient {
 
 	public PtcWebClient(Configuration config, ProxyInfo proxyInfo) {
 		this.dryRun = config.isDryRun();
-		
+
 		// Initialize Http Client
 		cookieJar = new SaveAllCookieJar();
 		client = proxyInfo.getProvider().getClient();
 		client = client.newBuilder().cookieJar(cookieJar).build();
 
 	}
-
-	// Simulate new account creation age check and dump CRSF token
-	public String sendAgeCheckAndGrabCrsfToken() throws AccountCreationException {
+	
+	/**
+	 * Simulate new account creation age check and dump CRSF token.
+	 * @return a valid CRSF token
+	 * @throws TechnicalException if the token could not be retreived
+	 */
+	public String sendAgeCheckAndGrabCrsfToken() throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Grab CRSF token from PTC web");
@@ -97,20 +103,19 @@ public class PtcWebClient {
 					sendAgeCheck(crsfToken);
 					return crsfToken;
 				}
-				logger.error("CSRF Token not found");
 			}
-
+			throw new TechnicalException("Age verification call and CSRF extraction failed");
 		} catch (IOException e) {
-			logger.error("Technical error getting CSRF Token", e);
+			logger.error("Technical error getting CSRF Token", e.getMessage());
+			throw new TechnicalException(e);
 		}
-		return null;
 	}
 
 	/**
 	 * Send the age check request, it will set up a cookie with the dod NOTE: it
 	 * could be skipped by manually adding the dod cookie ?
 	 */
-	public void sendAgeCheck(String crsfToken) throws AccountCreationException {
+	public void sendAgeCheck(String crsfToken) throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Pass age validation");
@@ -131,7 +136,7 @@ public class PtcWebClient {
 				}
 			}
 		} catch (IOException e) {
-			throw new AccountCreationException(e);
+			throw new TechnicalException(e);
 		}
 	}
 
@@ -199,8 +204,10 @@ public class PtcWebClient {
 
 	/**
 	 * The account creation itself
+	 * @throws TechnicalException 
+	 * @throws AccountDuplicateException 
 	 */
-	public void createAccount(AccountData account, String crsfToken, String captcha) throws AccountCreationException {
+	public void createAccount(AccountData account, String crsfToken, String captcha) throws TechnicalException, AccountDuplicateException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Send creation request for account [{}]", account);
@@ -236,7 +243,7 @@ public class PtcWebClient {
 					Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
 					if (!accessDenied.isEmpty()) {
 						logger.error("Access Denied");
-						throw new AccountCreationException("Access Denied");
+						throw new TechnicalException("Access Denied");
 					}
 
 					Elements errors = doc.select(".errorlist");
@@ -246,7 +253,7 @@ public class PtcWebClient {
 						if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals(FIELD_MISSING)) {
 							logger.error("Invalid or missing Captcha");
 							// Try Again maybe ?
-							throw new AccountCreationException("Captcha failed");
+							throw new TechnicalException("Captcha failed");
 						} else {
 							logger.error("{} error(s) found creating account {} :", errors.size() - 1, account.username);
 							for (int i = 0; i < errors.size() - 1; i++) {
@@ -265,22 +272,21 @@ public class PtcWebClient {
 
 							// Mark the Proxy
 							proxyInfo.getProxyPolicy().markOverLimit();
-
 							throw new AccountRateLimitExceededException(firstErrorTxt);
 						} else {
-							throw new AccountCreationException("Unknown creation error : " + firstErrorTxt);
+							throw new TechnicalException("Unknown creation error : " + firstErrorTxt);
 						}
 					}
 
 					logger.debug("SUCCESS : Account created");
 
 				} else {
-					throw new AccountCreationException("PTC server bad response, HTTP " + response.code());
+					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
 				}
 			}
 
 		} catch (IOException e) {
-			throw new AccountCreationException(e);
+			throw new TechnicalException(e);
 		}
 	}
 
