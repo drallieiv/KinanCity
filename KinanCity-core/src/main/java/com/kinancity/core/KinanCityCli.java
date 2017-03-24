@@ -75,6 +75,10 @@ public class KinanCityCli {
 			if (cmd.hasOption(CliOptions.PROXIES.shortName)) {
 				config.loadProxies(cmd.getOptionValue(CliOptions.PROXIES.shortName));
 			}
+			
+			if (cmd.hasOption(CliOptions.OUTPUT.shortName)) {
+				config.setResultLogFilename(cmd.getOptionValue(CliOptions.OUTPUT.shortName));
+			}
 
 			if (config.checkConfiguration()) {
 

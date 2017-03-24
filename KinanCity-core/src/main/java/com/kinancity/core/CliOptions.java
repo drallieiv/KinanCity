@@ -21,6 +21,8 @@ public enum CliOptions {
 	
 	PROXIES("px", "proxies", true, "single proxy or list of [proxy1,proxy2]"),
 	
+	OUTPUT("o", "output", true, "output csv file path where the result should be saved"),
+	
 	MULTIPLE_ACCOUNTS("a", "accounts", true, "name of an account file");
 	
 
