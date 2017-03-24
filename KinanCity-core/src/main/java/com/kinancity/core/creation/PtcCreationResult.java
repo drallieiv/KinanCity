@@ -17,7 +17,7 @@ public class PtcCreationResult {
 	private AccountCreationException error;
 
 	// True if the creation has been retried
-	private boolean rescheduled;
+	private boolean rescheduled = false;
 
 	public PtcCreationResult(boolean success, String message, AccountCreationException error, boolean rescheduled) {
 		super();

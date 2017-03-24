@@ -2,7 +2,7 @@
 
 	<appender name="CLI" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>[%thread] %msg%n</pattern>
+			<pattern>%-5level [%thread] %msg%n</pattern>
 		</encoder>
 	</appender>
 	

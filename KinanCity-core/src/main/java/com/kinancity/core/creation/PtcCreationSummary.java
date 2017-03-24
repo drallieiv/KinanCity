@@ -1,5 +1,6 @@
 package com.kinancity.core.creation;
 
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -12,6 +13,9 @@ public class PtcCreationSummary {
 	private List<PtcCreationResult> results;
 
 	private String errorMsg;
+
+	private LocalTime startTime;
+	private LocalTime endTime;
 
 	// Total generation time in seconds
 	private long duration;
@@ -47,23 +51,32 @@ public class PtcCreationSummary {
 	private String getTimeInText() {
 
 		StringBuilder sb = new StringBuilder();
-		long nbHours = Math.floorDiv(duration, 3600);
-		if (nbHours > 0) {
-			sb.append(nbHours).append("h ");
+		LocalDateTime tempDateTime = LocalDateTime.from(startTime);
+
+		long hours = tempDateTime.until(endTime, ChronoUnit.HOURS);
+		tempDateTime = tempDateTime.plusHours(hours);
+
+		long minutes = tempDateTime.until(endTime, ChronoUnit.MINUTES);
+		tempDateTime = tempDateTime.plusMinutes(minutes);
+
+		long seconds = tempDateTime.until(endTime, ChronoUnit.SECONDS);
+
+		if (hours > 0) {
+			sb.append(hours).append("h ");
 		}
 
-		long nbMinutes = Math.floorDiv(duration % 3600, 60);
-		if (nbHours > 0) {
-			sb.append(nbMinutes).append("m ");
+		if (minutes > 0) {
+			sb.append(minutes).append("m ");
 		}
 
-		long nbSeconds = duration % 60;
-		sb.append(nbSeconds).append("s ");
+		sb.append(seconds).append("s ");
 
 		return sb.toString();
 	}
 
 	public void setDuration(LocalTime startTime, LocalTime endTime) {
-		duration = ChronoUnit.SECONDS.between(startTime, endTime);
+		this.startTime = startTime;
+		this.endTime = endTime;
+
 	}
 }
