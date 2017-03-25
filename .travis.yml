@@ -21,9 +21,6 @@ deploy:
   api_key: "$GH_TOKEN"
   file_glob: true
   file:
-    - "$TRAVIS_BUILD_DIR/KinanCity-gui/target/KinanCity-gui-*.jar"
-    - "$TRAVIS_BUILD_DIR/KinanCity-mail/target/KinanCity-mail-*.jar"
-    - "$TRAVIS_BUILD_DIR/KinanCity-core/target/KinanCity-core-*.jar"
     - "$TRAVIS_BUILD_DIR/KinanCity-core/target/KinanCity-core-*.zip"
   skip_cleanup: true
   on:

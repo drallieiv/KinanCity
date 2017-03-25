@@ -18,6 +18,7 @@
 	<modules>
 		<module>KinanCity-core</module>
 		<module>KinanCity-mail</module>
+		<module>ptc-api</module>
 	</modules>
 
 	<dependencies>
