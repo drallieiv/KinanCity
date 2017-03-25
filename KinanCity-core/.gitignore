@@ -1,7 +1,8 @@
 /target/
 
-src/main/resources/config.properties
-src/main/resources/accounts.csv
+config.properties
+accounts.csv
 
 dependency-reduced-pom.xml
 debug.html
+result.csv

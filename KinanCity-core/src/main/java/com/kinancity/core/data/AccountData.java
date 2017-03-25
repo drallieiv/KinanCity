@@ -18,4 +18,8 @@ public class AccountData implements Cloneable{
 		clonedData.password = this.password;
         return clonedData;
     }
+
+	public String toCsv() {
+		return username+";"+password+";"+email;
+	}
 }

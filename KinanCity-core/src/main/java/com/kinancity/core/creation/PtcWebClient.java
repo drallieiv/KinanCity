@@ -1,10 +1,11 @@
-package com.kinancity.core;
+package com.kinancity.core.creation;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.CookieManager;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,21 +21,24 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.core.captcha.CaptchaProvider;
+import com.kinancity.core.Configuration;
 import com.kinancity.core.data.AccountData;
 import com.kinancity.core.errors.AccountCreationException;
 import com.kinancity.core.errors.AccountDuplicateException;
 import com.kinancity.core.errors.AccountRateLimitExceededException;
-import com.squareup.okhttp.FormEncodingBuilder;
-import com.squareup.okhttp.Headers;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
+import com.kinancity.core.errors.TechnicalException;
+import com.kinancity.core.proxy.ProxyInfo;
+
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 // Web client that will create a PTC account
-public class PTCWebClient {
+public class PtcWebClient {
 
 	private static final String FIELD_MISSING = "This field is required.";
 
@@ -46,32 +50,49 @@ public class PTCWebClient {
 	private String pathAgeCheck = "/sign-up/";
 	private String pathSignup = "/parents/sign-up";
 
-	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}";
+	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}$";
 
-	private boolean dumpError = false;
+	private boolean dumpError = true;
 
 	private OkHttpClient client;
 
-	private CookieManager cookieManager;
+	private SaveAllCookieJar cookieJar;
 
-	public PTCWebClient() {
+	private ProxyInfo proxyInfo;
+
+	/**
+	 * Dry Run
+	 */
+	private boolean dryRun;
+
+	public PtcWebClient(Configuration config, ProxyInfo proxyInfo) {
+		this.dryRun = config.isDryRun();
 
 		// Initialize Http Client
-		client = new OkHttpClient();
-		cookieManager = new CookieManager();
-		client.setCookieHandler(cookieManager);
-	}
+		cookieJar = new SaveAllCookieJar();
+		client = proxyInfo.getProvider().getClient();
+		client = client.newBuilder().cookieJar(cookieJar).build();
 
-	// Simulate new account creation age check and dump CRSF token
-	public String sendAgeCheckAndGrabCrsfToken() throws AccountCreationException {
-		try {
-			Response response = client.newCall(buildAgeCheckRequest()).execute();
+	}
+	
+	/**
+	 * Simulate new account creation age check and dump CRSF token.
+	 * @return a valid CRSF token
+	 * @throws TechnicalException if the token could not be retreived
+	 */
+	public String sendAgeCheckAndGrabCrsfToken() throws TechnicalException {
+
+		if (dryRun) {
+			logger.info("Dry-Run : Grab CRSF token from PTC web");
+			return "mockCrsfToken";
+		}
+
+		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 
 			if (response.isSuccessful()) {
-				Document doc = Jsoup.parse(response.body().byteStream(), "UTF-8", "");
-				response.body().close();
+				Document doc = Jsoup.parse(response.body().string());
 
-				logger.debug("Cookies are now  : {}", cookieManager.getCookieStore().getCookies());
+				logger.debug("Cookies are now  : {}", cookieJar.getCookies());
 
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
@@ -82,34 +103,40 @@ public class PTCWebClient {
 					sendAgeCheck(crsfToken);
 					return crsfToken;
 				}
-				logger.error("CSRF Token not found");
 			}
+			throw new TechnicalException("Age verification call and CSRF extraction failed");
 		} catch (IOException e) {
-			logger.error("Technical error getting CSRF Token", e);
+			logger.error("Technical error getting CSRF Token", e.getMessage());
+			throw new TechnicalException(e);
 		}
-		return null;
 	}
 
 	/**
 	 * Send the age check request, it will set up a cookie with the dod NOTE: it
 	 * could be skipped by manually adding the dod cookie ?
 	 */
-	public void sendAgeCheck(String crsfToken) throws AccountCreationException {
+	public void sendAgeCheck(String crsfToken) throws TechnicalException {
+
+		if (dryRun) {
+			logger.info("Dry-Run : Pass age validation");
+			return;
+		}
+
 		try {
 			// Create Request
 			Request request = this.buildAgeCheckSubmitRequest(crsfToken);
 
 			// Send Request
 			logger.debug("Sending age check request");
-			Response response = client.newCall(request).execute();
 
-			// Parse Response
-			if (response.isSuccessful()) {
-				logger.debug("Cookies are now : {}", cookieManager.getCookieStore().getCookies());
+			try (Response response = client.newCall(request).execute()) {
+				// Parse Response
+				if (response.isSuccessful()) {
+					logger.debug("Cookies are now : {}", cookieJar.getCookies());
+				}
 			}
-
 		} catch (IOException e) {
-			throw new AccountCreationException(e);
+			throw new TechnicalException(e);
 		}
 	}
 
@@ -120,10 +147,14 @@ public class PTCWebClient {
 	 * @return
 	 */
 	public boolean validateAccount(AccountData account) {
-		
+
+		if (dryRun) {
+			logger.info("Dry-Run : Check if username and password are okay");
+			return true;
+		}
+
 		String password = account.getPassword();
 		String username = account.getUsername();
-		
 
 		// Check password validity
 		if (!Pattern.matches(PTC_PWD_EXPREG, password)) {
@@ -131,35 +162,34 @@ public class PTCWebClient {
 			return false;
 		}
 
-
 		// Check username validity
 		String payload = Json.createObjectBuilder().add("name", username).build().toString();
 		RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), payload);
-		
+
 		Request request = new Request.Builder()
 				.url(url_verify_api)
 				.method("POST", body)
 				.build();
-		
-		try {
-			Response response = client.newCall(request).execute();
+
+		try (Response response = client.newCall(request).execute()) {
 			if (response.isSuccessful()) {
-				
+
 				JsonObject jsonResponse = Json.createReader(response.body().byteStream()).readObject();
-				
-				if(! jsonResponse.getBoolean("valid")){
+				response.body().close();
+
+				if (!jsonResponse.getBoolean("valid")) {
 					logger.error("Given username '{}' is not valid", username);
 					return false;
 				}
-				
-				if(jsonResponse.getBoolean("inuse")){
-					logger.error("Given username '{}' is already used, suggestions are {}", username, jsonResponse.getString("suggestions"));
+
+				if (jsonResponse.getBoolean("inuse")) {
+					logger.error("Given username '{}' is already used, suggestions are {}", username, jsonResponse.getJsonArray("suggestions"));
 					return false;
-				}				
-				
+				}
+
 				// All passed and went OK
 				return true;
-				
+
 			} else {
 				logger.error("Validation API dit not respond. Assume the username is available anyway");
 				return true;
@@ -174,80 +204,95 @@ public class PTCWebClient {
 
 	/**
 	 * The account creation itself
+	 * @throws TechnicalException 
+	 * @throws AccountDuplicateException 
 	 */
-	public void createAccount(AccountData account, String crsfToken, String captcha) throws AccountCreationException {
+	public void createAccount(AccountData account, String crsfToken, String captcha) throws TechnicalException, AccountDuplicateException {
+
+		if (dryRun) {
+			logger.info("Dry-Run : Send creation request for account [{}]", account);
+			return;
+		}
+
 		try {
 			// Create Request
 			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
 
 			// Send Request
 			logger.debug("Sending creation request");
-			Response response = client.newCall(request).execute();
 
-			// Parse Response
-			if (response.isSuccessful()) {
+			logger.debug("cookies : {}", client.cookieJar().toString());
 
-				String strResponse = response.body().string();
-				Document doc = Jsoup.parse(strResponse);
-				response.body().close();
+			try (Response response = client.newCall(request).execute()) {
 
-				Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
-				if (!accessDenied.isEmpty()) {
-					throw new AccountCreationException("Access Denied");
-				}
+				// Parse Response
+				if (response.isSuccessful()) {
 
-				if (dumpError) {
-					File debugFile = new File("debug.html");
-					debugFile.delete();
-					logger.debug("Saving response to {}", debugFile.toPath());
-					try (OutputStream out = Files.newOutputStream(debugFile.toPath())) {
-						out.write(doc.select(".container").outerHtml().getBytes());
-					}
-				}
+					Document doc = Jsoup.parse(response.body().string());
+					response.body().close();
 
-				Elements errors = doc.select(".errorlist");
-
-				if (!errors.isEmpty()) {
-
-					if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals(FIELD_MISSING)) {
-						logger.error("Invalid or missing Captcha");
-						// Try Again maybe ?
-						throw new AccountCreationException("Captcha failed");
-					} else {
-						logger.error("{} error(s) found creating account {} :", errors.size() - 1, account.username);
-						for (int i = 0; i < errors.size() - 1; i++) {
-							Element error = errors.get(i);
-							logger.error("- {}", error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim());
+					if (dumpError) {
+						File debugFile = new File("debug.html");
+						debugFile.delete();
+						logger.debug("Saving response to {}", debugFile.toPath());
+						try (OutputStream out = Files.newOutputStream(debugFile.toPath())) {
+							out.write(doc.select(".container").outerHtml().getBytes());
 						}
 					}
-				}
 
-				if (!errors.isEmpty()) {
-					String firstErrorTxt = errors.get(0).toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
-
-					if (firstErrorTxt.contains("username already exists")) {
-						throw new AccountDuplicateException(firstErrorTxt);
-					} else if (firstErrorTxt.contains("exceed")) {
-						throw new AccountRateLimitExceededException(firstErrorTxt);
-					} else {
-						throw new AccountCreationException("Unknown creation error : " + firstErrorTxt);
+					Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
+					if (!accessDenied.isEmpty()) {
+						logger.error("Access Denied");
+						throw new TechnicalException("Access Denied");
 					}
+
+					Elements errors = doc.select(".errorlist");
+
+					if (!errors.isEmpty()) {
+
+						if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals(FIELD_MISSING)) {
+							logger.error("Invalid or missing Captcha");
+							// Try Again maybe ?
+							throw new TechnicalException("Captcha failed");
+						} else {
+							logger.error("{} error(s) found creating account {} :", errors.size() - 1, account.username);
+							for (int i = 0; i < errors.size() - 1; i++) {
+								Element error = errors.get(i);
+								logger.error("- {}", error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim());
+							}
+						}
+					}
+
+					if (!errors.isEmpty()) {
+						String firstErrorTxt = errors.get(0).toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
+
+						if (firstErrorTxt.contains("username already exists")) {
+							throw new AccountDuplicateException(firstErrorTxt);
+						} else if (firstErrorTxt.contains("exceed")) {
+
+							// Mark the Proxy
+							proxyInfo.getProxyPolicy().markOverLimit();
+							throw new AccountRateLimitExceededException(firstErrorTxt);
+						} else {
+							throw new TechnicalException("Unknown creation error : " + firstErrorTxt);
+						}
+					}
+
+					logger.debug("SUCCESS : Account created");
+
+				} else {
+					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
 				}
-
-				logger.debug("SUCCESS : Account created");
-
-			} else {
-				throw new AccountCreationException("PTC server bad response, HTTP " + response.code());
 			}
 
 		} catch (IOException e) {
-			throw new AccountCreationException(e);
+			throw new TechnicalException(e);
 		}
 	}
 
 	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
 
-		RequestBody body = new FormEncodingBuilder()
+		RequestBody body = new FormBody.Builder()
 				// Given login and password
 				.add("username", account.username)
 				.add("email", account.email)
@@ -280,7 +325,7 @@ public class PTCWebClient {
 
 	private Request buildAgeCheckSubmitRequest(String csrfToken) throws UnsupportedEncodingException {
 
-		RequestBody body = new FormEncodingBuilder()
+		RequestBody body = new FormBody.Builder()
 				.add("dob", "1985-01-16")
 				.add("country", "US")
 				.add("csrfmiddlewaretoken", csrfToken)
@@ -308,7 +353,7 @@ public class PTCWebClient {
 		// CORS
 		headersMap.put("Origin", "https://club.pokemon.com");
 		headersMap.put("Referer", "https://club.pokemon.com/us/pokemon-trainer-club/parents/sign-up");
-		headersMap.put("Upgrade-Insecure-Requests", "https://club.pokemon.com");
+		headersMap.put("Upgrade-Insecure-Requests", "1");
 
 		headersMap.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
 		headersMap.put("DNT", "1");

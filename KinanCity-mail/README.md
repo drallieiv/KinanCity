@@ -1,4 +1,4 @@
-# Kinan City email validation server
+# KinanCity-mail : Email Activator
 
 ## What this module does
 
@@ -19,20 +19,7 @@ You may need to add a **A entry** to map a DNS to your machine IP address, as MX
 
 ## How to run
 
-Grab the last compiled version from https://github.com/drallieiv/KinanCity/releases
-
-or
-
-Compile it yourself (see below)
-
-Run with java :  
-`java -jar target/KinanCity-mail-1.0-SNAPSHOT.jar`
-
-## How to compile
-
-- compile the application :  
-`mvn compile`
-
+Run with java : `java -jar target/KinanCity-mail-<version>.jar`  
 
 ## Notes
 
