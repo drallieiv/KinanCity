@@ -2,15 +2,16 @@ package com.kinancity.api.captcha;
 
 import java.io.IOException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.api.errors.ConfigurationException;
 import com.kinancity.api.errors.TechnicalException;
+import com.kinancity.api.errors.TwoCaptchaConfigurationException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
 
+import lombok.Getter;
+import lombok.Setter;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -62,10 +63,13 @@ public class TwoCaptchaService implements CaptchaProvider {
 	private int maxTotalTime = 60;
 
 	// Wait a least 5 seconds (10-20 for recaptcha) and only then try to get the answer
-	private int waitBeforeFirstTry = 15000;
+	@Setter
+	private int waitBeforeFirstTry = 12000;
 
 	// If captcha is not solved yet - retry to get the answer after 5 seconds
-	private int waitBeforeRetry = 5000;
+	// Set at 8s
+	@Setter
+	private int waitBeforeRetry = 8000;
 
 	/**
 	 * Google Site key
@@ -79,21 +83,36 @@ public class TwoCaptchaService implements CaptchaProvider {
 
 	private OkHttpClient captchaClient;
 
-	public TwoCaptchaService(String apiKey) throws ConfigurationException, TechnicalException {
+	// Count the number of captcha sent
+	@Getter
+	private int nbSent = 0;
+
+	public TwoCaptchaService(String apiKey) throws TwoCaptchaConfigurationException, TechnicalException {
 		this(apiKey, false);
 	}
 
-	public TwoCaptchaService(String apiKey, boolean dryRun) throws ConfigurationException, TechnicalException {
+	public TwoCaptchaService(String apiKey, boolean dryRun) throws TwoCaptchaConfigurationException, TechnicalException {
 		this.apiKey = apiKey;
 		this.dryRun = dryRun;
 		this.captchaClient = new OkHttpClient();
 
-		if (!dryRun && !checkApiKeyValidity()) {
-			throw new ConfigurationException("2Captcha cannot be used with given key. Check key and balance");
+		if (!dryRun) {
+			try {
+				getBalance();
+			} catch (TechnicalException | TwoCaptchaConfigurationException e) {
+				throw e;
+			}
+
 		}
 	}
 
-	private boolean checkApiKeyValidity() throws TechnicalException, ConfigurationException {
+	/**
+	 * 
+	 * @return
+	 * @throws TechnicalException
+	 * @throws TwoCaptchaConfigurationException
+	 */
+	public double getBalance() throws TechnicalException, TwoCaptchaConfigurationException {
 		Request sendRequest = buildBalanceCheckequest();
 		try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
 			String body = sendResponse.body().string();
@@ -105,26 +124,26 @@ public class TwoCaptchaService implements CaptchaProvider {
 			// Check error results
 
 			if (body.startsWith(ERROR_WRONG_USER_KEY)) {
-				throw new ConfigurationException("Given 2captcha key is invalid");
+				throw new TwoCaptchaConfigurationException("Given 2captcha key " + apiKey + " is invalid");
 			}
 
 			if (body.startsWith(ERROR_KEY_DOES_NOT_EXIST)) {
-				throw new ConfigurationException("Given 2captcha key does not match any account");
+				throw new TwoCaptchaConfigurationException("Given 2captcha key does not match any account");
 			}
 
 			// Else assume we have balance
 			try {
 				double balance = Double.parseDouble(body);
 				if (balance < 0) {
-					logger.warn("Current 2 captcha balance is negative {}", balance);
+					logger.warn("WARNING ! : Current 2 captcha balance is negative {}", balance);
 				} else {
 					logger.info("Current 2 captcha balance is {}", balance);
 				}
+
+				return balance;
 			} catch (NumberFormatException e) {
 				throw new TechnicalException("invalid response from 2captcha : " + body);
 			}
-
-			return true;
 		} catch (IOException e) {
 			throw new TechnicalException(HTTP_ERROR_MSG, e);
 		}
@@ -144,6 +163,9 @@ public class TwoCaptchaService implements CaptchaProvider {
 
 			Request sendRequest = buildSendCaptchaRequest();
 			try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
+
+				nbSent++;
+
 				String body = sendResponse.body().string();
 
 				if (body != null && body.startsWith(OK_RESPONSE_PREFIX)) {
@@ -166,7 +188,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 
 							if (solution.contains(CAPCHA_NOT_READY)) {
 								// Keep Waiting
-								logger.info("waiting for captcha response ...");
+								logger.info("waiting for 2captcha response ...");
 								Thread.sleep(waitBeforeRetry);
 							} else {
 								// Stop loop

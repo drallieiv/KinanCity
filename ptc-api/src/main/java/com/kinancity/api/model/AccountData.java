@@ -17,15 +17,22 @@ public class AccountData implements Cloneable {
 
 	public String password;
 
+	public AccountData() {
+
+	}
+
+	public AccountData(String username, String email, String password) {
+		this.username = username;
+		this.email = email;
+		this.password = password;
+	}
+
 	public AccountData clone() {
-		AccountData clonedData = new AccountData();
-		clonedData.username = this.username;
-		clonedData.email = this.email;
-		clonedData.password = this.password;
-		return clonedData;
+		return new AccountData(username, email, password);
 	}
 
 	public String toCsv() {
 		return username + ";" + password + ";" + email;
 	}
+
 }

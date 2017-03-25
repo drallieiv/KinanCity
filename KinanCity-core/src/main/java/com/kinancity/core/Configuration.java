@@ -13,10 +13,12 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.core.captcha.CaptchaProvider;
-import com.kinancity.core.captcha.MockCaptchaService;
-import com.kinancity.core.captcha.TwoCaptchaService;
+import com.kinancity.api.captcha.CaptchaProvider;
+import com.kinancity.api.captcha.TwoCaptchaService;
+import com.kinancity.api.errors.TechnicalException;
+import com.kinancity.api.errors.TwoCaptchaConfigurationException;
 import com.kinancity.core.errors.ConfigurationException;
+import com.kinancity.core.generator.AccountGenerator;
 import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.proxy.ProxyTester;
@@ -24,6 +26,7 @@ import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
+import com.kinancity.core.worker.callbacks.ResultLogger;
 
 import lombok.Data;
 
@@ -46,16 +49,17 @@ public class Configuration {
 
 	private ProxyPolicy proxyPolicy;
 
+	private AccountGenerator accountGenerator;
+
 	private String resultLogFilename = "result.csv";
 
-	private PrintWriter resultLogWriter;
+	private ResultLogger resultLogger;
 
 	private boolean initDone = false;
-	
+
 	private boolean skipProxyTest = false;
-	
+
 	private int maxRetry = 3;
-	
 
 	// If true, everything will be mocked
 	private boolean dryRun = false;
@@ -72,9 +76,13 @@ public class Configuration {
 	public void init() throws ConfigurationException {
 
 		try {
-			
+
 			if (captchaProvider == null) {
-				captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
+				try {
+					captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
+				} catch (TechnicalException | TwoCaptchaConfigurationException e) {
+					throw new ConfigurationException(e);
+				}
 			}
 
 			if (proxyManager == null) {
@@ -84,7 +92,9 @@ public class Configuration {
 				proxyManager.addProxy(new ProxyInfo(new NintendoTimeLimitPolicy(), new NoProxy()));
 			}
 
-			resultLogWriter = new PrintWriter(new FileWriter(resultLogFilename, true));
+			if (resultLogger == null) {
+				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));
+			}
 		} catch (IOException e) {
 			throw new ConfigurationException(e);
 		}
@@ -108,13 +118,19 @@ public class Configuration {
 			}
 		}
 
-		if (captchaProvider == null) {
+		if (accountGenerator == null) {
+			logger.error("Missing Account Generator");
 			return false;
 		}
 
-		if(!skipProxyTest){
+		if (captchaProvider == null) {
+			logger.error("Missing Captcha provider");
+			return false;
+		}
+
+		if (!skipProxyTest) {
 			logger.info("Validating given proxies");
-	
+
 			ProxyTester proxyTester = new ProxyTester();
 			List<ProxyInfo> invalidProxies = new ArrayList<>();
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
@@ -123,9 +139,9 @@ public class Configuration {
 					invalidProxies.add(proxy);
 				}
 			}
-			if(invalidProxies.isEmpty()){
+			if (invalidProxies.isEmpty()) {
 				logger.info("All proxies are valid");
-			}else{
+			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
 			}
 			if (proxyManager.getProxies().isEmpty()) {
@@ -133,7 +149,7 @@ public class Configuration {
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
@@ -169,9 +185,9 @@ public class Configuration {
 	public void loadProxies(String proxiesConfig) {
 
 		if (proxiesConfig != null) {
-			
+
 			proxiesConfig = proxiesConfig.replaceAll("[\\[\\]]", "");
-			
+
 			proxyManager = new ProxyManager();
 
 			String[] proxyDefs = proxiesConfig.split("[,;]");
@@ -208,7 +224,6 @@ public class Configuration {
 	private ProxyPolicy getProxyPolicyInstance() {
 		if (proxyPolicy == null) {
 			proxyPolicy = new NintendoTimeLimitPolicy();
-			// proxyPolicy = new TimeLimitPolicy(3, 20);
 		}
 		return proxyPolicy.clone();
 	}

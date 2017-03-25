@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.kinancity</groupId>
 		<artifactId>KinanCity-parent</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>1.2.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>ptc-api</artifactId>
 	<name>PTC account creation API</name>

@@ -6,6 +6,7 @@ import java.net.Proxy.Type;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.kinancity.api.cookies.SaveAllCookieJar;
 import com.kinancity.core.proxy.HttpProxyProvider;
 import com.kinancity.core.proxy.ProxyBasicAuthenticator;
 
@@ -47,6 +48,9 @@ public class HttpProxy implements HttpProxyProvider {
 	public OkHttpClient getClient() {
 		Builder clientBuilder = new OkHttpClient.Builder();
 
+		// Own Cookie Jar
+		clientBuilder.cookieJar(new SaveAllCookieJar());
+		
 		// HTTP Proxy
 		clientBuilder.proxy(new Proxy(Type.HTTP, new InetSocketAddress(host, port)));
 

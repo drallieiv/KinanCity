@@ -244,7 +244,7 @@ public class PtcSession {
 						} else {
 							// List all the errors we had
 							List<String> errorMessages = new ArrayList<>();
-							for (int i = 0; i < errors.size() - 1; i++) {
+							for (int i = 0; i < errors.size(); i++) {
 								Element error = errors.get(i);
 								String errorTxt = error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
 
@@ -256,7 +256,7 @@ public class PtcSession {
 
 								errorMessages.add(errorTxt);
 							}
-							logger.warn("{} error(s) found creating account {} : {}", errors.size() - 1, account.username, errorMessages);
+							logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.username, errorMessages);
 
 							// Throw specific exception for name duplicate
 							if (isUsernameUsed) {
@@ -269,7 +269,7 @@ public class PtcSession {
 							}
 
 							// Else we have another unknown error
-							throw new TechnicalException("Unknown creation errors : " + errorMessages);
+							throw new TechnicalException("Unknown creation error : " + errorMessages);
 						}
 					}
 

@@ -4,7 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
-import com.kinancity.core.data.AccountData;
+import com.kinancity.api.model.AccountData;
+import com.kinancity.core.generator.account.SequenceAccountGenerator;
 
 public class SequenceAccountGeneratorTest {
 
@@ -19,19 +20,19 @@ public class SequenceAccountGeneratorTest {
 		
 		AccountData data;
 		
-		data = generator.nextAccountData();
+		data = generator.next();
 		assertThat(data).isNotNull();
 		assertThat(data.username).isEqualTo("pref01234suf");
 		
-		data = generator.nextAccountData();
+		data = generator.next();
 		assertThat(data).isNotNull();
 		assertThat(data.username).isEqualTo("pref01235suf");
 		
-		data = generator.nextAccountData();
+		data = generator.next();
 		assertThat(data).isNotNull();
 		assertThat(data.username).isEqualTo("pref01236suf");
 		
-		data = generator.nextAccountData();
+		data = generator.next();
 		assertThat(data).isNull();
 	}
 
