@@ -24,7 +24,7 @@ public enum CliOptions {
 
 	NB_THREADS("t", "thread", true, "Number of parallel threads"),
 
-	MULTIPLE_ACCOUNTS("a", "accounts", true, "name of an account file"),
+	CSV_ACCOUNTS("a", "accounts", true, "name of an account file"),
 	// FLAGS
 	NO_PROXY_CHECK("npc", "noProxyCheck", false, "Skip Proxy Checking"),
 	NO_LIMIT("nl", "noLimit", false, "use a no limit proxy policy"),

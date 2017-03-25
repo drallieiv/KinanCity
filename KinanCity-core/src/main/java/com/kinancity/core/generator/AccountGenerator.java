@@ -1,7 +1,9 @@
 package com.kinancity.core.generator;
 
-import com.kinancity.core.data.AccountData;
+import java.util.Iterator;
 
-public interface AccountGenerator {
-	AccountData nextAccountData();
+import com.kinancity.api.model.AccountData;
+
+public interface AccountGenerator extends Iterator<AccountData>{
+
 }

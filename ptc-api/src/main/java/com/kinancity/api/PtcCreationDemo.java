@@ -3,7 +3,7 @@ package com.kinancity.api;
 import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.captcha.TwoCaptchaService;
 import com.kinancity.api.cookies.SaveAllCookieJar;
-import com.kinancity.api.errors.ConfigurationException;
+import com.kinancity.api.errors.TwoCaptchaConfigurationException;
 import com.kinancity.api.errors.FatalException;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.fatal.AccountDuplicateException;
@@ -88,7 +88,7 @@ public class PtcCreationDemo {
 					System.out.println("Other technical exception : " + e.getMessage());
 					e.printStackTrace();
 				}
-			} catch (ConfigurationException e) {
+			} catch (TwoCaptchaConfigurationException e) {
 				System.out.println("Configuration Error : " + e.getMessage());
 			}
 		}

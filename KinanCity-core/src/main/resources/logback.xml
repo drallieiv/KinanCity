@@ -12,7 +12,7 @@
 		</encoder>
 	</appender>
 	
-	<logger name="com.kinancity.core" level="INFO" additivity="false">
+	<logger name="com.kinancity" level="INFO" additivity="false">
 		<appender-ref ref="CLI" />
 	</logger>
 
