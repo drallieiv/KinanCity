@@ -1,5 +1,8 @@
 package com.kinancity.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.captcha.TwoCaptchaService;
 import com.kinancity.api.cookies.SaveAllCookieJar;
@@ -21,6 +24,8 @@ import okhttp3.OkHttpClient;
  *
  */
 public class PtcCreationDemo {
+
+	private static Logger logger = LoggerFactory.getLogger(PtcCreationDemo.class);
 
 	public static void main(String[] args) {
 
