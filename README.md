@@ -3,6 +3,8 @@
 [![Last Version](https://img.shields.io/badge/version-1.0.0--Alpha1-brightgreen.svg)](https://github.com/drallieiv/KinanCity/releases/latest)
 [![Build Status](https://travis-ci.org/drallieiv/KinanCity.svg?branch=master)](https://travis-ci.org/drallieiv/KinanCity)
 
+Any issues with KinanCity, or you just want to talk about the project ? Go to [our discord server]( http://discord.gg/3jkb3zA)
+
 ## Were is Kinan City ?
 
 **Kinan City** (キナンシティ) is one of the cities of the Kalos region in Pokemon XY games and anime.
