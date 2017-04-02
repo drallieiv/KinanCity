@@ -133,6 +133,10 @@ public class Configuration {
 
 			ProxyTester proxyTester = new ProxyTester();
 			List<ProxyInfo> invalidProxies = new ArrayList<>();
+			if (proxyManager.getProxies().isEmpty()) {
+				logger.error("No valid proxy given");
+				return false;
+			}
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				if (!proxyTester.testProxy(proxy.getProvider())) {
 					logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
@@ -143,10 +147,6 @@ public class Configuration {
 				logger.info("All proxies are valid");
 			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
-			}
-			if (proxyManager.getProxies().isEmpty()) {
-				logger.error("No valid proxy given");
-				return false;
 			}
 		}
 
