@@ -8,6 +8,15 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
+      <directory>${project.basedir}</directory>
+      <outputDirectory>/</outputDirectory>
+      <filtered>false</filtered>
+      <includes>
+        <include>accounts.example.csv</include>
+        <include>config.example.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.basedir}/scripts/</directory>
       <outputDirectory>/</outputDirectory>
       <filtered>true</filtered>
