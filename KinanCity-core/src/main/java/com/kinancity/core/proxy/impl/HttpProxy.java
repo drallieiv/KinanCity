@@ -10,6 +10,7 @@ import com.kinancity.api.cookies.SaveAllCookieJar;
 import com.kinancity.core.proxy.HttpProxyProvider;
 import com.kinancity.core.proxy.ProxyBasicAuthenticator;
 
+import lombok.Getter;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
 
@@ -18,6 +19,7 @@ import okhttp3.OkHttpClient.Builder;
  * 
  * @author drallieiv
  */
+@Getter
 public class HttpProxy implements HttpProxyProvider {
 
 	// DNS or IP address
@@ -31,7 +33,19 @@ public class HttpProxy implements HttpProxyProvider {
 
 	// Proxy auth password
 	private String pass;
-	
+
+	/**
+	 * Constructor for a Http Proxy with auth
+	 * 
+	 * @param host
+	 *            ip address or dns
+	 * @param port
+	 *            connection port
+	 * @param login
+	 *            login
+	 * @param pass
+	 *            password
+	 */
 	public HttpProxy(String host, int port, String login, String pass) {
 		this.host = host;
 		this.port = port;
@@ -39,6 +53,14 @@ public class HttpProxy implements HttpProxyProvider {
 		this.pass = pass;
 	}
 
+	/**
+	 * Constructor for a Http Proxy without auth
+	 * 
+	 * @param host
+	 *            ip address or dns
+	 * @param port
+	 *            connection port
+	 */
 	public HttpProxy(String host, int port) {
 		this.host = host;
 		this.port = port;
@@ -50,7 +72,7 @@ public class HttpProxy implements HttpProxyProvider {
 
 		// Own Cookie Jar
 		clientBuilder.cookieJar(new SaveAllCookieJar());
-		
+
 		// HTTP Proxy
 		clientBuilder.proxy(new Proxy(Type.HTTP, new InetSocketAddress(host, port)));
 
@@ -61,9 +83,9 @@ public class HttpProxy implements HttpProxyProvider {
 
 		return clientBuilder.build();
 	}
-	
-	public String toString(){
-		return host+":"+port;
+
+	public String toString() {
+		return host + ":" + port;
 	}
 
 }

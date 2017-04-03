@@ -25,6 +25,14 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	// Period with rolling time in seconds
 	public long periodInSeconds;
 
+	/**
+	 * Constuctor for a Policy that limits to a number of account per period of time.
+	 * 
+	 * @param maxPerPeriod
+	 *            number of accounts
+	 * @param periodInSeconds
+	 *            duration in seconds
+	 */
 	public TimeLimitPolicy(int maxPerPeriod, long periodInSeconds) {
 		lastCalls = new ArrayList<>();
 		this.maxPerPeriod = maxPerPeriod;
@@ -35,11 +43,11 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	public synchronized void markUsed() {
 		lastCalls.add(LocalDateTime.now());
 	}
-	
+
 	@Override
 	public synchronized void freeOneTry() {
 		// pop the last one
-		lastCalls.remove(lastCalls.size() -1);
+		lastCalls.remove(lastCalls.size() - 1);
 	}
 
 	@Override
@@ -65,7 +73,7 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	}
 
 	public String toString() {
-		return "max " + maxPerPeriod + " / " + Math.round(periodInSeconds/60) + " min";
+		return "max " + maxPerPeriod + " / " + Math.round(periodInSeconds / 60) + " min";
 	}
 
 	@Override
