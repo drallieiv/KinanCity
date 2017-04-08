@@ -1,7 +1,15 @@
 package com.kinancity.api;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +33,7 @@ import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
 import com.kinancity.api.model.AccountData;
 
+import lombok.Setter;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -53,7 +62,15 @@ public class PtcSession {
 
 	private OkHttpClient client;
 
+	@Setter
 	private boolean dryRun;
+
+	// Dump Result
+	public static final int NEVER = 0;
+	public static final int ON_FAILURE = 1;
+	public static final int ALWAYS = 2;
+	@Setter
+	private int dumpResult = 0;
 
 	/**
 	 * Start a new PTC Session. Client must support cookies.
@@ -221,9 +238,13 @@ public class PtcSession {
 					Document doc = Jsoup.parse(response.body().string());
 					response.body().close();
 
+					if (dumpResult == ALWAYS) {
+						dumpResult(doc, account);
+					}
+
 					// If we get an access denied, them something is wrong with
 					// the process
-					// Maybe a cookie is missing or more controls habe been
+					// Maybe a cookie is missing or more controls have been
 					// added.
 					Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
 					if (!accessDenied.isEmpty()) {
@@ -238,6 +259,18 @@ public class PtcSession {
 
 					// If we have some
 					if (!errors.isEmpty()) {
+
+						if (dumpResult == ON_FAILURE) {
+							dumpResult(doc, account);
+						}
+						
+						// Specific check for email error
+						if(doc.getElementById("id_email").hasClass("alert-error")){
+							logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
+							throw new AccountRateLimitExceededException();
+						}
+						
+
 						// If there is only one that says required, it's the captcha.
 						if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
 							throw new TechnicalException("Invalid or missing Captcha");
@@ -286,11 +319,31 @@ public class PtcSession {
 		}
 	}
 
+	private void dumpResult(Document doc, AccountData account) {
+		String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+		if (Files.notExists(Paths.get("dump"))) {
+			try {
+				Files.createDirectory(Paths.get("dump"));
+			} catch (IOException e) {
+				logger.warn("Cannot create dump folder");
+			}
+		}
+		Path dumpName = Paths.get("dump/" + account.getUsername() + "_" + time + ".html");
+		try (BufferedWriter writer = Files.newBufferedWriter(dumpName)) {
+			String html = doc.outerHtml();
+			// Cleanup Scripts 
+			html = html.replaceAll("<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>", "");
+			writer.write(html);
+		} catch (IOException e) {
+			logger.warn("Error dumping file {}", dumpName);
+		}
+	}
+
 	/**
 	 * Below are the requests used
 	 */
 
-	// Request to the REST Api for username validation 
+	// Request to the REST Api for username validation
 	private Request buildUsernameCheckApiRequest(String username) {
 		String payload = Json.createObjectBuilder().add("name", username).build().toString();
 		RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), payload);

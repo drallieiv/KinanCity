@@ -13,6 +13,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.api.PtcSession;
 import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.captcha.TwoCaptchaService;
 import com.kinancity.api.errors.TechnicalException;
@@ -64,6 +65,8 @@ public class Configuration {
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 
+	private int dumpResult = PtcSession.NEVER;
+
 	public static Configuration getInstance() {
 		if (instance == null) {
 			instance = new Configuration();
@@ -89,7 +92,7 @@ public class Configuration {
 				logger.info("ProxyManager using direction connection with Nintendo policy");
 				proxyManager = new ProxyManager();
 				// Add Direct connection
-				proxyManager.addProxy(new ProxyInfo(new NintendoTimeLimitPolicy(), new NoProxy()));
+				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
 			}
 
 			if (resultLogger == null) {
@@ -175,6 +178,7 @@ public class Configuration {
 			// Load Config
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.loadProxies(prop.getProperty("proxies"));
+			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
