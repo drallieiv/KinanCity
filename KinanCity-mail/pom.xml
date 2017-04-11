@@ -47,7 +47,7 @@
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>com.kinancity.main.MailServerApplication</mainClass>
+									<mainClass>com.kinancity.mail.MailServerApplication</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
