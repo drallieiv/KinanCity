@@ -49,6 +49,18 @@ public class HttpProxy implements HttpProxyProvider {
 			"(?::(?<port>\\d{1,5}))?)$";
 
 	/**
+	 * Constructor for a Http Proxy without auth
+	 * 
+	 * @param host
+	 *            ip address or dns
+	 * @param port
+	 *            connection port
+	 */
+	public HttpProxy(String host, int port) {
+		this(host, port, null, null, Type.HTTP);
+	}
+	
+	/**
 	 * Constructor for a Http Proxy with auth
 	 * 
 	 * @param host
@@ -135,18 +147,7 @@ public class HttpProxy implements HttpProxyProvider {
 		}
 	}
 
-	/**
-	 * Constructor for a Http Proxy without auth
-	 * 
-	 * @param host
-	 *            ip address or dns
-	 * @param port
-	 *            connection port
-	 */
-	public HttpProxy(String host, int port) {
-		this.host = host;
-		this.port = port;
-	}
+
 
 	@Override
 	public OkHttpClient getClient() {
