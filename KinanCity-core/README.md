@@ -12,7 +12,7 @@ KinanCity need to solve captchas. It currently uses [2captcha](https://2captcha.
 **Running in command line**  
 the examples below only give the arguments that will follow the launch command : `java -jar KinanCity-core-<version>.jar` or `start.sh` for unix and `start.bat` for windows
 
-Element written between angle brackers are example values. Remove the bracked and use your own value.
+Element written between angle brackets (< >) are example values. Remove the brackets and use your own value.
 
 For all these examples, the usernames and password must follow theses rules :  
 - username : between 6 and 16 characters with no spaces
