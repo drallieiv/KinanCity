@@ -242,71 +242,7 @@ public class PtcSession {
 						dumpResult(doc, account);
 					}
 
-					// If we get an access denied, them something is wrong with
-					// the process
-					// Maybe a cookie is missing or more controls have been
-					// added.
-					Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
-					if (!accessDenied.isEmpty()) {
-						throw new FatalException("Access Denied");
-					}
-
-					// Search if the form has error notifications
-					Elements errors = doc.select(".errorlist");
-
-					boolean isUsernameUsed = false;
-					boolean isQuotaExceeded = false;
-
-					// If we have some
-					if (!errors.isEmpty()) {
-
-						if (dumpResult == ON_FAILURE) {
-							dumpResult(doc, account);
-						}
-						
-						// Specific check for email error
-						if(doc.getElementById("id_email").hasClass("alert-error")){
-							logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
-							throw new AccountRateLimitExceededException();
-						}
-						
-
-						// If there is only one that says required, it's the captcha.
-						if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
-							throw new TechnicalException("Invalid or missing Captcha");
-						} else {
-							// List all the errors we had
-							List<String> errorMessages = new ArrayList<>();
-							for (int i = 0; i < errors.size(); i++) {
-								Element error = errors.get(i);
-								String errorTxt = error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
-
-								if (errorTxt.contains("username already exists")) {
-									isUsernameUsed = true;
-								} else if (errorTxt.contains("exceed")) {
-									isQuotaExceeded = true;
-								}
-
-								errorMessages.add(errorTxt);
-							}
-							logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.username, errorMessages);
-
-							// Throw specific exception for name duplicate
-							if (isUsernameUsed) {
-								throw new AccountDuplicateException();
-							}
-
-							// Throw specific exception for quota exceeded
-							if (isQuotaExceeded) {
-								throw new AccountRateLimitExceededException();
-							}
-
-							// Else we have another unknown error
-							throw new TechnicalException("Unknown creation error : " + errorMessages);
-						}
-					}
-
-					logger.debug("SUCCESS : Account created");
+					checkForErrors(account, doc);
 
 				} else {
 					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
@@ -317,6 +253,73 @@ public class PtcSession {
 			// Will happend if connection failed or timed out
 			throw new HttpConnectionException("Create account request failed", e);
 		}
+	}
+
+	public void checkForErrors(AccountData account, Document doc) throws FatalException, AccountRateLimitExceededException, TechnicalException, AccountDuplicateException {
+		// If we get an access denied, them something is wrong with the process
+		// Maybe a cookie is missing or more controls have been added.
+		Elements accessDenied = doc.getElementsContainingOwnText("Access Denied");
+		if (!accessDenied.isEmpty()) {
+			throw new FatalException("Access Denied");
+		}
+
+		// Search if the form has error notifications
+		Elements errors = doc.select(".errorlist, div.error");
+
+		boolean isUsernameUsed = false;
+		boolean isQuotaExceeded = false;
+
+		// If we have some
+		if (!errors.isEmpty()) {
+
+			if (dumpResult == ON_FAILURE) {
+				dumpResult(doc, account);
+			}
+			
+			// Specific check for email error
+			Element idEmail = doc.getElementById("id_email");
+			if(idEmail != null && idEmail.hasClass("alert-error")){
+				logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
+				throw new AccountRateLimitExceededException();
+			}
+			
+
+			// If there is only one that says required, it's the captcha.
+			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
+				throw new TechnicalException("Invalid or missing Captcha");
+			} else {
+				// List all the errors we had
+				List<String> errorMessages = new ArrayList<>();
+				for (int i = 0; i < errors.size(); i++) {
+					Element error = errors.get(i);
+					String errorTxt = error.toString().replaceAll("<[^>]*>", "").replaceAll("[\n\r]", "").trim();
+
+					if (errorTxt.contains("username already exists")) {
+						isUsernameUsed = true;
+					} else if (errorTxt.contains("Account Creation Rate Limit Exceeded")) {
+						isQuotaExceeded = true;
+					}
+
+					errorMessages.add(errorTxt);
+				}
+				logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.username, errorMessages);
+
+				// Throw specific exception for name duplicate
+				if (isUsernameUsed) {
+					throw new AccountDuplicateException();
+				}
+
+				// Throw specific exception for quota exceeded
+				if (isQuotaExceeded) {
+					throw new AccountRateLimitExceededException();
+				}
+
+				// Else we have another unknown error
+				throw new TechnicalException("Unknown creation error : " + errorMessages);
+			}
+		}
+
+		logger.debug("SUCCESS : Account created");
 	}
 
 	private void dumpResult(Document doc, AccountData account) {
