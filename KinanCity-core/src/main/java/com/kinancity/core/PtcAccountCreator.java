@@ -131,6 +131,11 @@ public class PtcAccountCreator {
 		resultLogger.logEnd();
 		resultLogger.logComment(String.format("%s success, %s errors", done.size(), failed.size()));
 		resultLogger.close();
+		
+		// Quick output as RocketMapFormat
+		StringBuilder sb = new StringBuilder();
+		done.stream().forEach( acc -> sb.append("ptc,"+acc.getAccountData().getUsername()+","+acc.getAccountData().getPassword()+"\n"));
+		logger.info("Here are your accounts in RocketMapFormat : \n{}", sb.toString());
 
 		// Do something more
 		workerOverseer.stopAll();
