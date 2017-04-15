@@ -150,6 +150,7 @@ public class Configuration {
 				logger.info("All proxies are valid");
 			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
+				logger.info("{} valid proxies left", proxyManager.getProxies().size());
 			}
 		}
 
@@ -196,27 +197,11 @@ public class Configuration {
 
 			String[] proxyDefs = proxiesConfig.split("[,;]");
 			for (String proxyDef : proxyDefs) {
-				String[] parts = proxyDef.split("[:@]");
-				if (parts.length == 4) {
-					try {
-						// Auth Proxy
-						String host = parts[2];
-						int port = Integer.parseInt(parts[3]);
-						String login = parts[0];
-						String pass = parts[1];
-						proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new HttpProxy(host, port, login, pass)));
-					} catch (NumberFormatException e) {
-						logger.error("Invalid proxy {}", proxyDef);
-					}
-				} else if (parts.length == 2) {
-					try {
-						// Standard HTTP Proxy
-						String host = parts[0];
-						int port = Integer.parseInt(parts[1]);
-						proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new HttpProxy(host, port)));
-					} catch (NumberFormatException e) {
-						logger.error("Invalid proxy {}", proxyDef);
-					}
+				HttpProxy proxy = HttpProxy.fromURI(proxyDef.trim());
+				if(proxy == null){
+					logger.error("Invalid proxy {}", proxyDef);
+				}else{
+					proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), proxy));
 				}
 			}
 

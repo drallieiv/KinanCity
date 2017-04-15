@@ -35,7 +35,7 @@ public class ProxyTester {
 			logger.error("Proxy Timed out : {}", e.getMessage());
 			return false;
 		} catch (IOException e) {
-			logger.error("Proxy Test Failed : {}", e.getMessage());
+			logger.debug("Proxy Test Failed : {}", e.getMessage());
 			return false;
 		}
 
