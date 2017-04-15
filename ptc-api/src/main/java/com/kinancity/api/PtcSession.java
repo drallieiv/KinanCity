@@ -1,9 +1,7 @@
 package com.kinancity.api;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,7 +57,9 @@ public class PtcSession {
 	private String pathSignup = "/parents/sign-up";
 
 	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}$";
+	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]+$";
 
+	
 	private OkHttpClient client;
 
 	@Setter
@@ -104,6 +104,33 @@ public class PtcSession {
 			logger.error("Invalid password '{}', The password must include uppercase and lowercase letters, numbers, and symbols between 8 and 50 chars", password);
 			return false;
 		}
+		
+		if (!Pattern.matches(PTC_USENAME_EXPREG, username)) {
+			logger.error("Invalid username '{}', The username contains illegal values.", username);
+			return false;
+		}	
+		
+		// All passed and went OK
+		return true;
+		
+	}
+	
+	/**
+	 * Check if the account is valid
+	 * 
+	 * @param account
+	 * @return if the account is valid or not
+	 * @throws TechnicalException
+	 *             if the validation could not be done entirely
+	 */
+	public boolean isAccountValidWebservice(AccountData account) throws TechnicalException {
+
+		if (dryRun) {
+			logger.info("Dry-Run : Check if username and password are okay");
+			return true;
+		}
+		
+		String username = account.getUsername();
 
 		// Check username validity with API
 		Request request = buildUsernameCheckApiRequest(username);
