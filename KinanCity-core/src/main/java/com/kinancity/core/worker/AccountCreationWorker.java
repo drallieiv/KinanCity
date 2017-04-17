@@ -132,7 +132,7 @@ public class AccountCreationWorker implements Runnable {
 							callbacks.onFailure(currentCreation);
 						}
 					} catch (CaptchaSolvingException e) {
-						logger.warn("Captcha solving failed");
+						logger.warn(e.getMessage());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.CAPTCHA_SOLVING));
 						callbacks.onTechnicalIssue(currentCreation);
 
