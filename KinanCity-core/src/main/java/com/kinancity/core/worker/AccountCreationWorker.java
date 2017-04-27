@@ -18,6 +18,7 @@ import com.kinancity.core.model.AccountCreation;
 import com.kinancity.core.model.CreationFailure;
 import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
+import com.kinancity.core.proxy.ProxySlot;
 import com.kinancity.core.scheduling.AccountCreationQueue;
 import com.kinancity.core.status.ErrorCode;
 import com.kinancity.core.status.RunnerStatus;
@@ -101,7 +102,8 @@ public class AccountCreationWorker implements Runnable {
 
 				try {
 					// Grab an available connection
-					ProxyInfo proxy = getAvailableProxy();
+					ProxySlot proxySlot = getAvailableProxy();
+					ProxyInfo proxy = proxySlot.getInfo();
 					logger.debug("Use proxy : {}", proxy);
 
 					try {
@@ -122,6 +124,7 @@ public class AccountCreationWorker implements Runnable {
 							String captcha = captchaProvider.getCaptcha();
 
 							// 4. Account Creation
+							proxySlot.markUsed();
 							ptc.createAccount(account, crsfToken, captcha);
 
 							// All OK
@@ -136,8 +139,8 @@ public class AccountCreationWorker implements Runnable {
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.CAPTCHA_SOLVING));
 						callbacks.onTechnicalIssue(currentCreation);
 
-						// Do not count that try on proxy limitation
-						proxy.freeOneTry();
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					} catch (TechnicalException e) {
 						logger.warn("Technical Error : {}", e.getMessage());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.TECH_ERROR, e.getMessage(), e));
@@ -146,8 +149,8 @@ public class AccountCreationWorker implements Runnable {
 						if (e instanceof AccountRateLimitExceededException) {
 							proxy.getProxyPolicy().markOverLimit();
 						} else {
-							// Do not count that try on proxy limitation
-							proxy.freeOneTry();
+							// Free that proxy slot for re-use
+							proxySlot.freeSlot();
 						}
 
 					} catch (FatalException e) {
@@ -162,8 +165,8 @@ public class AccountCreationWorker implements Runnable {
 
 						callbacks.onFailure(currentCreation);
 
-						// Do not count that try on proxy limitation
-						proxy.freeOneTry();
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					}
 				} catch (TechnicalException e) {
 					// Error when getAvailableProxy
@@ -194,11 +197,11 @@ public class AccountCreationWorker implements Runnable {
 	 * @throws TechnicalException
 	 * @throws InterruptedException
 	 */
-	private ProxyInfo getAvailableProxy() throws TechnicalException {
+	private ProxySlot getAvailableProxy() throws TechnicalException {
 		try {
-			Optional<ProxyInfo> proxyInfo = proxyManager.getEligibleProxy();
+			Optional<ProxySlot> proxyInfo = proxyManager.getEligibleProxy();
 			if (!proxyInfo.isPresent()) {
-				logger.info("No proxy available for now. Start waiting for one.");
+				logger.info("No proxy slots available for now. Start waiting for one.");
 				while (!proxyInfo.isPresent()) {
 					Thread.sleep(proxyManager.getPollingRate());
 					proxyInfo = proxyManager.getEligibleProxy();

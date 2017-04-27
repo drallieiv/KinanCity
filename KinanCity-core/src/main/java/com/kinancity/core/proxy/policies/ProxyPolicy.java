@@ -1,5 +1,9 @@
 package com.kinancity.core.proxy.policies;
 
+import java.util.Optional;
+
+import com.kinancity.core.proxy.ProxySlot;
+
 /**
  * Interface that manages if that proxy can be used right now
  * @author drallieiv
@@ -8,7 +12,7 @@ package com.kinancity.core.proxy.policies;
 public interface ProxyPolicy extends Cloneable {
 	
 	// Triggered each time the proxy is used to get a HttpClient
-	void markUsed();
+	Optional<ProxySlot> getFreeSlot();
 	
 	// Triggerd if the PTC server responded that we are over limit
 	void markOverLimit();
@@ -16,6 +20,4 @@ public interface ProxyPolicy extends Cloneable {
 	boolean isAvailable();
 	
 	ProxyPolicy clone();
-
-	void freeOneTry();
 }

@@ -1,11 +1,14 @@
 package com.kinancity.core.proxy;
 
+import java.util.Optional;
+
 import com.kinancity.core.proxy.policies.ProxyPolicy;
 
 import lombok.Getter;
 
 /**
  * Proxy information
+ * 
  * @author drallieiv
  *
  */
@@ -13,10 +16,10 @@ import lombok.Getter;
 public class ProxyInfo {
 
 	/**
-	 * Policy that manages how much it is used and if we can use it now 
+	 * Policy that manages how much it is used and if we can use it now
 	 */
 	private ProxyPolicy proxyPolicy;
-	
+
 	/**
 	 * Provider of the HTTP client
 	 */
@@ -26,12 +29,12 @@ public class ProxyInfo {
 		this.proxyPolicy = proxyPolicy;
 		this.provider = provider;
 	}
-	
-	public boolean isAvailable(){
+
+	public boolean isAvailable() {
 		return proxyPolicy.isAvailable();
 	}
-	
-	public String toString(){
+
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(provider);
 		sb.append(" : ");
@@ -39,8 +42,12 @@ public class ProxyInfo {
 		return sb.toString();
 	}
 
-	public void freeOneTry() {
-		proxyPolicy.freeOneTry();
+	public Optional<ProxySlot> getFreeSlot() {
+		Optional<ProxySlot> slot = proxyPolicy.getFreeSlot();
+		if (slot.isPresent()) {
+			slot.get().setInfo(this);
+		}
+		return slot;
 	}
-		
+
 }

@@ -1,5 +1,9 @@
 package com.kinancity.core.proxy.policies;
 
+import java.util.Optional;
+
+import com.kinancity.core.proxy.ProxySlot;
+
 import lombok.Getter;
 
 /**
@@ -17,16 +21,6 @@ public class UnlimitedUsePolicy implements ProxyPolicy {
 
 	public void reset() {
 		overLimit = false;
-	}
-
-	@Override
-	public void markUsed() {
-		// Nothing to do
-	}
-	
-	@Override
-	public void freeOneTry() {
-		// Nothing to do	
 	}
 
 	@Override
@@ -48,5 +42,12 @@ public class UnlimitedUsePolicy implements ProxyPolicy {
 		return new UnlimitedUsePolicy();
 	}
 
+	@Override
+	public Optional<ProxySlot> getFreeSlot() {
+		if (overLimit) {
+			return Optional.empty();
+		}
+		return Optional.of(new ProxySlot());
+	}
 
 }

@@ -2,8 +2,10 @@ package com.kinancity.core.proxy.policies;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+
+import com.kinancity.core.proxy.ProxySlot;
 
 import lombok.Getter;
 
@@ -17,7 +19,7 @@ import lombok.Getter;
 public class TimeLimitPolicy implements ProxyPolicy {
 
 	// History of calls
-	public List<LocalDateTime> lastCalls;
+	public List<ProxySlot> slots;
 
 	// How many account can we create during the time span
 	public int maxPerPeriod;
@@ -34,42 +36,39 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	 *            duration in seconds
 	 */
 	public TimeLimitPolicy(int maxPerPeriod, long periodInSeconds) {
-		lastCalls = new ArrayList<>();
+		slots = new ArrayList<>();
+		for (int i = 0; i < maxPerPeriod; i++) {
+			slots.add(new ProxySlot());
+		}
 		this.maxPerPeriod = maxPerPeriod;
 		this.periodInSeconds = periodInSeconds;
 	}
 
 	@Override
-	public synchronized void markUsed() {
-		lastCalls.add(LocalDateTime.now());
-	}
-
-	@Override
-	public synchronized void freeOneTry() {
-		// pop the last one
-		lastCalls.remove(lastCalls.size() - 1);
+	public synchronized Optional<ProxySlot> getFreeSlot() {
+		Optional<ProxySlot> freeSlot = slots.stream().filter(slot -> !slot.isReserved()).findFirst();
+		if (freeSlot.isPresent()) {
+			freeSlot.get().setReserved(true);
+		}
+		return freeSlot;
 	}
 
 	@Override
 	public void markOverLimit() {
-		// Clear the whole list and replace by all now
-		lastCalls.clear();
-		while (lastCalls.size() < maxPerPeriod) {
-			lastCalls.add(LocalDateTime.now());
-		}
+		slots.forEach(ProxySlot::markUsed);
 	}
 
 	@Override
 	public boolean isAvailable() {
 		// Should we do it each time, or scheduled ?
-		cleanOlders();
-		return lastCalls.size() < maxPerPeriod;
+		cleanSlots();
+		return slots.stream().filter(slot -> !slot.isReserved()).findFirst().isPresent();
 	}
 
 	// Remove calls over the time limit
-	public void cleanOlders() {
+	public void cleanSlots() {
 		LocalDateTime cleanBefore = LocalDateTime.now().minusSeconds(periodInSeconds);
-		lastCalls.removeIf(call -> call.isBefore(cleanBefore));
+		slots.stream().filter(slot -> slot.isReserved() && slot.getLastUsed().isBefore(cleanBefore)).forEach(ProxySlot::freeSlot);
 	}
 
 	public String toString() {
@@ -80,4 +79,5 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	public TimeLimitPolicy clone() {
 		return new TimeLimitPolicy(this.getMaxPerPeriod(), this.getPeriodInSeconds());
 	}
+
 }

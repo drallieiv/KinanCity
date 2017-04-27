@@ -28,6 +28,9 @@ public class HttpProxy implements HttpProxyProvider {
 
 	private static Logger logger = LoggerFactory.getLogger(HttpProxy.class);
 
+	// Protocol
+	private String protocol;
+
 	// DNS or IP address
 	private String host;
 
@@ -61,7 +64,7 @@ public class HttpProxy implements HttpProxyProvider {
 	 *            password
 	 */
 	public HttpProxy(String host, int port, String login, String pass) {
-		this(host, port, login, pass, Type.HTTP);
+		this(host, port, login, pass, Type.HTTP, "http");
 	}
 
 	/**
@@ -76,12 +79,13 @@ public class HttpProxy implements HttpProxyProvider {
 	 * @param pass
 	 *            password
 	 */
-	public HttpProxy(String host, int port, String login, String pass, Type type) {
+	public HttpProxy(String host, int port, String login, String pass, Type type, String protocol) {
 		this.host = host;
 		this.port = port;
 		this.login = login;
 		this.pass = pass;
 		this.type = type;
+		this.protocol = protocol;
 	}
 
 	/**
@@ -91,7 +95,7 @@ public class HttpProxy implements HttpProxyProvider {
 	 * @return
 	 */
 	public static HttpProxy fromURI(String uri) {
-		if(uri == null){
+		if (uri == null) {
 			return null;
 		}
 		Matcher matcher = Pattern.compile(URI_REGEXP).matcher(uri);
@@ -101,15 +105,19 @@ public class HttpProxy implements HttpProxyProvider {
 			// Type from protocol. default to HTTP.
 			Type type = StringUtils.startsWith(StringUtils.lowerCase(matcher.group("protocol")), "socks") ? Type.SOCKS : Type.HTTP;
 
+			String login = matcher.group("login");
+			String pass = matcher.group("pass");
+			String protocol = matcher.group("protocol");
+
 			// Port given or default from protocol.
 			int port;
 			if (matcher.group("port") != null) {
 				port = Integer.parseInt(matcher.group("port"));
 			} else {
-				if (matcher.group("protocol") == null) {
+				if (protocol == null) {
 					port = 8080;
 				} else {
-					switch (matcher.group("protocol").toLowerCase()) {
+					switch (protocol.toLowerCase()) {
 					case "http":
 						port = 8080;
 						break;
@@ -128,10 +136,7 @@ public class HttpProxy implements HttpProxyProvider {
 				}
 			}
 
-			String login = matcher.group("login");
-			String pass = matcher.group("pass");
-
-			return new HttpProxy(host, port, login, pass, type);
+			return new HttpProxy(host, port, login, pass, type, protocol);
 		} else {
 			logger.warn("Cannot load URI [{}] as a HTTP Proxy", uri);
 			return null;
@@ -169,8 +174,23 @@ public class HttpProxy implements HttpProxyProvider {
 		return clientBuilder.build();
 	}
 
+	public String toURI() {
+		StringBuilder sb = new StringBuilder();
+		if (protocol != null) {
+			sb.append(protocol).append("://");
+		}
+		if (login != null) {
+			sb.append(login).append(":").append(pass).append("@");
+		}
+		sb.append(host);
+		if (port > 0) {
+			sb.append(":").append(port);
+		}
+		return sb.toString();
+	}
+
 	public String toString() {
-		return host + ":" + port;
+		return toURI();
 	}
 
 }
