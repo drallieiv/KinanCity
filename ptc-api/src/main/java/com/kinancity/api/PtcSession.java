@@ -302,14 +302,7 @@ public class PtcSession {
 			if (dumpResult == ON_FAILURE) {
 				dumpResult(doc, account);
 			}
-			
-			// Specific check for email error
-			Element idEmail = doc.getElementById("id_email");
-			if(idEmail != null && idEmail.hasClass("alert-error")){
-				logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
-				throw new AccountRateLimitExceededException();
-			}
-			
+					
 
 			// If there is only one that says required, it's the captcha.
 			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
@@ -340,6 +333,15 @@ public class PtcSession {
 				if (isQuotaExceeded) {
 					throw new AccountRateLimitExceededException();
 				}
+				
+				/* Should we keep that ?
+					// Specific check for email error
+					Element idEmail = doc.getElementById("id_email");
+					if(idEmail != null && idEmail.hasClass("alert-error")){
+						logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
+						throw new AccountRateLimitExceededException();
+					}
+				*/
 
 				// Else we have another unknown error
 				throw new TechnicalException("Unknown creation error : " + errorMessages);
