@@ -11,14 +11,6 @@
 			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
-
-	<logger name="com.kinancity.core.captcha" level="DEBUG" additivity="false">
-		<appender-ref ref="DETAILED" />
-	</logger>
-	
-	<logger name="com.kinancity.core.worker" level="DEBUG" additivity="false">
-		<appender-ref ref="CLI" />
-	</logger>
 		
 	<logger name="com.kinancity" level="INFO" additivity="false">
 		<appender-ref ref="CLI" />
