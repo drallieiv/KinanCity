@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.PtcSession;
-import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.errors.FatalException;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.fatal.AccountDuplicateException;
@@ -14,6 +13,8 @@ import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
 import com.kinancity.api.model.AccountData;
+import com.kinancity.core.captcha.CaptchaQueue;
+import com.kinancity.core.captcha.CaptchaRequest;
 import com.kinancity.core.model.AccountCreation;
 import com.kinancity.core.model.CreationFailure;
 import com.kinancity.core.proxy.ProxyInfo;
@@ -65,7 +66,7 @@ public class AccountCreationWorker implements Runnable {
 	 */
 	private long idlePollingRate = 1000;
 
-	private CaptchaProvider captchaProvider;
+	private CaptchaQueue captchaQueue;
 
 	private ProxyManager proxyManager;
 
@@ -75,12 +76,12 @@ public class AccountCreationWorker implements Runnable {
 	@Setter
 	private int dumpResult = PtcSession.NEVER;
 
-	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaProvider captchaProvider, ProxyManager proxyManager, CreationCallbacks callbacks) {
+	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks) {
 		this.status = RunnerStatus.IDLE;
 		this.accountCreationQueue = accountCreationQueue;
 		this.name = name;
 		this.callbacks = callbacks;
-		this.captchaProvider = captchaProvider;
+		this.captchaQueue = captchaQueue;
 		this.proxyManager = proxyManager;
 	}
 
@@ -121,7 +122,10 @@ public class AccountCreationWorker implements Runnable {
 							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken();
 
 							// 3. Captcha
-							String captcha = captchaProvider.getCaptcha();
+							CaptchaRequest captchaRequest = new CaptchaRequest(account.getUsername());
+							captchaQueue.addRequest(captchaRequest);
+							String captcha = captchaRequest.getResponse();
+							logger.debug("Use Captcha : {}", captcha);
 
 							// 4. Account Creation
 							proxySlot.markUsed();

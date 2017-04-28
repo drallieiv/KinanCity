@@ -14,10 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.PtcSession;
-import com.kinancity.api.captcha.CaptchaProvider;
-import com.kinancity.api.captcha.TwoCaptchaService;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.TwoCaptchaConfigurationException;
+import com.kinancity.core.captcha.CaptchaQueue;
+import com.kinancity.core.captcha.impl.LogCaptchaCollector;
+import com.kinancity.core.captcha.twoCaptcha.TwoCaptchaProvider;
 import com.kinancity.core.errors.ConfigurationException;
 import com.kinancity.core.generator.AccountGenerator;
 import com.kinancity.core.proxy.ProxyInfo;
@@ -44,7 +45,7 @@ public class Configuration {
 
 	private int nbThreads = 5;
 
-	private CaptchaProvider captchaProvider;
+	private CaptchaQueue captchaQueue;
 
 	private ProxyManager proxyManager;
 
@@ -61,6 +62,8 @@ public class Configuration {
 	private boolean skipProxyTest = false;
 
 	private int maxRetry = 3;
+
+	private int captchaMaxTotalTime = 600;
 
 	// If true, everything will be mocked
 	private boolean dryRun = false;
@@ -80,10 +83,30 @@ public class Configuration {
 
 		try {
 
-			if (captchaProvider == null) {
+			if (captchaQueue == null) {
 				try {
-					captchaProvider = new TwoCaptchaService(twoCaptchaApiKey, dryRun);
-				} catch (TechnicalException | TwoCaptchaConfigurationException e) {
+
+					captchaQueue = new CaptchaQueue(new LogCaptchaCollector());
+
+					if (twoCaptchaApiKey != null && !twoCaptchaApiKey.isEmpty()) {
+						try {
+							// Add 2 captcha Provider
+							TwoCaptchaProvider twoCaptchaProvider = new TwoCaptchaProvider(captchaQueue, twoCaptchaApiKey);
+							twoCaptchaProvider.setMaxWait(captchaMaxTotalTime);
+
+							twoCaptchaProvider.getBalance();
+
+							Thread twoCaptchaThread = new Thread(twoCaptchaProvider);
+							twoCaptchaThread.setName("2captcha");
+							twoCaptchaThread.start();
+						} catch (TwoCaptchaConfigurationException e) {
+							throw new ConfigurationException(e);
+						}
+					} else {
+						throw new ConfigurationException("No Catpcha Provider found. Only supports 2 captcha for now");
+					}
+
+				} catch (TechnicalException e) {
 					throw new ConfigurationException(e);
 				}
 			}
@@ -98,7 +121,9 @@ public class Configuration {
 			if (resultLogger == null) {
 				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));
 			}
-		} catch (IOException e) {
+		} catch (
+
+		IOException e) {
 			throw new ConfigurationException(e);
 		}
 
@@ -126,8 +151,8 @@ public class Configuration {
 			return false;
 		}
 
-		if (captchaProvider == null) {
-			logger.error("Missing Captcha provider");
+		if (captchaQueue == null) {
+			logger.error("Missing Captcha Queue");
 			return false;
 		}
 
@@ -180,6 +205,7 @@ public class Configuration {
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.loadProxies(prop.getProperty("proxies"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
+			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", "600")));
 
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
@@ -198,9 +224,9 @@ public class Configuration {
 			String[] proxyDefs = proxiesConfig.split("[,;]");
 			for (String proxyDef : proxyDefs) {
 				HttpProxy proxy = HttpProxy.fromURI(proxyDef.trim());
-				if(proxy == null){
+				if (proxy == null) {
 					logger.error("Invalid proxy {}", proxyDef);
-				}else{
+				} else {
 					proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), proxy));
 				}
 			}

@@ -60,6 +60,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 	/**
 	 * How many time should we wait in seconds
 	 */
+	@Setter
 	private int maxTotalTime = 60;
 
 	// Wait a least 5 seconds (10-20 for recaptcha) and only then try to get the answer

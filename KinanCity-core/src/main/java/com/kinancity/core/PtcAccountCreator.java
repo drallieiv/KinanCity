@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.model.AccountData;
+import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.generator.AccountGenerator;
 import com.kinancity.core.model.AccountCreation;
 import com.kinancity.core.proxy.ProxyManager;
@@ -90,14 +91,14 @@ public class PtcAccountCreator {
 		CreationCallbacks callbacks = new SaveOrRetryCallbacks(queue, done, failed, resultLogger);
 		
 		// Captcha Provider from config
-		CaptchaProvider catpchaProvider = config.getCaptchaProvider();
+		CaptchaQueue captchaQueue = config.getCaptchaQueue();
 		
 		// Proxy Manager from config
 		ProxyManager proxyManager = config.getProxyManager();
 
 		// Start multiple workers that will consume the queue
 		for (int i = 0; i < config.getNbThreads(); i++) {
-			AccountCreationWorker worker = accountCreationWorkerFactory.createWorker(queue, catpchaProvider, proxyManager, callbacks);
+			AccountCreationWorker worker = accountCreationWorkerFactory.createWorker(queue, captchaQueue, proxyManager, callbacks);
 			worker.setDryRun(config.isDryRun());
 			worker.setDumpResult(config.getDumpResult());
 			workerOverseer.addWorker(worker);
