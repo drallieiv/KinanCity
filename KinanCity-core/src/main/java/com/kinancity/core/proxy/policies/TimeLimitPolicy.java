@@ -68,7 +68,7 @@ public class TimeLimitPolicy implements ProxyPolicy {
 	// Remove calls over the time limit
 	public void cleanSlots() {
 		LocalDateTime cleanBefore = LocalDateTime.now().minusSeconds(periodInSeconds);
-		slots.stream().filter(slot -> slot.isReserved() && slot.getLastUsed().isBefore(cleanBefore)).forEach(ProxySlot::freeSlot);
+		slots.stream().filter(slot -> slot.isReserved() && slot.getLastUsed() != null && slot.getLastUsed().isBefore(cleanBefore)).forEach(ProxySlot::freeSlot);
 	}
 
 	public String toString() {
