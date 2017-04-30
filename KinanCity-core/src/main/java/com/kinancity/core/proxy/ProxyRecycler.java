@@ -1,5 +1,6 @@
 package com.kinancity.core.proxy;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -18,10 +19,10 @@ public class ProxyRecycler implements Runnable {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	// Pass every 10 minutes
+	// Pass every 5 minutes
 	@Getter
 	@Setter
-	private int wait = 10 * 60 * 1000;
+	private int wait = 5 * 60 * 1000;
 
 	@Setter
 	private boolean runFlag = true;
@@ -39,6 +40,7 @@ public class ProxyRecycler implements Runnable {
 
 	@Override
 	public void run() {
+		logger.info("Benched proxy recycler started.");
 		while (runFlag) {
 			// Sleep First
 			try {
@@ -47,8 +49,19 @@ public class ProxyRecycler implements Runnable {
 				e.printStackTrace();
 			}
 
-			List<ProxyInfo> benchedProxies = proxyManager.getProxyBench();
-			benchedProxies.stream().forEach(this::checkAndRecycle);
+			checkAndRecycleAllBenched();
+		}
+	}
+
+	public void checkAndRecycleAllBenched() {
+		List<ProxyInfo> benchedProxies = proxyManager.getProxyBench();
+		if (benchedProxies.isEmpty()) {
+			logger.debug("No benched proxies");
+		} else {
+			logger.info("Check and recycle {} benched proxies", benchedProxies.size());
+			ArrayList<ProxyInfo> proxiesToCheck = new ArrayList<>();
+			proxiesToCheck.addAll(benchedProxies);
+			proxiesToCheck.stream().forEach(this::checkAndRecycle);
 		}
 	}
 

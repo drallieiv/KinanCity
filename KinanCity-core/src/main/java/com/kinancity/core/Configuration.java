@@ -95,7 +95,12 @@ public class Configuration {
 							TwoCaptchaProvider twoCaptchaProvider = new TwoCaptchaProvider(captchaQueue, twoCaptchaApiKey);
 							twoCaptchaProvider.setMaxWait(captchaMaxTotalTime);
 
-							twoCaptchaProvider.getBalance();
+							double balance = twoCaptchaProvider.getBalance();
+							if (balance < 0) {
+								logger.warn("WARNING !! : Current 2 captcha balance is negative {}", balance);
+							} else {
+								logger.info("Catpcha Key is valid. Current 2 captcha balance is {}", balance);
+							}
 
 							Thread twoCaptchaThread = new Thread(twoCaptchaProvider);
 							twoCaptchaThread.setName("2captcha");
@@ -121,7 +126,10 @@ public class Configuration {
 			
 			// Add Proxy recycler and start thread
 			ProxyRecycler recycler = new ProxyRecycler(proxyManager);
-			new Thread(recycler).start();
+			Thread recyclerThread = new Thread(recycler);
+			recyclerThread.setName("NurseJoy(Recycler)");
+			recyclerThread.start();
+			proxyManager.setRecycler(recycler);
 
 			if (resultLogger == null) {
 				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));

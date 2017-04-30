@@ -40,6 +40,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+
 /**
  * Session for creating a PTC account.
  * 
@@ -201,7 +202,7 @@ public class PtcSession {
 			throw new TechnicalException("Age verification call or CSRF extraction failed");
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Technical error getting CSRF Token", e);
+			throw new HttpConnectionException("Technical error getting CSRF Token : " + e.getMessage(), e);
 		}
 	}
 
@@ -230,11 +231,11 @@ public class PtcSession {
 					logger.debug("Age check done");
 					return;
 				}
-				throw new TechnicalException("Age check request failed");
+				throw new TechnicalException("Age check request failed. HTTP "+response.code());
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Age check request failed", e);
+			throw new HttpConnectionException("Age check request failed : "+e.getMessage(), e);
 		}
 	}
 
@@ -278,7 +279,7 @@ public class PtcSession {
 
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Create account request failed", e);
+			throw new HttpConnectionException("Create account request failed : "+e.getMessage(), e);
 		}
 	}
 

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Manager that holds a set of proxies
@@ -36,6 +37,10 @@ public class ProxyManager {
 	@Getter
 	private List<ProxyInfo> proxyBench = new ArrayList<>();
 
+	@Setter
+	@Getter
+	private ProxyRecycler recycler;
+	
 	private boolean proxyRotation = true;
 
 	/**
@@ -68,6 +73,19 @@ public class ProxyManager {
 	public void benchProxy(ProxyInfo proxy) {
 		proxies.remove(proxy);
 		proxyBench.add(proxy);
-		logger.warn("Proxy [{}] moved out of rotation, {} proxy left", proxies.size());
+		logger.warn("Proxy [{}] moved out of rotation, {} proxy left",proxy, proxies.size());
+		
+		if(recycler != null && getNbProxyInRotation() == 0){
+			recycler.checkAndRecycleAllBenched();
+		}
+		
+	}
+	
+	public int getNbProxyInRotation(){
+		return proxies.size();
+	}
+	
+	public int getNbProxyBenched(){
+		return proxyBench.size();
 	}
 }

@@ -147,11 +147,15 @@ public class AccountCreationWorker implements Runnable {
 						// Free that proxy slot for re-use
 						proxySlot.freeSlot();
 					} catch (HttpConnectionException e) {
-						logger.warn("HttpConnectionException, proxy might be bad, move it out of rotation");
+						logger.warn("HttpConnectionException, proxy [{}] might be bad, move it out of rotation : {}", proxy.getProvider(), e.getMessage());
 						proxyManager.benchProxy(proxy);
-						
+
 					} catch (TechnicalException e) {
-						logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
+						if(e.getCause() != null){
+							logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
+						}else{
+							logger.warn("Technical Error : {}", e.getMessage());
+						}						
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.TECH_ERROR, e.getMessage(), e));
 						callbacks.onTechnicalIssue(currentCreation);
 
@@ -210,10 +214,16 @@ public class AccountCreationWorker implements Runnable {
 		try {
 			Optional<ProxySlot> proxyInfo = proxyManager.getEligibleProxy();
 			if (!proxyInfo.isPresent()) {
-				logger.info("No proxy slots available for now. Start waiting for one.");
+				logger.info(
+						"No proxy slots available for now. Start waiting for one. {} proxies in rotation and {} benched.", 
+						proxyManager.getNbProxyInRotation(), 
+						proxyManager.getNbProxyBenched());
 				while (!proxyInfo.isPresent()) {
 					Thread.sleep(proxyManager.getPollingRate());
 					proxyInfo = proxyManager.getEligibleProxy();
+					if(!proxyInfo.isPresent()){
+						logger.info("Still no proxy slots available. Keep waiting");
+					}
 				}
 			}
 

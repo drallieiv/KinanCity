@@ -3,6 +3,7 @@ package com.kinancity.core.proxy.impl;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,6 +16,7 @@ import com.kinancity.core.proxy.HttpProxyProvider;
 import com.kinancity.core.proxy.ProxyBasicAuthenticator;
 
 import lombok.Getter;
+import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
 
@@ -45,6 +47,10 @@ public class HttpProxy implements HttpProxyProvider {
 
 	// Type HTTP or SOCKS
 	private Type type;
+	
+	// Connction timeout, default is 30s
+	@Setter
+	private int connectionTimeout = 30;
 
 	public static final String URI_REGEXP = "^(?:(?<protocol>[\\w\\.\\-\\+]+):\\/{2})?" +
 			"(?:(?<login>[\\w\\d\\.\\-]+):(?<pass>[\\w\\d\\.]+)@)?" +
@@ -159,6 +165,9 @@ public class HttpProxy implements HttpProxyProvider {
 	@Override
 	public OkHttpClient getClient() {
 		Builder clientBuilder = new OkHttpClient.Builder();
+		
+		// TimeOuts
+		clientBuilder.connectTimeout(connectionTimeout, TimeUnit.SECONDS);				
 
 		// Own Cookie Jar
 		clientBuilder.cookieJar(new SaveAllCookieJar());
