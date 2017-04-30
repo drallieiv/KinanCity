@@ -12,6 +12,7 @@ import com.kinancity.api.errors.fatal.AccountDuplicateException;
 import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
+import com.kinancity.api.errors.tech.HttpConnectionException;
 import com.kinancity.api.model.AccountData;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.captcha.CaptchaRequest;
@@ -145,8 +146,12 @@ public class AccountCreationWorker implements Runnable {
 
 						// Free that proxy slot for re-use
 						proxySlot.freeSlot();
+					} catch (HttpConnectionException e) {
+						logger.warn("HttpConnectionException, proxy might be bad, move it out of rotation");
+						proxyManager.benchProxy(proxy);
+						
 					} catch (TechnicalException e) {
-						logger.warn("Technical Error : {}", e.getMessage());
+						logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.TECH_ERROR, e.getMessage(), e));
 						callbacks.onTechnicalIssue(currentCreation);
 

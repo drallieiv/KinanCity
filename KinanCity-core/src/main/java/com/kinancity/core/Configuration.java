@@ -23,6 +23,7 @@ import com.kinancity.core.errors.ConfigurationException;
 import com.kinancity.core.generator.AccountGenerator;
 import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
+import com.kinancity.core.proxy.ProxyRecycler;
 import com.kinancity.core.proxy.ProxyTester;
 import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
@@ -117,6 +118,10 @@ public class Configuration {
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
 			}
+			
+			// Add Proxy recycler and start thread
+			ProxyRecycler recycler = new ProxyRecycler(proxyManager);
+			new Thread(recycler).start();
 
 			if (resultLogger == null) {
 				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));

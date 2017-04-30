@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.Getter;
 
 /**
@@ -17,17 +20,21 @@ import lombok.Getter;
  */
 public class ProxyManager {
 
+	private Logger logger = LoggerFactory.getLogger(getClass());
+
 	@Getter
 	// How much time should we retry getting a proxy if none are found. in ms
 	private long pollingRate = 30000;
 
 	@Getter
 	// List of possible proxy instances
-	private List<ProxyInfo> proxies;
+	private List<ProxyInfo> proxies = new ArrayList<>();
 
-	public ProxyManager() {
-		proxies = new ArrayList<>();
-	}
+	/**
+	 * Move here the proxies which failed
+	 */
+	@Getter
+	private List<ProxyInfo> proxyBench = new ArrayList<>();
 
 	private boolean proxyRotation = true;
 
@@ -56,5 +63,11 @@ public class ProxyManager {
 			return slot;
 		}
 		return Optional.empty();
+	}
+
+	public void benchProxy(ProxyInfo proxy) {
+		proxies.remove(proxy);
+		proxyBench.add(proxy);
+		logger.warn("Proxy [{}] moved out of rotation, {} proxy left", proxies.size());
 	}
 }
