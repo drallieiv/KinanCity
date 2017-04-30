@@ -70,6 +70,11 @@ public class TwoCaptchaProvider implements Runnable {
 	 * Captcha API key
 	 */
 	private String apiKey = null;
+	
+	/**
+	 * 2 captcha Soft Id;
+	 */
+	private String softId = "1816";
 
 	/**
 	 * How much should we wait for each captcha in seconds. (default 600s, 0 for infinite)
@@ -289,6 +294,7 @@ public class TwoCaptchaProvider implements Runnable {
 				.addQueryParameter("method", "userrecaptcha")
 				.addQueryParameter("googlekey", googleSiteKey)
 				.addQueryParameter("pageurl", PAGE_URL)
+				.addQueryParameter("soft_id", softId)
 				.build();
 
 		Request request = new Request.Builder()
