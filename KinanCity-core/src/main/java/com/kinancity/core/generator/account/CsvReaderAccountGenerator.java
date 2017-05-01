@@ -61,6 +61,7 @@ public class CsvReaderAccountGenerator extends ListAccountGenerator implements A
 				}
 			} else {
 				logger.error("CSV file is missing header line.");
+				return;
 			}
 
 			// Read all other lines
