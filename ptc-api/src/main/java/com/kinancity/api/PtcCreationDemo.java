@@ -60,7 +60,7 @@ public class PtcCreationDemo {
 				// 1. Check password and username before we start
 				if (ptc.isAccountValid(account)) {
 					// 2. Start session
-					String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken();
+					String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
 
 					// 3. Captcha
 					String captcha = captchaProvider.getCaptcha();

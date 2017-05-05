@@ -169,12 +169,13 @@ public class PtcSession {
 
 	/**
 	 * Simulate new account creation age check and dump CRSF token.
+	 * @param account 
 	 * 
 	 * @return a valid CRSF token
 	 * @throws TechnicalException
 	 *             if the token could not be retrieived
 	 */
-	public String sendAgeCheckAndGrabCrsfToken() throws TechnicalException {
+	public String sendAgeCheckAndGrabCrsfToken(AccountData account) throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Grab CRSF token from PTC web");
@@ -195,7 +196,7 @@ public class PtcSession {
 					logger.error("CSRF Token not found");
 				} else {
 					String crsfToken = tokenField.get(0).val();
-					sendAgeCheck(crsfToken);
+					sendAgeCheck(account, crsfToken);
 					return crsfToken;
 				}
 			}
@@ -211,7 +212,7 @@ public class PtcSession {
 	 * 
 	 * NOTE: Maybe this step may skipped by manually adding the dod cookie.
 	 */
-	public void sendAgeCheck(String crsfToken) throws TechnicalException {
+	public void sendAgeCheck(AccountData account, String crsfToken) throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Pass age validation");
@@ -220,7 +221,7 @@ public class PtcSession {
 
 		try {
 			// Create Request
-			Request request = this.buildAgeCheckSubmitRequest(crsfToken);
+			Request request = this.buildAgeCheckSubmitRequest(account, crsfToken);
 
 			// Send Request
 			logger.debug("Sending age check request");
@@ -323,7 +324,7 @@ public class PtcSession {
 
 					errorMessages.add(errorTxt);
 				}
-				logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.username, errorMessages);
+				logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.getUsername(), errorMessages);
 
 				// Throw specific exception for name duplicate
 				if (isUsernameUsed) {
@@ -394,7 +395,7 @@ public class PtcSession {
 	}
 
 	// Http Request for age check submit
-	private Request buildAgeCheckSubmitRequest(String csrfToken) throws UnsupportedEncodingException {
+	private Request buildAgeCheckSubmitRequest(AccountData account, String csrfToken) throws UnsupportedEncodingException {
 		RequestBody body = new FormBody.Builder()
 				.add("dob", "1985-01-16")
 				.add("country", "US")
@@ -414,11 +415,11 @@ public class PtcSession {
 	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
 		RequestBody body = new FormBody.Builder()
 				// Given login and password
-				.add("username", account.username)
-				.add("email", account.email)
-				.add("confirm_email", account.email)
-				.add("password", account.password)
-				.add("confirm_password", account.password)
+				.add("username", account.getUsername())
+				.add("email", account.getEmail())
+				.add("confirm_email", account.getEmail())
+				.add("password", account.getPassword())
+				.add("confirm_password", account.getPassword())
 
 				// Technical Tokens
 				.add("csrfmiddlewaretoken", crsfToken)

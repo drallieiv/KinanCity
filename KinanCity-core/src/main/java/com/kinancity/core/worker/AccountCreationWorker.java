@@ -120,7 +120,7 @@ public class AccountCreationWorker implements Runnable {
 						// 1. Check password and username before we start
 						if (ptc.isAccountValid(account)) {
 							// 2. Start session
-							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken();
+							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
 
 							// 3. Captcha
 							CaptchaRequest captchaRequest = new CaptchaRequest(account.getUsername());
