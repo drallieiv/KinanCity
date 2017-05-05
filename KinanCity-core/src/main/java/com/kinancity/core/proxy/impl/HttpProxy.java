@@ -48,9 +48,9 @@ public class HttpProxy implements HttpProxyProvider {
 	// Type HTTP or SOCKS
 	private Type type;
 	
-	// Connction timeout, default is 30s
+	// Connction timeout, default is 60s
 	@Setter
-	private int connectionTimeout = 30;
+	private int connectionTimeout = 60;
 
 	public static final String URI_REGEXP = "^(?:(?<protocol>[\\w\\.\\-\\+]+):\\/{2})?" +
 			"(?:(?<login>[\\w\\d\\.\\-]+):(?<pass>[\\w\\d\\.]+)@)?" +
@@ -167,7 +167,8 @@ public class HttpProxy implements HttpProxyProvider {
 		Builder clientBuilder = new OkHttpClient.Builder();
 		
 		// TimeOuts
-		clientBuilder.connectTimeout(connectionTimeout, TimeUnit.SECONDS);				
+		clientBuilder.connectTimeout(connectionTimeout, TimeUnit.SECONDS);
+		clientBuilder.readTimeout(2 * connectionTimeout, TimeUnit.SECONDS);
 
 		// Own Cookie Jar
 		clientBuilder.cookieJar(new SaveAllCookieJar());

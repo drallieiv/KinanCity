@@ -13,6 +13,8 @@ import okhttp3.Response;
 
 public class ProxyTester {
 
+	private static final int CONNECT_TIMEOUT = 45;
+
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private String url_ptc = "https://club.pokemon.com/us/pokemon-trainer-club";
@@ -22,7 +24,7 @@ public class ProxyTester {
 		try {
 			Request testrequest = new Request.Builder().url(url_ptc).get().build();
 
-			OkHttpClient client = provider.getClient().newBuilder().connectTimeout(20, TimeUnit.SECONDS).build();
+			OkHttpClient client = provider.getClient().newBuilder().connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS).build();
 			try (Response response = client.newCall(testrequest).execute()) {
 				if (!response.isSuccessful()) {
 					logger.error("Error, received HTTP {}", response.code());
