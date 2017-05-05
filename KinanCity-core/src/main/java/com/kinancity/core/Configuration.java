@@ -118,7 +118,7 @@ public class Configuration {
 			}
 
 			if (proxyManager == null) {
-				logger.info("ProxyManager using direction connection with Nintendo policy");
+				logger.info("ProxyManager using direc connection with Nintendo policy");
 				proxyManager = new ProxyManager();
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));

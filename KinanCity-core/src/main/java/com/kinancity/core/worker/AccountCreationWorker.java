@@ -150,6 +150,9 @@ public class AccountCreationWorker implements Runnable {
 						logger.warn("HttpConnectionException, proxy [{}] might be bad, move it out of rotation : {}", proxy.getProvider(), e.getMessage());
 						proxyManager.benchProxy(proxy);
 
+						currentCreation.getFailures().add(new CreationFailure(ErrorCode.NETWORK_ERROR, e.getMessage(), e));
+						callbacks.onTechnicalIssue(currentCreation);
+
 					} catch (TechnicalException e) {
 						if(e.getCause() != null){
 							logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
@@ -191,6 +194,7 @@ public class AccountCreationWorker implements Runnable {
 			} else if (stopWithQueueEnd) {
 				status = RunnerStatus.STOP;
 				loopStatus = RunnerStatus.STOP;
+				logger.info("End of account creation queue reached. Stop worker");
 			} else {
 				status = RunnerStatus.IDLE;
 				try {

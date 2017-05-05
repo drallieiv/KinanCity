@@ -6,7 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.model.AccountData;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.generator.AccountGenerator;

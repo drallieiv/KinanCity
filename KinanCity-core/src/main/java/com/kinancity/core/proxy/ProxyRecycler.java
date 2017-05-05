@@ -53,7 +53,7 @@ public class ProxyRecycler implements Runnable {
 		}
 	}
 
-	public void checkAndRecycleAllBenched() {
+	public synchronized void checkAndRecycleAllBenched() {
 		List<ProxyInfo> benchedProxies = proxyManager.getProxyBench();
 		if (benchedProxies.isEmpty()) {
 			logger.debug("No benched proxies");
@@ -65,7 +65,7 @@ public class ProxyRecycler implements Runnable {
 		}
 	}
 
-	public void checkAndRecycle(ProxyInfo proxy) {
+	public synchronized void checkAndRecycle(ProxyInfo proxy) {
 		if (proxyManager.getProxyBench().contains(proxy)) {
 			boolean valid = tester.testProxy(proxy.getProvider());
 			if (valid) {
@@ -75,7 +75,7 @@ public class ProxyRecycler implements Runnable {
 				proxyManager.getProxies().add(proxy);
 			}
 		} else {
-			logger.debug("Only benched proxies should be checked");
+			logger.debug("Proxy is not benched, or already removed from bench");
 		}
 
 	}
