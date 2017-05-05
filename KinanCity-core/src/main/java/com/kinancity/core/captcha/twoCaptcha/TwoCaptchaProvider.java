@@ -5,14 +5,13 @@ import java.io.StringReader;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.json.Json;
 import javax.json.JsonObject;
+import javax.json.stream.JsonParsingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,12 +50,14 @@ public class TwoCaptchaProvider implements Runnable {
 	 */
 	public static final String CAPCHA_NOT_READY = "CAPCHA_NOT_READY";
 	public static final String OK_RESPONSE_PREFIX = "OK|";
-	// Wrong “key” parameter format, it should contain 32 symbols
+	// Wrong "key" parameter format, it should contain 32 symbols
 	public static final String ERROR_WRONG_USER_KEY = "ERROR_WRONG_USER_KEY";
-	// The “key” doesn’t exist
+	// The "key" doesn't exist
 	public static final String ERROR_KEY_DOES_NOT_EXIST = "ERROR_KEY_DOES_NOT_EXIST";
-	// You don’t have money on your account
+	// You don't have money on your account
 	public static final String ERROR_ZERO_BALANCE = "ERROR_ZERO_BALANCE";
+	// Another Error
+	public static final String ERROR_PREFIX = "ERROR_";
 
 	/**
 	 * Actions that can be asked
@@ -70,7 +71,7 @@ public class TwoCaptchaProvider implements Runnable {
 	 * Captcha API key
 	 */
 	private String apiKey = null;
-	
+
 	/**
 	 * 2 captcha Soft Id;
 	 */
@@ -253,7 +254,6 @@ public class TwoCaptchaProvider implements Runnable {
 			}
 
 			// Check error results
-
 			if (body.startsWith(ERROR_WRONG_USER_KEY)) {
 				throw new TwoCaptchaConfigurationException("Given 2captcha key " + apiKey + " is invalid");
 			}
@@ -262,17 +262,26 @@ public class TwoCaptchaProvider implements Runnable {
 				throw new TwoCaptchaConfigurationException("Given 2captcha key does not match any account");
 			}
 
-			// Else assume we have balance
-			JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
-			if (isValidResponse(jsonResponse)) {
-				try {
-					return Double.parseDouble(jsonResponse.getString(JSON_RESPONSE));
-				} catch (NumberFormatException e) {
-					throw new TechnicalException("invalid balance from 2captcha : " + jsonResponse.getString(JSON_RESPONSE));
-				}
-			} else {
-				throw new TechnicalException("invalid response from 2captcha : " + body);
+			if (body.startsWith(ERROR_PREFIX)) {
+				throw new TwoCaptchaConfigurationException("Returned 2captcha Error : " + body);
 			}
+
+			// Else assume we have balance
+			try {
+				JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
+				if (isValidResponse(jsonResponse)) {
+					try {
+						return Double.parseDouble(jsonResponse.getString(JSON_RESPONSE));
+					} catch (NumberFormatException e) {
+						throw new TechnicalException("invalid balance from 2captcha : " + jsonResponse.getString(JSON_RESPONSE));
+					}
+				} else {
+					throw new TechnicalException("invalid response from 2captcha : " + body);
+				}
+			} catch (JsonParsingException e) {
+				throw new TwoCaptchaConfigurationException("Other Error : " + body);
+			}
+
 		} catch (IOException e) {
 			throw new TechnicalException(HTTP_ERROR_MSG, e);
 		}
