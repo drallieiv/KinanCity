@@ -153,6 +153,9 @@ public class AccountCreationWorker implements Runnable {
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.NETWORK_ERROR, e.getMessage(), e));
 						callbacks.onTechnicalIssue(currentCreation);
 
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
+
 					} catch (TechnicalException e) {
 						if(e.getCause() != null){
 							logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
