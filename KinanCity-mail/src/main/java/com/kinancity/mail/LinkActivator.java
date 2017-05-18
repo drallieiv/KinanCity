@@ -18,13 +18,12 @@ import com.squareup.okhttp.Response;
 public class LinkActivator {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
-	
+
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
 	private static final String ALREADY_DONE_MSG = "Your account has already been activated.";
 	private static final String INVALID_TOKEN_MSG = "We cannot find an account matching the confirmation email.";
-	
-	
 	private OkHttpClient client;
+
 
 	public LinkActivator() {
 		client = new OkHttpClient();
@@ -39,26 +38,26 @@ public class LinkActivator {
 		try {
 			Request request = new Request.Builder().url(link).build();
 			Response response = client.newCall(request).execute();
-			
+
 			String strResponse = response.body().string();
 
-			if(strResponse.contains(SUCCESS_MSG)){
+			if (strResponse.contains(SUCCESS_MSG)) {
 				logger.info("Activation success");
 				return true;
 			}
-			
-			if(strResponse.contains(ALREADY_DONE_MSG)){
+
+			if (strResponse.contains(ALREADY_DONE_MSG)) {
 				logger.info("Activation already done");
 				return true;
 			}
 
-			if(strResponse.contains(INVALID_TOKEN_MSG)){
+			if (strResponse.contains(INVALID_TOKEN_MSG)) {
 				logger.error("Invalid Activation token");
 				return false;
 			}
-			
+
 			logger.error("Unexpected Error");
-			
+
 			return false;
 		} catch (IOException e) {
 			return false;
