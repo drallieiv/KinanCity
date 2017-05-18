@@ -5,9 +5,9 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 /**
  * Class that will take care of following the activation link
@@ -22,16 +22,23 @@ public class LinkActivator {
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
 	private static final String ALREADY_DONE_MSG = "Your account has already been activated.";
 	private static final String INVALID_TOKEN_MSG = "We cannot find an account matching the confirmation email.";
-	private OkHttpClient client;
 
+	private okhttp3.OkHttpClient client;
 
 	public LinkActivator() {
-		client = new OkHttpClient();
+		client = new OkHttpClient.Builder().build();
+	}
+
+	public static void main(String[] args) throws IOException {
+		LinkActivator activator = new LinkActivator();
+		activator.activateLink(args[0]);
 	}
 
 	/**
 	 * Activate link
-	 * @param link activation url
+	 * 
+	 * @param link
+	 *            activation url
 	 * @return true if activation successfull
 	 */
 	public boolean activateLink(String link) {
