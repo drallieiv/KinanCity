@@ -1,4 +1,4 @@
-package com.kinancity.mail;
+package com.kinancity.mail.activator;
 
 import java.io.IOException;
 
@@ -15,31 +15,31 @@ import okhttp3.Response;
  * @author drallieiv
  *
  */
-public class LinkActivator {
+public class DirectLinkActivator implements LinkActivator {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
 	private static final String ALREADY_DONE_MSG = "Your account has already been activated.";
 	private static final String INVALID_TOKEN_MSG = "We cannot find an account matching the confirmation email.";
+	private static final String THROTTLE_MSG = "403 Forbidden";
 
 	private okhttp3.OkHttpClient client;
 
-	public LinkActivator() {
+	public DirectLinkActivator() {
 		client = new OkHttpClient.Builder().build();
 	}
 
 	public static void main(String[] args) throws IOException {
-		LinkActivator activator = new LinkActivator();
-		activator.activateLink(args[0]);
+		boolean stop = false;
+		while (! stop){
+			LinkActivator activator = new DirectLinkActivator();
+			activator.activateLink(args[0]);
+		}
 	}
 
-	/**
-	 * Activate link
-	 * 
-	 * @param link
-	 *            activation url
-	 * @return true if activation successfull
+	/* (non-Javadoc)
+	 * @see com.kinancity.mail.activator.LinkActivator#activateLink(java.lang.String)
 	 */
 	public boolean activateLink(String link) {
 		try {
@@ -48,24 +48,33 @@ public class LinkActivator {
 
 			String strResponse = response.body().string();
 
-			if (strResponse.contains(SUCCESS_MSG)) {
+			if(response.isSuccessful()){
+				if (strResponse.contains(SUCCESS_MSG)) {
+					logger.info("Activation success : Your account is now active");
+					return true;
+				}
+				
 				logger.info("Activation success");
 				return true;
-			}
+			}else{ 
+				if (strResponse.contains(ALREADY_DONE_MSG)) {
+					logger.info("Activation already done");
+					return true;
+				}
 
-			if (strResponse.contains(ALREADY_DONE_MSG)) {
-				logger.info("Activation already done");
-				return true;
-			}
-
-			if (strResponse.contains(INVALID_TOKEN_MSG)) {
-				logger.error("Invalid Activation token");
+				if (strResponse.contains(INVALID_TOKEN_MSG)) {
+					logger.error("Invalid Activation token");
+					return false;
+				}
+				
+				if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
+					logger.error("HTTP 503. Your validation request was throttled");
+					return false;
+				}
+				
+				logger.error("Unexpected Error : {}", strResponse);
 				return false;
 			}
-
-			logger.error("Unexpected Error");
-
-			return false;
 		} catch (IOException e) {
 			return false;
 		}

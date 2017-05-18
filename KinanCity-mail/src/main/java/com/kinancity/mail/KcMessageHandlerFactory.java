@@ -4,6 +4,8 @@ import org.subethamail.smtp.MessageContext;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.MessageHandlerFactory;
 
+import com.kinancity.mail.activator.LinkActivator;
+
 /**
  * Message Handler Factory
  * 

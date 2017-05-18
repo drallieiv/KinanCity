@@ -18,6 +18,8 @@ import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.RejectException;
 import org.subethamail.smtp.TooMuchDataException;
 
+import com.kinancity.mail.activator.LinkActivator;
+
 /**
  * Message Handler
  * 
@@ -80,12 +82,9 @@ public class KcMessageHandler implements MessageHandler {
 					String activationLink = m.group(0);
 					logger.info("Activation link found  for email {} : [{}]", recipient, activationLink);
 					
-					if(activator.activateLink(activationLink)){
-						logger.info("Account activation for email {} : success", recipient);
-					}else{
-						logger.error("Account activation for email {} : failed", recipient);
-					}
-					
+					// Link activation, may be sync or async
+					activator.activateLink(activationLink);
+						
 				} else {
 					logger.error("No activation link found");
 				}
