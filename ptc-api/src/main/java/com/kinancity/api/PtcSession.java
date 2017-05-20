@@ -188,19 +188,27 @@ public class PtcSession {
 			if (response.isSuccessful()) {
 				// Parse the response
 				Document doc = Jsoup.parse(response.body().string());
-
+				response.body().close();
+				
 				// Look for the CRSF
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
 				if (tokenField.isEmpty()) {
 					logger.error("CSRF Token not found");
+					
+					if (dumpResult == ALWAYS) {
+						Path dumpPath = dumpResult(doc, account);
+						logger.error("Response dump saved in {}", dumpPath);
+					}
+					
+					throw new TechnicalException("Age verification call failed");
 				} else {
 					String crsfToken = tokenField.get(0).val();
 					sendAgeCheck(account, crsfToken);
 					return crsfToken;
 				}
 			}
-			throw new TechnicalException("Age verification call or CSRF extraction failed");
+			throw new TechnicalException("Age verification call failed. HTTP " + response.code());
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
 			throw new HttpConnectionException("Technical error getting CSRF Token : " + e.getMessage(), e);
@@ -353,7 +361,7 @@ public class PtcSession {
 		logger.debug("SUCCESS : Account created");
 	}
 
-	private void dumpResult(Document doc, AccountData account) {
+	private Path dumpResult(Document doc, AccountData account) {
 		String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 		if (Files.notExists(Paths.get("dump"))) {
 			try {
@@ -371,6 +379,8 @@ public class PtcSession {
 		} catch (IOException e) {
 			logger.warn("Error dumping file {}", dumpName);
 		}
+		
+		return dumpName.toAbsolutePath();
 	}
 
 	/**
