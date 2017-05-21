@@ -3,20 +3,20 @@ package com.kinancity.api.errors.tech;
 import com.kinancity.api.errors.TechnicalException;
 
 /**
- * Error when solving captcha
- * 
+ * Error when IP gets softbanned on PTC site
+ *  
  * @author drallieiv
  *
  */
-public class CaptchaSolvingException extends TechnicalException {
+public class IpSoftBanException extends TechnicalException {
 
 	private static final long serialVersionUID = -1173353148853930289L;
 
-	public CaptchaSolvingException(Exception e) {
+	public IpSoftBanException(Exception e) {
 		super(e);
 	}
 
-	public CaptchaSolvingException(String msg) {
+	public IpSoftBanException(String msg) {
 		super(msg);
 	}
 

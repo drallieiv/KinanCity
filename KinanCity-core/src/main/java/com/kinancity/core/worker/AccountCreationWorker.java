@@ -13,6 +13,7 @@ import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
+import com.kinancity.api.errors.tech.IpSoftBanException;
 import com.kinancity.api.model.AccountData;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.captcha.CaptchaRequest;
@@ -139,6 +140,14 @@ public class AccountCreationWorker implements Runnable {
 							currentCreation.getFailures().add(new CreationFailure(ErrorCode.BAD_USERNAME_OR_PASSWORD));
 							callbacks.onFailure(currentCreation);
 						}
+					} catch (IpSoftBanException e){
+						logger.warn("PTC softban, put that IP on hold.");
+						proxyManager.benchProxy(proxy);
+						
+						callbacks.onTechnicalIssue(currentCreation);
+
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					} catch (CaptchaSolvingException e) {
 						logger.warn(e.getMessage());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.CAPTCHA_SOLVING));

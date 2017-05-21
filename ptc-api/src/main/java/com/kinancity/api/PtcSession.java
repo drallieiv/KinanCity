@@ -30,6 +30,7 @@ import com.kinancity.api.errors.fatal.AccountDuplicateException;
 import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
+import com.kinancity.api.errors.tech.IpSoftBanException;
 import com.kinancity.api.model.AccountData;
 
 import lombok.Setter;
@@ -40,7 +41,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
 
 /**
  * Session for creating a PTC account.
@@ -61,7 +61,6 @@ public class PtcSession {
 	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}$";
 	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]{4,15}$";
 
-	
 	private OkHttpClient client;
 
 	@Setter
@@ -106,17 +105,17 @@ public class PtcSession {
 			logger.error("Invalid password '{}', The password must include uppercase and lowercase letters, numbers, and symbols between 8 and 50 chars", password);
 			return false;
 		}
-		
+
 		if (!Pattern.matches(PTC_USENAME_EXPREG, username)) {
 			logger.error("Invalid username '{}', The username may contains illegal values and must be between 4 and 15 characters long", username);
 			return false;
-		}	
-		
+		}
+
 		// All passed and went OK
 		return true;
-		
+
 	}
-	
+
 	/**
 	 * Check if the account is valid
 	 * 
@@ -131,7 +130,7 @@ public class PtcSession {
 			logger.info("Dry-Run : Check if username and password are okay");
 			return true;
 		}
-		
+
 		String username = account.getUsername();
 
 		// Check username validity with API
@@ -170,7 +169,8 @@ public class PtcSession {
 
 	/**
 	 * Simulate new account creation age check and dump CRSF token.
-	 * @param account 
+	 * 
+	 * @param account
 	 * 
 	 * @return a valid CRSF token
 	 * @throws TechnicalException
@@ -190,26 +190,29 @@ public class PtcSession {
 				// Parse the response
 				Document doc = Jsoup.parse(response.body().string());
 				response.body().close();
-				
+
 				// Look for the CRSF
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
 				if (tokenField.isEmpty()) {
 					logger.error("CSRF Token not found");
-					
+
 					if (dumpResult == ALWAYS) {
 						Path dumpPath = dumpResult(doc, account);
 						logger.error("Response dump saved in {}", dumpPath);
 					}
-					
+
 					throw new TechnicalException("Age verification call failed");
 				} else {
 					String crsfToken = tokenField.get(0).val();
 					sendAgeCheck(account, crsfToken);
 					return crsfToken;
 				}
+			} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
+				throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
+			} else {
+				throw new TechnicalException("Age verification call failed. HTTP " + response.code());
 			}
-			throw new TechnicalException("Age verification call failed. HTTP " + response.code());
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
 			throw new HttpConnectionException("Technical error getting CSRF Token : " + e.getMessage(), e);
@@ -241,11 +244,11 @@ public class PtcSession {
 					logger.debug("Age check done");
 					return;
 				}
-				throw new TechnicalException("Age check request failed. HTTP "+response.code());
+				throw new TechnicalException("Age check request failed. HTTP " + response.code());
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Age check request failed : "+e.getMessage(), e);
+			throw new HttpConnectionException("Age check request failed : " + e.getMessage(), e);
 		}
 	}
 
@@ -282,6 +285,8 @@ public class PtcSession {
 
 					checkForErrors(account, doc);
 
+				} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
+					throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
 				} else {
 					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
 				}
@@ -289,7 +294,7 @@ public class PtcSession {
 
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Create account request failed : "+e.getMessage(), e);
+			throw new HttpConnectionException("Create account request failed : " + e.getMessage(), e);
 		}
 	}
 
@@ -314,7 +319,6 @@ public class PtcSession {
 			if (dumpResult == ON_FAILURE) {
 				dumpResult(doc, account);
 			}
-					
 
 			// If there is only one that says required, it's the captcha.
 			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required.")) {
@@ -330,7 +334,7 @@ public class PtcSession {
 						isUsernameUsed = true;
 					} else if (errorTxt.contains("Account Creation Rate Limit Exceeded")) {
 						isQuotaExceeded = true;
-					} else if (errorTxt.contains("There is a problem with your email address")){
+					} else if (errorTxt.contains("There is a problem with your email address")) {
 						isEmailError = true;
 					}
 
@@ -342,7 +346,7 @@ public class PtcSession {
 				if (isUsernameUsed) {
 					throw new AccountDuplicateException();
 				}
-				
+
 				// Throw specific exception for email blocked or duplicate
 				if (isEmailError) {
 					throw new EmailDuplicateOrBlockedException();
@@ -352,15 +356,6 @@ public class PtcSession {
 				if (isQuotaExceeded) {
 					throw new AccountRateLimitExceededException();
 				}
-				
-				/* Should we keep that ?
-					// Specific check for email error
-					Element idEmail = doc.getElementById("id_email");
-					if(idEmail != null && idEmail.hasClass("alert-error")){
-						logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
-						throw new AccountRateLimitExceededException();
-					}
-				*/
 
 				// Else we have another unknown error
 				throw new TechnicalException("Unknown creation error : " + errorMessages);
@@ -382,13 +377,13 @@ public class PtcSession {
 		Path dumpName = Paths.get("dump/" + account.getUsername() + "_" + time + ".html");
 		try (BufferedWriter writer = Files.newBufferedWriter(dumpName)) {
 			String html = doc.outerHtml();
-			// Cleanup Scripts 
+			// Cleanup Scripts
 			html = html.replaceAll("<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>", "");
 			writer.write(html);
 		} catch (IOException e) {
 			logger.warn("Error dumping file {}", dumpName);
 		}
-		
+
 		return dumpName.toAbsolutePath();
 	}
 
