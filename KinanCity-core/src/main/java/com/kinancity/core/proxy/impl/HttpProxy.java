@@ -3,6 +3,10 @@ package com.kinancity.core.proxy.impl;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +32,9 @@ import okhttp3.OkHttpClient.Builder;
 @Getter
 public class HttpProxy implements HttpProxyProvider {
 
+	private static final int DEFAULT_PORT = 8080;
+	private static final String DEFAULT_PROTOCOL = "http";
+
 	private static Logger logger = LoggerFactory.getLogger(HttpProxy.class);
 
 	// Protocol
@@ -47,7 +54,7 @@ public class HttpProxy implements HttpProxyProvider {
 
 	// Type HTTP or SOCKS
 	private Type type;
-	
+
 	// Connction timeout, default is 60s
 	@Setter
 	private int connectionTimeout = 60;
@@ -56,6 +63,17 @@ public class HttpProxy implements HttpProxyProvider {
 			"(?:(?<login>[\\w\\d\\.\\-%]+):(?<pass>[\\w\\d\\.\\-%]+)@)?" +
 			"(?:(?<host>[a-zA-Z0-9\\.\\-_]+)" +
 			"(?::(?<port>\\d{1,5}))?)$";
+
+	static final Map<String, Integer> DEFAULT_MAPPING = Collections.unmodifiableMap(new HashMap<String, Integer>() {
+		private static final long serialVersionUID = 1L;
+		{
+			put("http", 8080);
+			put("https", 3128);
+			put("socks", 1080);
+			put("socks4", 1080);
+			put("socks5", 1080);
+		}
+	});
 
 	/**
 	 * Constructor for a Http Proxy with auth
@@ -108,39 +126,44 @@ public class HttpProxy implements HttpProxyProvider {
 		if (matcher.find()) {
 			String host = matcher.group("host");
 
-			// Type from protocol. default to HTTP.
-			Type type = StringUtils.startsWith(StringUtils.lowerCase(matcher.group("protocol")), "socks") ? Type.SOCKS : Type.HTTP;
+			String protocol = StringUtils.lowerCase(matcher.group("protocol"));
 
 			String login = matcher.group("login");
 			String pass = matcher.group("pass");
-			String protocol = matcher.group("protocol");
 
-			// Port given or default from protocol.
-			int port;
+			int port = -1;
 			if (matcher.group("port") != null) {
 				port = Integer.parseInt(matcher.group("port"));
+			}
+
+			// Full Default is HTTP port 8080
+			if (port < 0 && protocol == null) {
+				protocol = "http";
+				port = DEFAULT_PORT;
 			} else {
-				if (protocol == null) {
-					port = 8080;
-				} else {
-					switch (protocol.toLowerCase()) {
-					case "http":
-						port = 8080;
-						break;
-					case "https":
-						port = 443;
-						break;
-					case "socks":
-					case "socks4":
-					case "socks5":
-						port = 1080;
-						break;
-					default:
-						port = 8080;
-						break;
+				if (port < 0) {
+					// Guess port from Protocol
+					for (Entry<String, Integer> entry : DEFAULT_MAPPING.entrySet()) {
+						if (entry.getValue() == port) {
+							protocol = entry.getKey();
+							break;
+						}
+					}
+					if (protocol == null) {
+						protocol = DEFAULT_PROTOCOL;
+					}
+				} else if (protocol == null) {
+					// Guess protocol from port
+					if (DEFAULT_MAPPING.get(protocol) != null) {
+						port = DEFAULT_MAPPING.get(protocol);
+					} else {
+						port = DEFAULT_PORT;
 					}
 				}
 			}
+
+			// Type from protocol. default to HTTP.
+			Type type = StringUtils.startsWith(protocol, "socks") ? Type.SOCKS : Type.HTTP;
 
 			return new HttpProxy(host, port, login, pass, type, protocol);
 		} else {
@@ -165,7 +188,7 @@ public class HttpProxy implements HttpProxyProvider {
 	@Override
 	public OkHttpClient getClient() {
 		Builder clientBuilder = new OkHttpClient.Builder();
-		
+
 		// TimeOuts
 		clientBuilder.connectTimeout(connectionTimeout, TimeUnit.SECONDS);
 		clientBuilder.readTimeout(2 * connectionTimeout, TimeUnit.SECONDS);
