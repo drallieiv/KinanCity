@@ -118,7 +118,7 @@ public class Configuration {
 			}
 
 			if (proxyManager == null) {
-				logger.info("ProxyManager using direc connection with Nintendo policy");
+				logger.info("ProxyManager using direct connection with Nintendo policy");
 				proxyManager = new ProxyManager();
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
@@ -170,7 +170,6 @@ public class Configuration {
 		}
 
 		if (!skipProxyTest) {
-			logger.info("Validating given proxies");
 
 			ProxyTester proxyTester = new ProxyTester();
 			List<ProxyInfo> invalidProxies = new ArrayList<>();
@@ -178,6 +177,9 @@ public class Configuration {
 				logger.error("No valid proxy given");
 				return false;
 			}
+			
+			logger.info("Validating {} given proxies", proxyManager.getProxies().size());
+			
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				if (!proxyTester.testProxy(proxy.getProvider())) {
 					logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
