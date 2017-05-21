@@ -23,9 +23,18 @@ public class ProxyRecycler implements Runnable {
 	@Getter
 	@Setter
 	private int wait = 5 * 60 * 1000;
+	
+	// Pass every 1 minutes
+	@Getter
+	@Setter
+	private int fastwait = 1 * 60 * 1000;
 
 	@Setter
 	private boolean runFlag = true;
+	
+	// mode that makes retry faster until one proxy gets back up
+	@Setter
+	private boolean fastMode = false;
 
 	private ProxyManager proxyManager;
 
@@ -44,7 +53,7 @@ public class ProxyRecycler implements Runnable {
 		while (runFlag) {
 			// Sleep First
 			try {
-				Thread.sleep(wait);
+				Thread.sleep(fastMode ? fastwait : wait);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -70,6 +79,7 @@ public class ProxyRecycler implements Runnable {
 			boolean valid = tester.testProxy(proxy.getProvider());
 			if (valid) {
 				logger.info("Proxy [{}] is working again, set it back in rotation", proxy.getProvider());
+				fastMode = false;
 				// move proxy from bench back in rotation
 				proxyManager.getProxyBench().remove(proxy);
 				proxyManager.getProxies().add(proxy);

@@ -231,7 +231,7 @@ public class TwoCaptchaProvider implements Runnable {
 			logger.error("This captcha had an unexpected error : {}", response);
 			challenges.remove(challenge);
 		} else {
-			logger.debug("Captcha response given in {}s", ChronoUnit.SECONDS.between(challenge.getSentTime(), LocalDateTime.now()));
+			logger.info("Captcha response given in {}s", ChronoUnit.SECONDS.between(challenge.getSentTime(), LocalDateTime.now()));
 			queue.addCaptcha(response);
 			challenges.remove(challenge);
 		}

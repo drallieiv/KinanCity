@@ -76,6 +76,7 @@ public class ProxyManager {
 		logger.warn("Proxy [{}] moved out of rotation, {} proxy left",proxy, proxies.size());
 		
 		if(recycler != null && getNbProxyInRotation() == 0){
+			recycler.setFastMode(true);
 			recycler.checkAndRecycleAllBenched();
 		}
 		
