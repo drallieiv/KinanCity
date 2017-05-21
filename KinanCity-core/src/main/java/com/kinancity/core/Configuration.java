@@ -189,6 +189,9 @@ public class Configuration {
 			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
 				logger.info("{} valid proxies left", proxyManager.getProxies().size());
+				if(proxyManager.getProxies().size() == 0){
+					return false;
+				}
 			}
 		}
 
