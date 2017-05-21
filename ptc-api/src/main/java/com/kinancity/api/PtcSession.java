@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import com.kinancity.api.errors.FatalException;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.fatal.AccountDuplicateException;
+import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
 import com.kinancity.api.model.AccountData;
@@ -305,6 +306,7 @@ public class PtcSession {
 
 		boolean isUsernameUsed = false;
 		boolean isQuotaExceeded = false;
+		boolean isEmailError = false;
 
 		// If we have some
 		if (!errors.isEmpty()) {
@@ -315,8 +317,8 @@ public class PtcSession {
 					
 
 			// If there is only one that says required, it's the captcha.
-			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
-				throw new TechnicalException("Invalid or missing Captcha");
+			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required.")) {
+				throw new TechnicalException("Invalid or missing Captcha. Captcha may have expired, try reducing captchaMaxTotalTime");
 			} else {
 				// List all the errors we had
 				List<String> errorMessages = new ArrayList<>();
@@ -328,6 +330,8 @@ public class PtcSession {
 						isUsernameUsed = true;
 					} else if (errorTxt.contains("Account Creation Rate Limit Exceeded")) {
 						isQuotaExceeded = true;
+					} else if (errorTxt.contains("There is a problem with your email address")){
+						isEmailError = true;
 					}
 
 					errorMessages.add(errorTxt);
@@ -337,6 +341,11 @@ public class PtcSession {
 				// Throw specific exception for name duplicate
 				if (isUsernameUsed) {
 					throw new AccountDuplicateException();
+				}
+				
+				// Throw specific exception for email blocked or duplicate
+				if (isEmailError) {
+					throw new EmailDuplicateOrBlockedException();
 				}
 
 				// Throw specific exception for quota exceeded
