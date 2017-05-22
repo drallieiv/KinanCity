@@ -141,7 +141,7 @@ public class HttpProxy implements HttpProxyProvider {
 				protocol = "http";
 				port = DEFAULT_PORT;
 			} else {
-				if (port < 0) {
+				if (protocol == null) {
 					// Guess port from Protocol
 					for (Entry<String, Integer> entry : DEFAULT_MAPPING.entrySet()) {
 						if (entry.getValue() == port) {
@@ -152,7 +152,7 @@ public class HttpProxy implements HttpProxyProvider {
 					if (protocol == null) {
 						protocol = DEFAULT_PROTOCOL;
 					}
-				} else if (protocol == null) {
+				} else if (port < 0) {
 					// Guess protocol from port
 					if (DEFAULT_MAPPING.get(protocol) != null) {
 						port = DEFAULT_MAPPING.get(protocol);
