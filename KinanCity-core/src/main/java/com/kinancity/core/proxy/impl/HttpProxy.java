@@ -3,6 +3,7 @@ package com.kinancity.core.proxy.impl;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.net.Socket;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.net.SocketFactory;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -23,6 +26,9 @@ import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
+import sockslib.client.Socks5;
+import sockslib.client.SocksProxy;
+import sockslib.client.SocksProxyFactory;
 
 /**
  * Using HTTP proxy
@@ -196,12 +202,18 @@ public class HttpProxy implements HttpProxyProvider {
 		// Own Cookie Jar
 		clientBuilder.cookieJar(new SaveAllCookieJar());
 
-		// HTTP Proxy
-		clientBuilder.proxy(new Proxy(type, new InetSocketAddress(host, port)));
+		if (type == Type.HTTP) {
+			// HTTP Proxy
+			clientBuilder.proxy(new Proxy(type, new InetSocketAddress(host, port)));
 
-		// Authentication
-		if (StringUtils.isNotEmpty(login)) {
-			clientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(login, pass));
+			// Authentication
+			if (StringUtils.isNotEmpty(login)) {
+				clientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(login, pass));
+			}
+		} else if (type == Type.SOCKS){
+			InetSocketAddress socketAddress = new InetSocketAddress(host, port);
+			SocksProxy proxy = new Socks5(socketAddress, login, pass);
+			clientBuilder.socketFactory(new CustomSocketFactory(proxy));
 		}
 
 		return clientBuilder.build();
