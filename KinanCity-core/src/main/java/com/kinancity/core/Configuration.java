@@ -46,7 +46,9 @@ public class Configuration {
 
 	private String twoCaptchaApiKey;
 
-	private int nbThreads = 5;
+	private int nbThreads = 3;
+	
+	private boolean forceMaxThread = false;
 
 	private CaptchaQueue captchaQueue;
 
@@ -198,6 +200,15 @@ public class Configuration {
 				}
 			}
 		}
+		
+		if(forceMaxThread){
+			// Max 3 times more thread then proxies
+			int maxThreads = proxyManager.getProxies().size() * 3;
+			if(nbThreads > maxThreads){
+				nbThreads = maxThreads;
+				logger.info("Too many thread compared to proxies, forcing thread count to {}", nbThreads);
+			}
+		}		
 
 		return true;
 	}
