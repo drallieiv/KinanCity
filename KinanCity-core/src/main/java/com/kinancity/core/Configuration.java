@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
+import com.kinancity.core.proxy.policies.TimeLimitPolicy;
 import com.kinancity.core.worker.callbacks.ResultLogger;
 
 import lombok.Data;
@@ -221,10 +223,16 @@ public class Configuration {
 
 			// Load Config
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
-			this.loadProxies(prop.getProperty("proxies"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", "600")));
+			
+			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
+			if(customPeriod != null && NumberUtils.isNumber(customPeriod)){
+				proxyPolicy = new TimeLimitPolicy(5, Integer.parseInt(customPeriod) * 60);
+			}
 
+			this.loadProxies(prop.getProperty("proxies"));
+			
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
 		}
