@@ -2,7 +2,16 @@
 
 	<appender name="CLI" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
-			<pattern>%-5level [%thread] %msg%n</pattern>
+			<pattern>%d{MM-dd HH:mm} [%thread] %msg%n</pattern>
+		</encoder>
+	</appender>
+	
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>KinanCityCore.log</file>
+		<append>true</append>
+		<immediateFlush>true</immediateFlush>
+		<encoder>
+			<pattern>%d{MM-dd HH:mm} [%thread] %msg%n</pattern>
 		</encoder>
 	</appender>
 	
@@ -14,6 +23,7 @@
 		
 	<logger name="com.kinancity" level="INFO" additivity="false">
 		<appender-ref ref="CLI" />
+		<appender-ref ref="FILE" />
 	</logger>
 
 	<root level="INFO" additivity="false">

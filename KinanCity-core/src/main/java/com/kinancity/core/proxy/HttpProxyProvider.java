@@ -9,4 +9,6 @@ import okhttp3.OkHttpClient;
  */
 public interface HttpProxyProvider {
 	OkHttpClient getClient();
+	
+	String getHost();
 }

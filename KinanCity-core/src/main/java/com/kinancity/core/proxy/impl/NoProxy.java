@@ -22,4 +22,9 @@ public class NoProxy implements HttpProxyProvider {
 	public String toString(){
 		return "Direct";
 	}
+
+	@Override
+	public String getHost() {
+		return toString();
+	}
 }

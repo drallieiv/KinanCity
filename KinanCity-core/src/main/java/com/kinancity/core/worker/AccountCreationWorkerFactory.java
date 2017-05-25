@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.apache.commons.lang.math.RandomUtils;
 
-import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.scheduling.AccountCreationQueue;
+import com.kinancity.core.throttle.Bottleneck;
 import com.kinancity.core.worker.callbacks.CreationCallbacks;
 
 import lombok.Getter;
@@ -31,8 +31,8 @@ public class AccountCreationWorkerFactory {
 		return trainerNames.get(position++);
 	}
 
-	public AccountCreationWorker createWorker(AccountCreationQueue accountCreationQueue, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks) {
-		return new AccountCreationWorker(accountCreationQueue, getNextName(), captchaQueue, proxyManager, callbacks);
+	public AccountCreationWorker createWorker(AccountCreationQueue accountCreationQueue, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck bottleneck) {
+		return new AccountCreationWorker(accountCreationQueue, getNextName(), captchaQueue, proxyManager, callbacks, bottleneck);
 	}
 
 }

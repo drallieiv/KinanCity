@@ -6,6 +6,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.throttle.Bottleneck;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,6 +43,9 @@ public class ProxyRecycler implements Runnable {
 	@Getter
 	@Setter
 	private ProxyTester tester;
+	
+	@Setter
+	private Bottleneck bottleneck;
 
 	public ProxyRecycler(ProxyManager proxyManager) {
 		this.proxyManager = proxyManager;
@@ -76,6 +81,7 @@ public class ProxyRecycler implements Runnable {
 
 	public synchronized void checkAndRecycle(ProxyInfo proxy) {
 		if (proxyManager.getProxyBench().contains(proxy)) {
+			bottleneck.syncUseOf(proxy);
 			boolean valid = tester.testProxy(proxy.getProvider());
 			if (valid) {
 				logger.info("Proxy [{}] is working again, set it back in rotation", proxy.getProvider());

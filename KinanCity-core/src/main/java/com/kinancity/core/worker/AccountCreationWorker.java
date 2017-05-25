@@ -25,6 +25,7 @@ import com.kinancity.core.proxy.ProxySlot;
 import com.kinancity.core.scheduling.AccountCreationQueue;
 import com.kinancity.core.status.ErrorCode;
 import com.kinancity.core.status.RunnerStatus;
+import com.kinancity.core.throttle.Bottleneck;
 import com.kinancity.core.worker.callbacks.CreationCallbacks;
 
 import lombok.Getter;
@@ -78,13 +79,20 @@ public class AccountCreationWorker implements Runnable {
 	@Setter
 	private int dumpResult = PtcSession.NEVER;
 
-	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks) {
+	// Wait at least this time before requesting a captcha
+	@Setter
+	private long minWaitBeforeCaptcha = 5000;
+	
+	private Bottleneck bottleneck;
+
+	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck bottleneck) {
 		this.status = RunnerStatus.IDLE;
 		this.accountCreationQueue = accountCreationQueue;
 		this.name = name;
 		this.callbacks = callbacks;
 		this.captchaQueue = captchaQueue;
 		this.proxyManager = proxyManager;
+		this.bottleneck = bottleneck;
 	}
 
 	public void run() {
@@ -120,15 +128,30 @@ public class AccountCreationWorker implements Runnable {
 
 						// 1. Check password and username before we start
 						if (ptc.isAccountValid(account)) {
+							
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
 							// 2. Start session
 							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
-
+							
+							try {
+								Thread.sleep(minWaitBeforeCaptcha);
+							} catch (InterruptedException e) {
+								// Interrupted
+							}
+							
 							// 3. Captcha
 							CaptchaRequest captchaRequest = new CaptchaRequest(account.getUsername());
 							captchaQueue.addRequest(captchaRequest);
 							String captcha = captchaRequest.getResponse();
 							logger.debug("Use Captcha : {}", captcha);
 
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
 							// 4. Account Creation
 							proxySlot.markUsed();
 							ptc.createAccount(account, crsfToken, captcha);

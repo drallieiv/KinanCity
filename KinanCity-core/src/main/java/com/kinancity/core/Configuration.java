@@ -31,6 +31,9 @@ import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
 import com.kinancity.core.proxy.policies.TimeLimitPolicy;
+import com.kinancity.core.throttle.Bottleneck;
+import com.kinancity.core.throttle.IpBottleneck;
+import com.kinancity.core.throttle.NoBottleneck;
 import com.kinancity.core.worker.callbacks.ResultLogger;
 
 import lombok.Data;
@@ -49,6 +52,12 @@ public class Configuration {
 	private int nbThreads = 3;
 	
 	private boolean forceMaxThread = false;
+	
+	private Bottleneck bottleneck;
+	
+	private int bottleneckRetention = 5;
+	
+	private boolean useIpBottleNeck = true;
 
 	private CaptchaQueue captchaQueue;
 
@@ -127,14 +136,26 @@ public class Configuration {
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
 			}
+						
+			// Add BottleNeck
+			if(!useIpBottleNeck){
+				bottleneck = new NoBottleneck();
+			}else{
+				bottleneck = new IpBottleneck(bottleneckRetention);
+								
+				Thread bottleNeckThread = new Thread();
+				bottleNeckThread.setName("OfficerJenny(BottleNeck)");
+				bottleNeckThread.start();
+			}
 			
 			// Add Proxy recycler and start thread
 			ProxyRecycler recycler = new ProxyRecycler(proxyManager);
+			recycler.setBottleneck(bottleneck);
 			Thread recyclerThread = new Thread(recycler);
 			recyclerThread.setName("NurseJoy(Recycler)");
 			recyclerThread.start();
 			proxyManager.setRecycler(recycler);
-
+			
 			if (resultLogger == null) {
 				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));
 			}
@@ -236,6 +257,7 @@ public class Configuration {
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", "600")));
+			this.setBottleneckRetention(Integer.parseInt(prop.getProperty("proxy.bottleneck", "5")));
 			
 			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
 			if(customPeriod != null && NumberUtils.isNumber(customPeriod)){

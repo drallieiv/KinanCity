@@ -226,4 +226,9 @@ public class HttpProxy implements HttpProxyProvider {
 		return toURI();
 	}
 
+	@Override
+	public String getHost() {
+		return host;
+	}
+
 }
