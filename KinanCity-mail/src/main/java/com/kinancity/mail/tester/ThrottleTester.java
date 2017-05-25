@@ -54,19 +54,17 @@ public class ThrottleTester {
 				if (checkOK()) {
 					chainSuccess++;
 					logger.debug("{} success in a row", chainSuccess);
-
 					if (chainSuccess >= rampCount) {
 						logger.info("All {} requests at {}s delay OK", rampCount, asString(delay));
 						delay = Math.round(delay * delayRamp);
 						chainSuccess = 0;
 						logValues();
 					}
-
 					pause(delay);
 				} else {
 					hasFailed = true;
-					logger.info("Failed after {} sucess at {}s delay", chainSuccess, asString(delay));
-					logger.info("Start checking for release every {}s", Math.abs(errorDelay / 100) / 100);
+					logger.info("Failed after {} success at {}s delay", chainSuccess, asString(delay));
+					logger.info("Start checking for release every {}s", asString(errorDelay));
 					pause(errorDelay);
 				}
 			}else{
@@ -74,6 +72,7 @@ public class ThrottleTester {
 					// Still blocked
 					chainError++;
 					logger.debug("{} softban in a row", chainError);
+					pause(errorDelay);
 				}else{
 					logger.info("softban released after {} calls with {}s delay", chainError, asString(errorDelay));
 					stop = true;
