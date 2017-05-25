@@ -1,9 +1,23 @@
 <configuration>
+
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 			<pattern>%d %-5level %logger{0}: %msg%n</pattern>
 		</encoder>
 	</appender>
+
+	<appender name="TESTER" class="ch.qos.logback.core.FileAppender">
+		<file>tester.log</file>
+		<append>true</append>
+		<immediateFlush>true</immediateFlush>
+		<encoder>
+			<pattern>%d %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="com.kinancity.mail.tester" level="DEBUG" additivity="true">
+		<appender-ref ref="TESTER" />
+	</logger>
 
 	<logger name="com.kinancity.mail" level="DEBUG" additivity="false">
 		<appender-ref ref="STDOUT" />
