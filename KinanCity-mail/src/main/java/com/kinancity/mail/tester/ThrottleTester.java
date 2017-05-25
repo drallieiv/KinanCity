@@ -3,6 +3,7 @@ package com.kinancity.mail.tester;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,13 +14,13 @@ import okhttp3.Response;
 
 public class ThrottleTester {
 
-	private static final String URL = "https://club.pokemon.com/us/pokemon-trainer-club/";
+	private static final String URL = "https://club.pokemon.com/us/pokemon-trainer-club/activated/";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	// Start at 20s delay between each request
+	// Start at 15s delay between each request
 	@Setter
-	private int delay = 20000;
+	private int delay = 15000;
 
 	private float delayRamp = .9f;
 
@@ -96,7 +97,7 @@ public class ThrottleTester {
 
 	private boolean checkOK() {
 		try {
-			Response response = client.newCall(request).execute();
+			Response response = newClient().newCall(request).execute();
 			return response.isSuccessful();
 		} catch (IOException e) {
 			logger.error("ERROR : {}", e.getMessage());
@@ -105,10 +106,18 @@ public class ThrottleTester {
 	}
 
 	private void setup() {
-		client = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES).readTimeout(1, TimeUnit.MINUTES).build();
-		request = new Request.Builder().url(URL).build();
+		client = newClient();
+		request = new Request.Builder().url(URL+randomHash()).build();
 	}
-
+	
+	private OkHttpClient newClient(){
+		return new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES).readTimeout(1, TimeUnit.MINUTES).build();
+	}
+	
+	private String randomHash(){
+		return RandomStringUtils.randomAlphanumeric(33);
+	}
+	
 	private void logValues() {
 		logger.info("Testing with delay {}s, and errorDelay {}s", asString(delay), asString(errorDelay));
 	}
