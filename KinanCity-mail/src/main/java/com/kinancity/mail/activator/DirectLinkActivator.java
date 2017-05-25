@@ -17,6 +17,7 @@ import okhttp3.Response;
  */
 public class DirectLinkActivator implements LinkActivator {
 
+	private Logger fileLogger = LoggerFactory.getLogger("LINKS");
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
@@ -51,6 +52,7 @@ public class DirectLinkActivator implements LinkActivator {
 			if(response.isSuccessful()){
 				if (strResponse.contains(SUCCESS_MSG)) {
 					logger.info("Activation success : Your account is now active");
+					fileLogger.info("{};OK",link);
 					return true;
 				}
 				
@@ -59,20 +61,24 @@ public class DirectLinkActivator implements LinkActivator {
 			}else{ 
 				if (strResponse.contains(ALREADY_DONE_MSG)) {
 					logger.info("Activation already done");
+					fileLogger.info("{};DONE",link);
 					return true;
 				}
 
 				if (strResponse.contains(INVALID_TOKEN_MSG)) {
 					logger.error("Invalid Activation token");
+					fileLogger.info("{};BAD",link);
 					return false;
 				}
 				
 				if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
 					logger.error("HTTP 503. Your validation request was throttled");
+					fileLogger.info("{};THROTTLED",link);
 					return false;
 				}
 				
 				logger.error("Unexpected Error : {}", strResponse);
+				fileLogger.info("{};ERROR",link);
 				return false;
 			}
 		} catch (IOException e) {

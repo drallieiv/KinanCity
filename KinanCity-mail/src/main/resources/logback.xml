@@ -14,7 +14,20 @@
 			<pattern>%d %msg%n</pattern>
 		</encoder>
 	</appender>
+	
+	<appender name="LINKS" class="ch.qos.logback.core.FileAppender">
+		<file>links.log</file>
+		<append>true</append>
+		<immediateFlush>true</immediateFlush>
+		<encoder>
+			<pattern>%msg%n</pattern>
+		</encoder>
+	</appender>
 
+	<logger name="LINKS" level="DEBUG" additivity="false">
+		<appender-ref ref="LINKS" />
+	</logger>
+	
 	<logger name="com.kinancity.mail.tester" level="DEBUG" additivity="true">
 		<appender-ref ref="TESTER" />
 	</logger>
