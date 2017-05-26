@@ -20,21 +20,25 @@ public class ThrottleTester {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	// Start at 15s delay between each request
+	// Start at 5s delay between each request
 	@Setter
-	private int delay = 15000;
+	private int delay = 5000;
 
 	private float delayRamp = .9f;
 
 	@Setter
-	private int rampCount = 12;
+	private int rampCount = 20;
 
 	@Setter
 	private int errorDelay = 1000;
 
-	private boolean stop = false;
+	@Setter
+	private int pauseAfterNRequests = 6;
 
-	private OkHttpClient client;
+	@Setter
+	private int delayAfterNRequests = 45000;
+
+	private boolean stop = false;
 
 	private Request request;
 
@@ -62,20 +66,26 @@ public class ThrottleTester {
 						chainSuccess = 0;
 						logValues();
 					}
-					pause(delay);
+
+					if (pauseAfterNRequests != 0 && chainSuccess % pauseAfterNRequests == 0) {
+						logger.info("Group of {} requests done, wait for {}s", pauseAfterNRequests, asString(delayAfterNRequests));
+						pause(delayAfterNRequests);
+					} else {
+						pause(delay);
+					}
 				} else {
 					hasFailed = true;
 					logger.info("Failed after {} success at {}s delay", chainSuccess, asString(delay));
 					logger.info("Start checking for release every {}s", asString(errorDelay));
 					pause(errorDelay);
 				}
-			}else{
+			} else {
 				if (!checkOK()) {
 					// Still blocked
 					chainError++;
 					logger.debug("{} softban in a row", chainError);
 					pause(errorDelay);
-				}else{
+				} else {
 					logger.info("softban released after {} calls with {}s delay", chainError, asString(errorDelay));
 					stop = true;
 				}
@@ -107,22 +117,21 @@ public class ThrottleTester {
 	}
 
 	private void setup() {
-		client = newClient();
 		request = new Request.Builder()
 				.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
-				.url(URL+randomHash())
+				.url(URL + randomHash())
 				.build();
 	}
-	
-	private OkHttpClient newClient(){
+
+	private OkHttpClient newClient() {
 		return new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES).readTimeout(1, TimeUnit.MINUTES).build();
 	}
-	
-	private String randomHash(){
+
+	private String randomHash() {
 		return RandomStringUtils.randomAlphanumeric(33);
 	}
-	
+
 	private void logValues() {
-		logger.info("Testing with delay {}s, and errorDelay {}s", asString(delay), asString(errorDelay));
+		logger.info("Testing {} requests with delay {}s, and errorDelay {}s and {}s pause every {} requests", this.rampCount, asString(delay), asString(errorDelay), asString(delayAfterNRequests), this.pauseAfterNRequests);
 	}
 }

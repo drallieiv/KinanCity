@@ -29,6 +29,14 @@ public class MailServerApplication {
 			if (args.length > 2) {
 				tester.setErrorDelay(Integer.parseInt(args[2]));
 			}
+			
+			if (args.length > 3) {
+				tester.setPauseAfterNRequests(Integer.parseInt(args[3]));
+			}
+			
+			if (args.length > 4) {
+				tester.setDelayAfterNRequests(Integer.parseInt(args[4]));
+			}
 
 			tester.start();
 		} else {
