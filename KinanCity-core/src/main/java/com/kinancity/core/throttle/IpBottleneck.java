@@ -19,7 +19,7 @@ public class IpBottleneck implements Runnable, Bottleneck {
 
 	// Dont call this IP if it was used in the last retentionTime seconds (default 15)
 	@Setter
-	private int retentionTime = 5;
+	private int retentionTime = 15;
 
 	private Map<String, IpWaitQueue> hostQueues = new HashMap<>();
 

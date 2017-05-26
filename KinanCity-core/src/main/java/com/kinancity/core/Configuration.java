@@ -141,11 +141,11 @@ public class Configuration {
 			if(!useIpBottleNeck){
 				bottleneck = new NoBottleneck();
 			}else{
-				bottleneck = new IpBottleneck(bottleneckRetention);
-								
-				Thread bottleNeckThread = new Thread();
+				IpBottleneck ipBottleneck = new IpBottleneck(bottleneckRetention);
+				Thread bottleNeckThread = new Thread(ipBottleneck);
 				bottleNeckThread.setName("OfficerJenny(BottleNeck)");
 				bottleNeckThread.start();
+				bottleneck = ipBottleneck;
 			}
 			
 			// Add Proxy recycler and start thread
