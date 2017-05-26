@@ -6,6 +6,7 @@ import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.api.ApiConstants;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.TwoCaptchaConfigurationException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
@@ -231,6 +232,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 				.build();
 
 		Request request = new Request.Builder()
+				.header(ApiConstants.HEADER_USER_AGENT, ApiConstants.CHROME_USER_AGENT)
 				.url(url)
 				.build();
 		return request;
@@ -250,6 +252,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 				.build();
 
 		Request request = new Request.Builder()
+				.header(ApiConstants.HEADER_USER_AGENT, ApiConstants.CHROME_USER_AGENT)
 				.url(url)
 				.build();
 		return request;
@@ -268,6 +271,7 @@ public class TwoCaptchaService implements CaptchaProvider {
 				.build();
 
 		Request request = new Request.Builder()
+				.header(ApiConstants.HEADER_USER_AGENT, ApiConstants.CHROME_USER_AGENT)
 				.url(url)
 				.build();
 		return request;

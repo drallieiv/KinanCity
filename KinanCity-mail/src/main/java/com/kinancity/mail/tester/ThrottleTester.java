@@ -7,6 +7,8 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.mail.MailConstants;
+
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -106,7 +108,10 @@ public class ThrottleTester {
 
 	private void setup() {
 		client = newClient();
-		request = new Request.Builder().url(URL+randomHash()).build();
+		request = new Request.Builder()
+				.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
+				.url(URL+randomHash())
+				.build();
 	}
 	
 	private OkHttpClient newClient(){

@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.mail.MailConstants;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -44,7 +46,10 @@ public class DirectLinkActivator implements LinkActivator {
 	 */
 	public boolean activateLink(String link) {
 		try {
-			Request request = new Request.Builder().url(link).build();
+			Request request = new Request.Builder()
+					.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
+					.url(link)
+					.build();
 			Response response = client.newCall(request).execute();
 
 			String strResponse = response.body().string();

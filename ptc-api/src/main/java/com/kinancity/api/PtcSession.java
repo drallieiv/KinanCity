@@ -398,6 +398,7 @@ public class PtcSession {
 
 		Request request = new Request.Builder()
 				.url(url_verify_api)
+				.headers(getHeaders())
 				.method("POST", body)
 				.build();
 		return request;
@@ -405,7 +406,10 @@ public class PtcSession {
 
 	// Http Request for account creation start page with age check
 	private Request buildAgeCheckRequest() {
-		return new Request.Builder().url(url_ptc + pathAgeCheck).headers(getHeaders()).build();
+		return new Request.Builder()
+				.url(url_ptc + pathAgeCheck)
+				.headers(getHeaders())
+				.build();
 	}
 
 	// Http Request for age check submit
@@ -454,7 +458,7 @@ public class PtcSession {
 	}
 
 	// Add all HTTP headers
-	private Headers getHeaders() {
+	public static Headers getHeaders() {
 
 		Map<String, String> headersMap = new HashMap<>();
 		// Base browser User Agent
