@@ -143,7 +143,7 @@ public class Configuration {
 			}else{
 				bottleneck = new IpBottleneck(bottleneckRetention);
 								
-				Thread bottleNeckThread = new Thread();
+				Thread bottleNeckThread = new Thread(bottleneck);
 				bottleNeckThread.setName("OfficerJenny(BottleNeck)");
 				bottleNeckThread.start();
 			}
