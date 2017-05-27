@@ -11,9 +11,9 @@ public class MailServerApplication {
 
 	public static void main(String[] args) {
 
-		String mode = "MAIL";
+		String mode = "mail";
 
-		if (args.length >= 0) {
+		if (args.length > 0) {
 			mode = args[0].toLowerCase();
 		}
 
