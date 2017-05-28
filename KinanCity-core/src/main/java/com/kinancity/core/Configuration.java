@@ -26,14 +26,14 @@ import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.proxy.ProxyRecycler;
 import com.kinancity.core.proxy.ProxyTester;
+import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
+import com.kinancity.core.proxy.bottleneck.ProxySpacedBottleneck;
 import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
 import com.kinancity.core.proxy.policies.TimeLimitPolicy;
 import com.kinancity.core.throttle.Bottleneck;
-import com.kinancity.core.throttle.IpBottleneck;
-import com.kinancity.core.throttle.NoBottleneck;
 import com.kinancity.core.worker.callbacks.ResultLogger;
 
 import lombok.Data;
@@ -53,7 +53,7 @@ public class Configuration {
 	
 	private boolean forceMaxThread = false;
 	
-	private Bottleneck bottleneck;
+	private Bottleneck<ProxyInfo> bottleneck;
 	
 	private int bottleneckRetention = 5;
 	
@@ -139,9 +139,9 @@ public class Configuration {
 						
 			// Add BottleNeck
 			if(!useIpBottleNeck){
-				bottleneck = new NoBottleneck();
+				bottleneck = new ProxyNoBottleneck();
 			}else{
-				IpBottleneck ipBottleneck = new IpBottleneck(bottleneckRetention);
+				ProxySpacedBottleneck ipBottleneck = new ProxySpacedBottleneck(bottleneckRetention);
 				Thread bottleNeckThread = new Thread(ipBottleneck);
 				bottleNeckThread.setName("OfficerJenny(BottleNeck)");
 				bottleNeckThread.start();

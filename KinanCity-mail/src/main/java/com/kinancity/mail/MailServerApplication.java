@@ -51,7 +51,7 @@ public class MailServerApplication {
 			wiser.setPort(25);
 			wiser.setHostname("localhost");
 
-			wiser.getServer().setMessageHandlerFactory(new KcMessageHandlerFactory(activator));
+			wiser.getServer().setMessageHandlerFactory(new KcMessageHandlerFactory(activator));			
 			wiser.start();
 		}
 	}

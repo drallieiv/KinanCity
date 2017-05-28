@@ -20,6 +20,7 @@
 		<module>KinanCity-mail</module>
 		<module>KinanCity-server</module>
 		<module>ptc-api</module>
+		<module>KinanCity-utils</module>
 	</modules>
 
 	<dependencies>

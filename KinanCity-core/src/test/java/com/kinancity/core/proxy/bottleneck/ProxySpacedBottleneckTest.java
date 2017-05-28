@@ -1,4 +1,4 @@
-package com.kinancity.core.throttle;
+package com.kinancity.core.proxy.bottleneck;
 
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -9,14 +9,14 @@ import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
 
-public class IpBottleneckTest {
+public class ProxySpacedBottleneckTest {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Test
 	public void singleProxyTest() {
 
-		IpBottleneck bottleneck = new IpBottleneck();
+		ProxySpacedBottleneck bottleneck = new ProxySpacedBottleneck();
 		
 		Thread bottleNeckThread = new Thread(bottleneck);
 		bottleNeckThread.start();
@@ -37,7 +37,7 @@ public class IpBottleneckTest {
 	@Test
 	public void parallelUsesTest() {
 
-		IpBottleneck bottleneck = new IpBottleneck();
+		ProxySpacedBottleneck bottleneck = new ProxySpacedBottleneck();
 		
 		Thread bottleNeckThread = new Thread(bottleneck);
 		bottleNeckThread.start();
