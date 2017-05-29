@@ -68,7 +68,7 @@ public class PtcSession {
 
 	// Should the age form be really sent ?
 	@Setter
-	private boolean sendAgeCheck = false;
+	private boolean sendAgeCheck = true;
 
 	// Dump Result
 	public static final int NEVER = 0;
