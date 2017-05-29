@@ -26,7 +26,7 @@ public class BottleneckCooldown<R> extends BottleneckWithQueues<R, WaitQueueCool
 	private int maxRequests = 6;
 
 	@Setter
-	private int pauseAfterMax = 60; // seconds
+	private int pauseAfterMax = 65; // seconds
 
 	private long runLoopPause = 500;
 
@@ -44,6 +44,7 @@ public class BottleneckCooldown<R> extends BottleneckWithQueues<R, WaitQueueCool
 	 */
 	@Override
 	public void run() {
+		logger.info("Starting Bottleneck with a cooldown of {}s every {} resources access", pauseAfterMax, maxRequests);
 		while (true) {
 
 			for (Entry<R, WaitQueueCooldown<R>> entry : ressourceQueueMap.entrySet()) {
@@ -55,17 +56,17 @@ public class BottleneckCooldown<R> extends BottleneckWithQueues<R, WaitQueueCool
 					waitingQueue.countOne();
 				}
 
-				if (!waitingQueue.getQueue().isEmpty()  && waitingQueue.getCount() >= maxRequests) {
-					if(waitingQueue.getBurnOutReached() == null){
+				if (!waitingQueue.getQueue().isEmpty() && waitingQueue.getCount() >= maxRequests) {
+					if (waitingQueue.getBurnOutReached() == null) {
 						logger.debug("Burn waitingQueue for {} for {}s", entry.getKey(), pauseAfterMax);
 						waitingQueue.setBurnOutReached(LocalDateTime.now());
-					}else{
+					} else {
 						LocalDateTime releaseTime = waitingQueue.getBurnOutReached().plusSeconds(pauseAfterMax);
-						if(LocalDateTime.now().isAfter(releaseTime)){
+						if (LocalDateTime.now().isAfter(releaseTime)) {
 							logger.debug("Reset waitingQueue for {}", entry.getKey());
 							waitingQueue.setCount(0);
 							waitingQueue.setBurnOutReached(null);
-						}else{
+						} else {
 							logger.debug("WaitingQueue for {} is on cooldown", entry.getKey());
 						}
 					}
@@ -83,6 +84,14 @@ public class BottleneckCooldown<R> extends BottleneckWithQueues<R, WaitQueueCool
 	@Override
 	WaitQueueCooldown<R> newWaitQueue() {
 		return new WaitQueueCooldown<R>();
+	}
+
+	@Override
+	public void onServerError(R resource) {
+		WaitQueueCooldown<R> ressource = ressourceQueueMap.get(resource);
+		if (ressource != null) {
+			ressource.setBurnOutReached(LocalDateTime.now());
+		}
 	}
 
 }

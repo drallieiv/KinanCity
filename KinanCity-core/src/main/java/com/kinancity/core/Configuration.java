@@ -55,7 +55,7 @@ public class Configuration {
 	
 	private Bottleneck<ProxyInfo> bottleneck;
 	
-	private int bottleneckRetention = 5;
+	private int bottleneckRetention = 15;
 	
 	private boolean useIpBottleNeck = true;
 
@@ -256,8 +256,8 @@ public class Configuration {
 			// Load Config
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
-			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", "600")));
-			this.setBottleneckRetention(Integer.parseInt(prop.getProperty("proxy.bottleneck", "5")));
+			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
+			this.setBottleneckRetention(Integer.parseInt(prop.getProperty("proxy.bottleneck", String.valueOf(bottleneckRetention))));
 			
 			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
 			if(customPeriod != null && NumberUtils.isNumber(customPeriod)){

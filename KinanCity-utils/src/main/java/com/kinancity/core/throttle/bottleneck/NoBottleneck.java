@@ -16,4 +16,9 @@ public class NoBottleneck<T> implements Bottleneck<T> {
 		callback.onBottleneckPass();
 	}
 
+	@Override
+	public void onServerError(T resource) {
+		// DO nothing
+	}
+
 }

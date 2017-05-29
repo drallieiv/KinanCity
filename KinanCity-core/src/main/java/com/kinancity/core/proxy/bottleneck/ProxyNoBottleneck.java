@@ -23,4 +23,8 @@ public class ProxyNoBottleneck implements Bottleneck<ProxyInfo> {
 		hostBottleNeck.asyncUseOf(proxy.getProvider().getHost(), callback);
 	}
 
+	@Override
+	public void onServerError(ProxyInfo proxy) {
+		hostBottleNeck.onServerError(proxy.getProvider().getHost());
+	}
 }

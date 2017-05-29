@@ -41,7 +41,7 @@ public abstract class BottleneckWithQueues<R, Q extends WaitQueue<R>> implements
 
 	// Add in queue a new ticket for that resource
 	@SuppressWarnings("unchecked")
-	public void addNewTicket(WaitTicket<R> ticket) {
+	public synchronized void addNewTicket(WaitTicket<R> ticket) {
 
 		R resource = ticket.getRessource();
 		Q queue = ressourceQueueMap.get(resource);

@@ -66,6 +66,10 @@ public class PtcSession {
 	@Setter
 	private boolean dryRun;
 
+	// Should the age form be really sent ?
+	@Setter
+	private boolean sendAgeCheck = false;
+
 	// Dump Result
 	public static final int NEVER = 0;
 	public static final int ON_FAILURE = 1;
@@ -137,6 +141,7 @@ public class PtcSession {
 		Request request = buildUsernameCheckApiRequest(username);
 
 		// Send a request to the Nintendo REST API
+		logger.debug("Execute Request [AccountValid] on proxy {}", client.proxy());
 		try (Response response = client.newCall(request).execute()) {
 			if (response.isSuccessful()) {
 
@@ -184,6 +189,7 @@ public class PtcSession {
 		}
 
 		// Send HTTP Request
+		logger.debug("Execute Request [AgeCheck] on proxy {}", client.proxy());
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 
 			if (response.isSuccessful()) {
@@ -205,7 +211,10 @@ public class PtcSession {
 					throw new TechnicalException("Age verification call failed");
 				} else {
 					String crsfToken = tokenField.get(0).val();
-					sendAgeCheck(account, crsfToken);
+					if (sendAgeCheck) {
+						sendAgeCheck(account, crsfToken);
+					}
+
 					return crsfToken;
 				}
 			} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
@@ -238,6 +247,7 @@ public class PtcSession {
 			// Send Request
 			logger.debug("Sending age check request");
 
+			logger.debug("Execute Request [sendAgeCheck] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
 				// Parse Response
 				if (response.isSuccessful()) {
@@ -270,7 +280,7 @@ public class PtcSession {
 			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
 
 			// Send Request
-			logger.debug("Sending creation request");
+			logger.debug("Execute Request [createAccount] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
 
 				if (response.isSuccessful()) {

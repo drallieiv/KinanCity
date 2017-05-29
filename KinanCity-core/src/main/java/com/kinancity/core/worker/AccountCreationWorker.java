@@ -83,7 +83,7 @@ public class AccountCreationWorker implements Runnable {
 	@Setter
 	private long minWaitBeforeCaptcha = 5000;
 	
-	private Bottleneck bottleneck;
+	private Bottleneck<ProxyInfo> bottleneck;
 
 	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck bottleneck) {
 		this.status = RunnerStatus.IDLE;
@@ -165,6 +165,12 @@ public class AccountCreationWorker implements Runnable {
 						}
 					} catch (IpSoftBanException e){
 						logger.warn("PTC softban, put that IP on hold.");
+						
+						if(bottleneck != null){
+							// Send error to the bottleneck too
+							bottleneck.onServerError(proxy);
+						}
+						
 						proxyManager.benchProxy(proxy);
 						
 						callbacks.onTechnicalIssue(currentCreation);

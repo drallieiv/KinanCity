@@ -38,4 +38,9 @@ public class ProxySpacedBottleneck implements Runnable, Bottleneck<ProxyInfo> {
 		hostBottleNeck.run();		
 	}
 
+	@Override
+	public void onServerError(ProxyInfo proxy) {
+		hostBottleNeck.onServerError(proxy.getProvider().getHost());
+	}
+
 }

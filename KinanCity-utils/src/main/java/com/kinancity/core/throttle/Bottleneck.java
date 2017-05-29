@@ -7,4 +7,7 @@ public interface Bottleneck<T> {
 
 	// Non blocking call, but the callback will be called once the resource is usable
 	void asyncUseOf(T resource, BottleneckCallback callback);
+	
+	// Called when a 503 occurs
+	void onServerError(T resource);
 }
