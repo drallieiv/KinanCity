@@ -55,7 +55,7 @@ public class SequenceAccountGenerator implements AccountGenerator {
 		emailGenerator = new PlusTrickEmailGenerator(baseEmail);
 
 		SequenceUsernameGenerator seqUsernameGenerator = new SequenceUsernameGenerator(usernamePattern, startFrom);
-		if (startFrom + nbAccounts > seqUsernameGenerator.getMaxSequence()) {
+		if (startFrom + nbAccounts > seqUsernameGenerator.getSequenceCount()) {
 			throw new IllegalArgumentException("Sequence would overflow format, use more *");
 		}
 		usernameGenerator = seqUsernameGenerator;
