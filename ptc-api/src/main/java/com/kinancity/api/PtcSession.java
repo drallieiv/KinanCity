@@ -425,8 +425,8 @@ public class PtcSession {
 	// Http Request for age check submit
 	private Request buildAgeCheckSubmitRequest(AccountData account, String csrfToken) throws UnsupportedEncodingException {
 		RequestBody body = new FormBody.Builder()
-				.add("dob", "1985-01-16")
-				.add("country", "US")
+				.add("dob", account.getDob())
+				.add("country", account.getCountry())
 				.add("csrfmiddlewaretoken", csrfToken)
 				.build();
 
