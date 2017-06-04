@@ -85,7 +85,7 @@ public class AccountCreationWorker implements Runnable {
 	
 	private Bottleneck<ProxyInfo> bottleneck;
 
-	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck bottleneck) {
+	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck<ProxyInfo> bottleneck) {
 		this.status = RunnerStatus.IDLE;
 		this.accountCreationQueue = accountCreationQueue;
 		this.name = name;
