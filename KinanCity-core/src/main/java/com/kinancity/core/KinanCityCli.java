@@ -13,6 +13,7 @@ import com.kinancity.api.model.AccountData;
 import com.kinancity.core.generator.account.CsvReaderAccountGenerator;
 import com.kinancity.core.generator.account.SequenceAccountGenerator;
 import com.kinancity.core.generator.account.SingleAccountGenerator;
+import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
 import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
 
 public class KinanCityCli {
@@ -95,6 +96,7 @@ public class KinanCityCli {
 		// -nl/-noLimit : Use Unlimited Policy
 		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
 			config.setProxyPolicy(new UnlimitedUsePolicy());
+			config.setBottleneck(new ProxyNoBottleneck());
 		}
 
 		// -t/-thread : Customize number of thread for parallel processing

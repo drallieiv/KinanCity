@@ -138,14 +138,16 @@ public class Configuration {
 			}
 						
 			// Add BottleNeck
-			if(!useIpBottleNeck){
-				bottleneck = new ProxyNoBottleneck();
-			}else{
-				ProxySpacedBottleneck ipBottleneck = new ProxySpacedBottleneck(bottleneckRetention);
-				Thread bottleNeckThread = new Thread(ipBottleneck);
-				bottleNeckThread.setName("OfficerJenny(BottleNeck)");
-				bottleNeckThread.start();
-				bottleneck = ipBottleneck;
+			if(bottleneck == null) {
+				if(!useIpBottleNeck){
+					bottleneck = new ProxyNoBottleneck();
+				}else{
+					ProxySpacedBottleneck ipBottleneck = new ProxySpacedBottleneck(bottleneckRetention);
+					Thread bottleNeckThread = new Thread(ipBottleneck);
+					bottleNeckThread.setName("OfficerJenny(BottleNeck)");
+					bottleNeckThread.start();
+					bottleneck = ipBottleneck;
+				}
 			}
 			
 			// Add Proxy recycler and start thread
