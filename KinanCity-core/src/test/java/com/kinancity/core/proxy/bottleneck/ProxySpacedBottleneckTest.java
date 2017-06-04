@@ -1,5 +1,6 @@
 package com.kinancity.core.proxy.bottleneck;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ public class ProxySpacedBottleneckTest {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
+	@Ignore
 	@Test
 	public void singleProxyTest() {
 
@@ -34,6 +36,7 @@ public class ProxySpacedBottleneckTest {
 		logger.info("Third Use of proxy 1");
 	}
 
+	@Ignore
 	@Test
 	public void parallelUsesTest() {
 
