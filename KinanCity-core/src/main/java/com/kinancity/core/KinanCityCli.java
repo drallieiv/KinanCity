@@ -78,6 +78,12 @@ public class KinanCityCli {
 			config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
 		}
 
+		// -nl/-noLimit : Use Unlimited Policy
+		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
+			config.setProxyPolicy(new UnlimitedUsePolicy());
+			config.setBottleneck(new ProxyNoBottleneck());
+		}
+		
 		// -px/-proxies : list of proxy to use
 		if (cmd.hasOption(CliOptions.PROXIES.shortName)) {
 			config.loadProxies(cmd.getOptionValue(CliOptions.PROXIES.shortName));
@@ -91,12 +97,6 @@ public class KinanCityCli {
 		// -npc/-noProxyCheck : Skip proxy check at startup
 		if (cmd.hasOption(CliOptions.NO_PROXY_CHECK.shortName)) {
 			config.setSkipProxyTest(true);
-		}
-
-		// -nl/-noLimit : Use Unlimited Policy
-		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
-			config.setProxyPolicy(new UnlimitedUsePolicy());
-			config.setBottleneck(new ProxyNoBottleneck());
 		}
 
 		// -t/-thread : Customize number of thread for parallel processing

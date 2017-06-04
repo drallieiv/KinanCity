@@ -45,7 +45,7 @@ public class ProxyRecycler implements Runnable {
 	private ProxyTester tester;
 	
 	@Setter
-	private Bottleneck bottleneck;
+	private Bottleneck<ProxyInfo> bottleneck;
 
 	public ProxyRecycler(ProxyManager proxyManager) {
 		this.proxyManager = proxyManager;

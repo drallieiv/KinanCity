@@ -292,7 +292,12 @@ public class Configuration {
 				}
 			}
 
-			logger.info("ProxyManager setup with {} proxies", proxyManager.getProxies().size());
+			logger.info("ProxyManager setup with {} proxies : ", proxyManager.getProxies().size());
+			
+			for (ProxyInfo proxy : proxyManager.getProxies()) {
+				logger.info(" - {}", proxy.toString());
+			}
+			
 		}
 
 	}
