@@ -2,8 +2,11 @@ package com.kinancity.api.model;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
 
+import org.apache.commons.lang.math.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +36,9 @@ public class AccountData implements Cloneable {
 	// String Date of birth as YYYY-MM-DD
 	private String dob;
 
-	private String country = "US";
+	private String country;
+
+	public static final String DEFAULT_COUNTRY = "US";
 
 	private SimpleDateFormat dobFormat = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -49,8 +54,8 @@ public class AccountData implements Cloneable {
 		this.username = username;
 		this.email = email;
 		this.password = password;
-		setDob(dob != null ? dob : chooseRandomDateOfBirth());
-		this.country = country;
+		this.dob = (dob != null) ? dob : randomAdultDateOfBirth();
+		this.country = (country != null) ? country : DEFAULT_COUNTRY;
 	}
 
 	public void setDob(String dob) {
@@ -82,29 +87,14 @@ public class AccountData implements Cloneable {
 		return "AccountData [" + (username != null ? "username=" + username + ", " : "") + (email != null ? "email=" + email + ", " : "") + (password != null ? "password=" + password + ", " : "") + (dob != null ? "dob=" + dob + ", " : "") + (country != null ? "country=" + country : "") + "]";
 	}
 
-	private String chooseRandomDateOfBirth() {
-		Random generator = new Random();
-		// year: 1970 to 2000
-		int y = generator.nextInt(30) + 1970;
-		// month: 1 to 12
-		int m = generator.nextInt(12) + 1;
-		// day: depending on month
-		int maxDays;
-		switch (m) {
-			case 2:
-				maxDays = 28;
-				break;
-			case 4:
-			case 6:
-			case 9:
-			case 11:
-				maxDays = 30;
-				break;
-			default:
-				maxDays = 31;
-		}
-		int d = generator.nextInt(maxDays) + 1;
-		return String.format("%04d-%02d-%02d", y, m, d);
+	public static String randomAdultDateOfBirth() {
+		return randomDateOfBirth(18, 80);
+	}
+
+	public static String randomDateOfBirth(int minAge, int maxAge) {
+		int randomDays = RandomUtils.nextInt(maxAge * 365);
+		LocalDateTime dobDate = LocalDateTime.now().minusYears(minAge).minusDays(randomDays);
+		return dobDate.format(DateTimeFormatter.ISO_DATE);
 	}
 
 }
