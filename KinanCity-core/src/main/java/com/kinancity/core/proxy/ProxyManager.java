@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
+
 /**
  * Manager that holds a set of proxies
  * 
