@@ -60,7 +60,7 @@ public class SequenceUsernameGenerator implements UsernameGenerator {
 	 * @return
 	 */
 	public double getMaxSequence() {
-		return Math.pow(10, sequencePadWidth) - 1;
+		return Math.pow(10, sequencePadWidth);
 	}
 
 	@Override
