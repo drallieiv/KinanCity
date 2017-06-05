@@ -9,7 +9,7 @@ import lombok.Getter;
 /**
  * Ideal unlimited use policy.
  * 
- * Only gets blocked if marked over limit Can be released with reset
+ * Never gets blocked. Always available.
  * 
  * @author drallieiv
  *
@@ -17,26 +17,16 @@ import lombok.Getter;
 @Getter
 public class UnlimitedUsePolicy implements ProxyPolicy {
 
-	private boolean overLimit = false;
-
-	public void reset() {
-		overLimit = false;
-	}
-
-	@Override
-	public void markOverLimit() {
-		overLimit = true;
-	}
-
 	@Override
 	public boolean isAvailable() {
-		return !overLimit;
+		return true;
 	}
-
-	public String toString() {
-		return "unlimited";
+    
+	@Override
+	public void markOverLimit() {
+        	return;
 	}
-
+    
 	@Override
 	public UnlimitedUsePolicy clone() {
 		return new UnlimitedUsePolicy();
@@ -44,10 +34,11 @@ public class UnlimitedUsePolicy implements ProxyPolicy {
 
 	@Override
 	public Optional<ProxySlot> getFreeSlot() {
-		if (overLimit) {
-			return Optional.empty();
-		}
 		return Optional.of(new ProxySlot());
 	}
-
+	
+	public String toString() {
+		return "unlimited";
+	}
+	
 }
