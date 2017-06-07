@@ -4,6 +4,7 @@ import org.subethamail.wiser.Wiser;
 
 import com.kinancity.mail.activator.DirectLinkActivator;
 import com.kinancity.mail.activator.LinkActivator;
+import com.kinancity.mail.activator.QueueLinkActivator;
 import com.kinancity.mail.activator.ToFileLinkActivator;
 import com.kinancity.mail.tester.ThrottleTester;
 
@@ -29,21 +30,23 @@ public class MailServerApplication {
 			if (args.length > 2) {
 				tester.setErrorDelay(Integer.parseInt(args[2]));
 			}
-			
+
 			if (args.length > 3) {
 				tester.setPauseAfterNRequests(Integer.parseInt(args[3]));
 			}
-			
+
 			if (args.length > 4) {
 				tester.setDelayAfterNRequests(Integer.parseInt(args[4]));
 			}
 
 			tester.start();
 		} else {
-			LinkActivator activator = new DirectLinkActivator();
+			LinkActivator activator = new QueueLinkActivator();
 			if (mode.equals("log")) {
 				System.out.println("Started in Log Mode");
 				activator = new ToFileLinkActivator();
+			} else {
+				System.out.println("Started in Direct Mode");
 			}
 
 			// Start Wiser server
@@ -51,7 +54,7 @@ public class MailServerApplication {
 			wiser.setPort(25);
 			wiser.setHostname("localhost");
 
-			wiser.getServer().setMessageHandlerFactory(new KcMessageHandlerFactory(activator));			
+			wiser.getServer().setMessageHandlerFactory(new KcMessageHandlerFactory(activator));
 			wiser.start();
 		}
 	}
