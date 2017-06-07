@@ -42,6 +42,8 @@ public class SkippedFileProcessor {
 					if (processStatus.contains(parts[1])) {
 						activator.activateLink(parts[0]);
 					}
+				}else{
+					activator.activateLink(line);
 				}
 			}
 
