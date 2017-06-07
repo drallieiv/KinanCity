@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kinancity.mail.MailConstants;
 
+import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -33,6 +34,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	private ArrayDeque<String> linkQueue;
 
+	@Setter
 	private boolean stop = false;
 
 	public QueueLinkActivator() {
@@ -60,7 +62,6 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 			boolean isFinal = false;
 			boolean success = true;
-			int countTry = 0;
 
 			while (!isFinal) {
 				Response response = client.newCall(request).execute();
@@ -73,24 +74,24 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 					if (strResponse.contains(SUCCESS_MSG)) {
 						logger.info("Activation success : Your account is now active");
 						fileLogger.info("{};OK", link);
-					} else {
-						logger.warn("OK response but missing confirmation.");
-						countTry++;
-					}
-				} else {
-					if (strResponse.contains(ALREADY_DONE_MSG)) {
+					} else if (strResponse.contains(ALREADY_DONE_MSG)) {
 						logger.info("Activation success : Activation already done");
 						fileLogger.info("{};OK", link);
 					} else if (strResponse.contains(INVALID_TOKEN_MSG)) {
 						logger.error("Invalid Activation token");
 						fileLogger.info("{};BAD", link);
 						success = false;
-					} else if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
+					} else {
+						logger.warn("OK response but missing confirmation.");
+						logger.debug("Body : \n {}", strResponse);
+					}
+				} else {
+					if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
 						logger.warn("HTTP 503. Your validation request was throttled, wait 60s");
 						isFinal = false;
 						throttlePause();
 					} else {
-						logger.error("Unexpected Error : {}", strResponse);
+						logger.error("Unexpected Error {} : {}", response.code(), strResponse);
 						fileLogger.info("{};ERROR", link);
 						success = false;
 					}
@@ -123,7 +124,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	@Override
 	public void run() {
-		while (!stop) {
+		while (!stop || !linkQueue.isEmpty()) {
 			if (linkQueue.isEmpty()) {
 				try {
 					Thread.sleep(1000);

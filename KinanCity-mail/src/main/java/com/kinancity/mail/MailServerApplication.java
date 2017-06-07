@@ -2,7 +2,6 @@ package com.kinancity.mail;
 
 import org.subethamail.wiser.Wiser;
 
-import com.kinancity.mail.activator.DirectLinkActivator;
 import com.kinancity.mail.activator.LinkActivator;
 import com.kinancity.mail.activator.QueueLinkActivator;
 import com.kinancity.mail.activator.ToFileLinkActivator;
@@ -12,7 +11,7 @@ public class MailServerApplication {
 
 	public static void main(String[] args) {
 
-		String mode = "mail";
+		String mode = "direct";
 
 		if (args.length > 0) {
 			mode = args[0].toLowerCase();
@@ -40,6 +39,18 @@ public class MailServerApplication {
 			}
 
 			tester.start();
+		} else if (mode.equals("file")) {
+
+			String filePath = "links.log";
+			if (args.length > 1) {
+				filePath = args[1];
+			}
+
+			LinkActivator activator = new QueueLinkActivator();
+			
+			System.out.println("Started in file Mode");
+			new SkippedFileProcessor(activator, filePath).process();
+
 		} else {
 			LinkActivator activator = new QueueLinkActivator();
 			if (mode.equals("log")) {
