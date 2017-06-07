@@ -92,6 +92,8 @@ public class KcMessageHandler implements MessageHandler {
 			} catch (MessagingException e) {
 				logger.error("Failed parsing Mime Message");
 			}
+		} else {
+			throw new RejectException(200, "Kinan : Email rejected");
 		}
 
 	}
