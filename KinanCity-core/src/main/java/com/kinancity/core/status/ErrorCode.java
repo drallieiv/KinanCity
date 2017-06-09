@@ -28,7 +28,7 @@ public enum ErrorCode {
 	/**
 	 * Technical Error
 	 */
-	NETWORK_ERROR("NATWORK_ERROR", "Network Error"),
+	NETWORK_ERROR("NETWORK_ERROR", "Network Error"),
 	
 	/**
 	 * Technical Error
