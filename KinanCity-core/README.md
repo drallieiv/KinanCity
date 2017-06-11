@@ -19,10 +19,9 @@ For all these examples, the usernames and password must follow theses rules :
 - password : with lower and uppercase letters, numbers and at least a symbol
 
 There are several modes you can be using : 
-- Create a sequence of accounts
-- Create a batch from a csv
-- Create a single account
-
+- [Create a sequence of accounts](#create-a-sequence-of-accounts)
+- [Create a batch from a csv](#create-a-batch-from-a-csv)
+- [Create a single account](#Create-a-single-account)
 
 ## Create a sequence of accounts
 
