@@ -127,7 +127,7 @@ public class AccountCreationWorker implements Runnable {
 						ptc.setDumpResult(dumpResult);
 
 						// 1. Check password and username before we start
-						if (ptc.isAccountValid(account)) {
+						if (ptc.isAccountValid(account) && ptc.isAccountValidWebservice(account)) {
 							
 							if(bottleneck != null){
 								bottleneck.syncUseOf(proxy);
