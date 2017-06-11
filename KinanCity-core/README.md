@@ -18,8 +18,13 @@ For all these examples, the usernames and password must follow theses rules :
 - username : between 6 and 16 characters with no spaces
 - password : with lower and uppercase letters, numbers and at least a symbol
 
+There are several modes you can be using : 
+- Create a sequence of accounts
+- Create a batch from a csv
+- Create a single account
 
-**Create a sequence of accounts :**
+
+## Create a sequence of accounts
 
 `-m <email@domain.com> -f <aa***bb> -p <Passw0rd!> -c 20`  
 
@@ -27,13 +32,13 @@ will create 20 accounts using the pattern given replacing the stars by a increme
 
 `-s 123` or `-startnum 123` will make the sequence start at 123 instead of 0.
 
-**Create a batch from a csv file with a list of accounts :**
+## Create a batch from a csv file with a list of accounts
 
 `-a pathTo/accounts.csv`
 
 will create 1 account per line the the csv file.
 
-***CSV Format***
+### CSV Format
 
 Countries and birthdates can be customised when using a CSV file, as long as you include the correct header columns. Columns can be any order, but the header row must be the first line and start with `#`.
 
@@ -47,13 +52,13 @@ jill141237;fhJ3%hfsd;jill141237@example.com;1987-10-03;GB
 ```
 
 
-**Create a single account :**
+## Create a single account
 
 `-u <username> -m <email@domain.com> -p <password>`
 
 will create 1 account with given parameters.
 
-**Additional parameters :**
+# Additional parameters :
 
 * `-ck <captchaKey>` or `-captchaKey <captchaKey>` to give a specific apiKey add
 * `-px [proxy1,proxy2,...]` or `-proxies [proxy1,proxy2,...]` to use multiple proxies.  
