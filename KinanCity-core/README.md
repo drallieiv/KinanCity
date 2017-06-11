@@ -2,7 +2,7 @@
 
 # TABLE OF CONTENTS
 
-- [Main usage and tips](Main-usage-and-tips)
+- [Main usage and tips](#main-usage-and-tips)
 - Configuration examples
   - [Create a sequence of accounts](#create-a-sequence-of-accounts)
   - [Create a batch from a csv](#create-a-batch-from-a-csv)
