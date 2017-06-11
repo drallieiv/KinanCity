@@ -18,7 +18,7 @@ KinanCity-core main class accepts configuration from :
 **Note :**  A usage help is shown if called without any parameters or an invalid set of parameters.
 
 **About Captchas**  
-KinanCity needs to solve captchas. It currently uses [2captcha](https://2captcha.com) which requires an **apiKey** that must be given each time or saved in the config file.
+KinanCity needs to solve captchas. It currently uses 2captcha which requires an **apiKey** that must be given each time or saved in the config file. If you want to help, please use our referral link : http://2captcha.com/?from=2219901
 
 **Running in command line**  
 The examples below only give the arguments that will follow the launch command : `java -jar KinanCity-core-<version>.jar` or `start.sh` for unix and `start.bat` for windows
