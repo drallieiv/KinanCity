@@ -1,6 +1,6 @@
 # KinanCity-core : CLI account creator
 
-# TABLE OF CONTENTS
+** TABLE OF CONTENTS **
 
 - [Main usage and tips](#main-usage-and-tips)
 - Configuration examples
