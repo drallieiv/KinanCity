@@ -1,5 +1,16 @@
 # KinanCity-core : CLI account creator
 
+# TABLE OF CONTENTS
+
+- [Main usage and tips](Main-usage-and-tips)
+- Configuration examples
+  - [Create a sequence of accounts](#create-a-sequence-of-accounts)
+  - [Create a batch from a csv](#create-a-batch-from-a-csv)
+  - [Create a single account](#create-a-single-account)
+- [Additional parameters](#additional-parameters)
+
+# Main usage and tips
+
 KinanCity-core main class accepts configuration from :
 - a set of **Command Line parameters** given at runtime
 - a **config.properties** file you can create and customize from **config.example.properties**
@@ -17,11 +28,6 @@ Elements written between angle brackets (< >) are example values. Remove the bra
 For all these examples, the usernames and password must follow theses rules :  
 - username : between 6 and 16 characters with no spaces
 - password : with lower and uppercase letters, numbers and at least a symbol
-
-There are several modes you can be using : 
-- [Create a sequence of accounts](#create-a-sequence-of-accounts)
-- [Create a batch from a csv](#create-a-batch-from-a-csv)
-- [Create a single account](#Create-a-single-account)
 
 ## Create a sequence of accounts
 
