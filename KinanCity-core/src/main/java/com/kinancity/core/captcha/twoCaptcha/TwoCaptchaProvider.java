@@ -144,27 +144,31 @@ public class TwoCaptchaProvider implements Runnable {
 				try (Response solveResponse = captchaClient.newCall(resolveRequest).execute()) {
 					String body = solveResponse.body().string();
 
-					JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
-					if (isValidResponse(jsonResponse)) {
-						logger.debug("response : {}", body);
+					try {
+						JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
+						if (isValidResponse(jsonResponse)) {
+							logger.debug("response : {}", body);
 
-						String[] responses = jsonResponse.getString(JSON_RESPONSE).split("\\|");
+							String[] responses = jsonResponse.getString(JSON_RESPONSE).split("\\|");
 
-						if (responses.length != challengesToResolve.size()) {
-							logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
-						} else {
-							int i = 0;
-							for (TwoCaptchaChallenge challenge : challengesToResolve) {
-								String response = responses[i];
-								manageChallengeResponse(challenge, response);
-								i++;
+							if (responses.length != challengesToResolve.size()) {
+								logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
+							} else {
+								int i = 0;
+								for (TwoCaptchaChallenge challenge : challengesToResolve) {
+									String response = responses[i];
+									manageChallengeResponse(challenge, response);
+									i++;
+								}
 							}
+
+							logger.debug("Remaining Challenges : {}", challenges.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(",")));
+
+						} else {
+							logger.error("Invalid response : {}", body);
 						}
-
-						logger.debug("Remaining Challenges : {}", challenges.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(",")));
-
-					} else {
-						logger.error("Invalid response : {}", body);
+					} catch (JsonParsingException e) {
+						logger.error("2captcha response was not a valid JSON : {}", body);
 					}
 
 				} catch (IOException e) {
