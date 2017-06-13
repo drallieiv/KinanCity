@@ -191,12 +191,11 @@ public class PtcSession {
 		// Send HTTP Request
 		logger.debug("Execute Request [AgeCheck] on proxy {}", client.proxy());
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
-
+			// Parse the response
+			Document doc = Jsoup.parse(response.body().string());
+			response.body().close();
+			
 			if (response.isSuccessful()) {
-				// Parse the response
-				Document doc = Jsoup.parse(response.body().string());
-				response.body().close();
-
 				// Look for the CRSF
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
@@ -220,6 +219,7 @@ public class PtcSession {
 			} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
 				throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
 			} else {
+				dumpResult(doc, account);
 				throw new TechnicalException("Age verification call failed. HTTP " + response.code());
 			}
 		} catch (IOException e) {
@@ -254,6 +254,12 @@ public class PtcSession {
 					logger.debug("Age check done");
 					return;
 				}
+
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+				dumpResult(doc, account);
+				
 				throw new TechnicalException("Age check request failed. HTTP " + response.code());
 			}
 		} catch (IOException e) {
@@ -283,18 +289,16 @@ public class PtcSession {
 			logger.debug("Execute Request [createAccount] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
 
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+
+				if (dumpResult == ALWAYS) {
+					dumpResult(doc, account);
+				}
+				
 				if (response.isSuccessful()) {
-
-					// Parse the response
-					Document doc = Jsoup.parse(response.body().string());
-					response.body().close();
-
-					if (dumpResult == ALWAYS) {
-						dumpResult(doc, account);
-					}
-
 					checkForErrors(account, doc);
-
 				} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
 					throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
 				} else {
