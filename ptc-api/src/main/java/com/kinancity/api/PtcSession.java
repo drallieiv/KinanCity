@@ -163,8 +163,11 @@ public class PtcSession {
 				return true;
 
 			} else {
-				logger.error("Validation API response is an HTTP{} error", response.code());
-				throw new TechnicalException("Validation API did not respond");
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+				manageError(account, response, doc, "Validation API");
+				throw new TechnicalException("Validation API, unknown error");
 			}
 
 		} catch (IOException e) {
@@ -191,9 +194,9 @@ public class PtcSession {
 		// Send HTTP Request
 		logger.debug("Execute Request [AgeCheck] on proxy {}", client.proxy());
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
+
 			// Parse the response
 			Document doc = Jsoup.parse(response.body().string());
-			boolean contains403 = response.body().string().contains("403 Forbidden");
 			response.body().close();
 
 			if (response.isSuccessful()) {
@@ -217,13 +220,9 @@ public class PtcSession {
 
 					return crsfToken;
 				}
-			} else if (response.code() == 503 && contains403) {
-				throw new IpSoftBanException("Age verification HTTP 503 error with 403 Forbidden message");
-			} else if (response.code() == 503) {
-				throw new IpSoftBanException("Age verification HTTP 503 error may be Ip SoftBan");
-			} else {
-				dumpResult(doc, account);
-				throw new TechnicalException("Age verification call failed. HTTP " + response.code());
+			}else{
+				manageError(account, response, doc, "Age verification");
+				throw new TechnicalException("Age verification, unknown error");
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
@@ -253,29 +252,47 @@ public class PtcSession {
 			logger.debug("Execute Request [sendAgeCheck] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
 
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+
 				// Parse Response
 				if (response.isSuccessful()) {
 					logger.debug("Age check done");
 					return;
-				}
-
-				// Parse the response
-				Document doc = Jsoup.parse(response.body().string());
-				boolean contains403 = response.body().string().contains("403 Forbidden");
-				response.body().close();
-				dumpResult(doc, account);
-
-				if (response.code() == 503 && contains403) {
-					throw new IpSoftBanException("Age check HTTP 503 error with 403 Forbidden message");
-				} else if (response.code() == 503) {
-					throw new IpSoftBanException("Age check HTTP 503 error may be Ip SoftBan");
-				} else {
-					throw new TechnicalException("Age check request failed. HTTP " + response.code());
+				}else{
+					manageError(account, response, doc, "Age check");
 				}
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
 			throw new HttpConnectionException("Age check request failed : " + e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Common Error management
+	 * 
+	 * @param account
+	 * @param response
+	 * @param doc
+	 * @param step
+	 * @throws IpSoftBanException
+	 * @throws TechnicalException
+	 */
+	public void manageError(AccountData account, Response response, Document doc, String step) throws IpSoftBanException, TechnicalException {
+		if (response.code() == 503) {
+			// Check if we encountered a 503 error
+			Elements title = doc.getElementsByTag("title");
+			if (title != null && title.contains("403 Forbidden")) {
+				throw new IpSoftBanException(step + " HTTP 503 error with 403 Forbidden message");
+			} else {
+				throw new IpSoftBanException(step + " HTTP 503 error may be Ip SoftBan");
+			}
+		} else {
+			// If it is another error
+			dumpResult(doc, account);
+			throw new TechnicalException(step + " Request failed. HTTP " + response.code());
 		}
 	}
 
@@ -302,7 +319,6 @@ public class PtcSession {
 
 				// Parse the response
 				Document doc = Jsoup.parse(response.body().string());
-				boolean contains403 = response.body().string().contains("403 Forbidden");
 				response.body().close();
 
 				if (dumpResult == ALWAYS) {
@@ -311,12 +327,8 @@ public class PtcSession {
 
 				if (response.isSuccessful()) {
 					checkForErrors(account, doc);
-				} else if (response.code() == 503 && contains403) {
-					throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
-				} else if (response.code() == 503) {
-					throw new IpSoftBanException("HTTP 503 error may be Ip SoftBan");
-				} else {
-					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
+				}else{
+					manageError(account, response, doc, "Creation");
 				}
 			}
 
