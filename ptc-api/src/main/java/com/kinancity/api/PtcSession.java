@@ -193,8 +193,9 @@ public class PtcSession {
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 			// Parse the response
 			Document doc = Jsoup.parse(response.body().string());
+			boolean contains403 = response.body().string().contains("403 Forbidden");
 			response.body().close();
-			
+
 			if (response.isSuccessful()) {
 				// Look for the CRSF
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
@@ -216,8 +217,10 @@ public class PtcSession {
 
 					return crsfToken;
 				}
-			} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
-				throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
+			} else if (response.code() == 503 && contains403) {
+				throw new IpSoftBanException("Age verification HTTP 503 error with 403 Forbidden message");
+			} else if (response.code() == 503) {
+				throw new IpSoftBanException("Age verification HTTP 503 error may be Ip SoftBan");
 			} else {
 				dumpResult(doc, account);
 				throw new TechnicalException("Age verification call failed. HTTP " + response.code());
@@ -249,6 +252,7 @@ public class PtcSession {
 
 			logger.debug("Execute Request [sendAgeCheck] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
+
 				// Parse Response
 				if (response.isSuccessful()) {
 					logger.debug("Age check done");
@@ -257,10 +261,17 @@ public class PtcSession {
 
 				// Parse the response
 				Document doc = Jsoup.parse(response.body().string());
+				boolean contains403 = response.body().string().contains("403 Forbidden");
 				response.body().close();
 				dumpResult(doc, account);
-				
-				throw new TechnicalException("Age check request failed. HTTP " + response.code());
+
+				if (response.code() == 503 && contains403) {
+					throw new IpSoftBanException("Age check HTTP 503 error with 403 Forbidden message");
+				} else if (response.code() == 503) {
+					throw new IpSoftBanException("Age check HTTP 503 error may be Ip SoftBan");
+				} else {
+					throw new TechnicalException("Age check request failed. HTTP " + response.code());
+				}
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
@@ -291,16 +302,19 @@ public class PtcSession {
 
 				// Parse the response
 				Document doc = Jsoup.parse(response.body().string());
+				boolean contains403 = response.body().string().contains("403 Forbidden");
 				response.body().close();
 
 				if (dumpResult == ALWAYS) {
 					dumpResult(doc, account);
 				}
-				
+
 				if (response.isSuccessful()) {
 					checkForErrors(account, doc);
-				} else if (response.code() == 503 && response.body().string().contains("403 Forbidden")) {
+				} else if (response.code() == 503 && contains403) {
 					throw new IpSoftBanException("HTTP 503 error with 403 Forbidden message");
+				} else if (response.code() == 503) {
+					throw new IpSoftBanException("HTTP 503 error may be Ip SoftBan");
 				} else {
 					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
 				}
