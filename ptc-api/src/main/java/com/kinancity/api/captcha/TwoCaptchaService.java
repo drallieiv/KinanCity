@@ -33,11 +33,11 @@ public class TwoCaptchaService implements CaptchaProvider {
 	 */
 	public static final String CAPCHA_NOT_READY = "CAPCHA_NOT_READY";
 	public static final String OK_RESPONSE_PREFIX = "OK|";
-	// Wrong “key” parameter format, it should contain 32 symbols
+	// Wrong "key" parameter format, it should contain 32 symbols
 	public static final String ERROR_WRONG_USER_KEY = "ERROR_WRONG_USER_KEY";
-	// The “key” doesn’t exist
+	// The "key" doesn't exist
 	public static final String ERROR_KEY_DOES_NOT_EXIST = "ERROR_KEY_DOES_NOT_EXIST";
-	// You don’t have money on your account
+	// You donâ€™t have money on your account
 	public static final String ERROR_ZERO_BALANCE = "ERROR_ZERO_BALANCE";
 
 	/**
