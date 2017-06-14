@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.mail.Activation;
+import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
 
 import okhttp3.OkHttpClient;
@@ -18,8 +20,6 @@ import okhttp3.Response;
  *
  */
 public class DirectLinkActivator implements LinkActivator {
-
-	private Logger fileLogger = LoggerFactory.getLogger("LINKS");
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
@@ -35,59 +35,62 @@ public class DirectLinkActivator implements LinkActivator {
 
 	public static void main(String[] args) throws IOException {
 		boolean stop = false;
-		while (! stop){
+		while (!stop) {
 			LinkActivator activator = new DirectLinkActivator();
-			activator.activateLink(args[0]);
+			activator.activateLink(new Activation(args[0], "test@mail.com"));
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see com.kinancity.mail.activator.LinkActivator#activateLink(java.lang.String)
 	 */
-	public boolean activateLink(String link) {
+	public boolean activateLink(Activation link) {
 		try {
 			Request request = new Request.Builder()
 					.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
-					.url(link)
+					.url(link.getLink())
 					.build();
 			Response response = client.newCall(request).execute();
 
 			String strResponse = response.body().string();
 
-			if(response.isSuccessful()){
+			if (response.isSuccessful()) {
 				if (strResponse.contains(SUCCESS_MSG)) {
 					logger.info("Activation success : Your account is now active");
-					fileLogger.info("{};OK",link);
+					FileLogger.logStatus(link, FileLogger.OK);
 					return true;
 				}
-				
+
 				logger.info("Activation success");
 				return true;
-			}else{ 
+			} else {
 				if (strResponse.contains(ALREADY_DONE_MSG)) {
 					logger.info("Activation already done");
-					fileLogger.info("{};DONE",link);
+					FileLogger.logStatus(link, FileLogger.DONE);
 					return true;
 				}
 
 				if (strResponse.contains(INVALID_TOKEN_MSG)) {
 					logger.error("Invalid Activation token");
-					fileLogger.info("{};BAD",link);
+					FileLogger.logStatus(link, FileLogger.BAD);
 					return false;
 				}
-				
+
 				if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
 					logger.error("HTTP 503. Your validation request was throttled");
-					fileLogger.info("{};THROTTLED",link);
+					FileLogger.logStatus(link, FileLogger.THROTTLED);
 					return false;
 				}
-				
+
 				logger.error("Unexpected Error : {}", strResponse);
-				fileLogger.info("{};ERROR",link);
+				FileLogger.logStatus(link, FileLogger.ERROR);
 				return false;
 			}
 		} catch (IOException e) {
 			return false;
 		}
 	}
+
 }

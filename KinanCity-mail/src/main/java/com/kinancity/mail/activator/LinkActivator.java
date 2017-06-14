@@ -1,14 +1,16 @@
 package com.kinancity.mail.activator;
 
+import com.kinancity.mail.Activation;
+
 public interface LinkActivator {
 
 	/**
 	 * Activate link
 	 * 
 	 * @param link
-	 *            activation url
+	 *            activation data
 	 * @return true if activation successfull
 	 */
-	boolean activateLink(String link);
+	boolean activateLink(Activation link);
 
 }

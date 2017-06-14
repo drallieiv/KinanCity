@@ -22,7 +22,7 @@ public class SkippedFileProcessor {
 
 	private String filePath;
 
-	private ArrayList<String> processStatus = new ArrayList<String>(Arrays.asList("skipped"));
+	private ArrayList<String> processStatus = new ArrayList<String>(Arrays.asList(FileLogger.SKIPPED));
 
 	public SkippedFileProcessor(LinkActivator activator, String filePath) {
 		this.activator = activator;
@@ -38,19 +38,19 @@ public class SkippedFileProcessor {
 			while ((line = reader.readLine()) != null) {
 				// CSV or not ?
 				if (line.contains(";")) {
-					String[] parts = line.split(";");
-					if (processStatus.contains(parts[1])) {
-						activator.activateLink(parts[0]);
+					Activation activation = FileLogger.fromLog(line);
+					if (processStatus.contains(activation.getStatus().toUpperCase())) {
+						activator.activateLink(activation);
 					}
-				}else{
-					activator.activateLink(line);
+				} else {
+					activator.activateLink(new Activation(line, ""));
 				}
 			}
 
 			if (activator instanceof QueueLinkActivator) {
 				QueueLinkActivator.class.cast(activator).setStop(true);
 			}
-			
+
 		} catch (IOException e) {
 			log.error("Error opening file {}", filePath);
 		}

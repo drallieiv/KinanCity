@@ -6,6 +6,8 @@ import java.util.ArrayDeque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.mail.Activation;
+import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
 
 import lombok.Setter;
@@ -22,7 +24,6 @@ import okhttp3.Response;
 public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	private static final int THROTTLE_PAUSE = 60000;
-	private Logger fileLogger = LoggerFactory.getLogger("LINKS");
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String SUCCESS_MSG = "Thank you for signing up! Your account is now active.";
@@ -32,7 +33,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	private okhttp3.OkHttpClient client;
 
-	private ArrayDeque<String> linkQueue;
+	private ArrayDeque<Activation> linkQueue;
 
 	@Setter
 	private boolean stop = false;
@@ -45,19 +46,19 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 		process.start();
 	}
 
-	public boolean activateLink(String link) {
+	public boolean activateLink(Activation link) {
 		linkQueue.add(link);
 		return true;
 	}
 
-	public boolean realActivateLink(String link) {
+	public boolean realActivateLink(Activation link) {
 		try {
 
 			logger.info("Start actvation of link : {}", link);
 
 			Request request = new Request.Builder()
 					.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
-					.url(link)
+					.url(link.getLink())
 					.build();
 
 			boolean isFinal = false;
@@ -73,13 +74,13 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 				if (response.isSuccessful()) {
 					if (strResponse.contains(SUCCESS_MSG)) {
 						logger.info("Activation success : Your account is now active");
-						fileLogger.info("{};OK", link);
+						FileLogger.logStatus(link, FileLogger.OK);
 					} else if (strResponse.contains(ALREADY_DONE_MSG)) {
 						logger.info("Activation success : Activation already done");
-						fileLogger.info("{};OK", link);
+						FileLogger.logStatus(link, FileLogger.DONE);
 					} else if (strResponse.contains(INVALID_TOKEN_MSG)) {
 						logger.error("Invalid Activation token");
-						fileLogger.info("{};BAD", link);
+						FileLogger.logStatus(link, FileLogger.BAD);
 						success = false;
 					} else {
 						logger.warn("OK response but missing confirmation.");
@@ -92,7 +93,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						throttlePause();
 					} else {
 						logger.error("Unexpected Error {} : {}", response.code(), strResponse);
-						fileLogger.info("{};ERROR", link);
+						FileLogger.logStatus(link, FileLogger.ERROR);
 						success = false;
 					}
 
@@ -133,7 +134,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 					logger.warn("stoppped");
 				}
 			} else {
-				String firstLink = linkQueue.pop();
+				Activation firstLink = linkQueue.pop();
 				if (firstLink != null) {
 					realActivateLink(firstLink);
 				}
