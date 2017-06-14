@@ -80,10 +80,10 @@ public class KcMessageHandler implements MessageHandler {
 				Matcher m = p.matcher(content);
 				if (m.find()) {
 					String activationLink = m.group(0);
-					logger.info("Activation link found  for email {} : [{}]", recipient, activationLink);
+					logger.info("Activation link found  for email {} : [{}]", this.recipient, activationLink);
 					
 					// Link activation, may be sync or async
-					activator.activateLink(activationLink);
+					activator.activateLink(new Activation(activationLink, this.recipient));
 						
 				} else {
 					logger.error("No activation link found");
