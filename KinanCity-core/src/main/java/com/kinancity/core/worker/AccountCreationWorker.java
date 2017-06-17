@@ -133,8 +133,15 @@ public class AccountCreationWorker implements Runnable {
 								bottleneck.syncUseOf(proxy);
 							}
 							
-							// 2. Start session
+							// 2A. Start session : get CRSF Token
 							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
+							
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
+							// 2B. Start session : send age check
+							ptc.sendAgeCheck(account, crsfToken);
 							
 							try {
 								Thread.sleep(minWaitBeforeCaptcha);

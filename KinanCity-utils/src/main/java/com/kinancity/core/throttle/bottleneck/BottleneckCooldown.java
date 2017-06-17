@@ -67,7 +67,7 @@ public class BottleneckCooldown<R> extends BottleneckWithQueues<R, WaitQueueCool
 							waitingQueue.setCount(0);
 							waitingQueue.setBurnOutReached(null);
 						} else {
-							logger.debug("WaitingQueue for {} is on cooldown", entry.getKey());
+							// logger.debug("WaitingQueue for {} is on cooldown", entry.getKey());
 						}
 					}
 				}
