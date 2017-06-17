@@ -26,8 +26,8 @@ import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.proxy.ProxyRecycler;
 import com.kinancity.core.proxy.ProxyTester;
+import com.kinancity.core.proxy.bottleneck.ProxyCooldownBottleneck;
 import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
-import com.kinancity.core.proxy.bottleneck.ProxySpacedBottleneck;
 import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
@@ -50,13 +50,11 @@ public class Configuration {
 	private String twoCaptchaApiKey;
 
 	private int nbThreads = 3;
-	
+
 	private boolean forceMaxThread = false;
-	
+
 	private Bottleneck<ProxyInfo> bottleneck;
-	
-	private int bottleneckRetention = 15;
-	
+
 	private boolean useIpBottleNeck = true;
 
 	private CaptchaQueue captchaQueue;
@@ -136,20 +134,20 @@ public class Configuration {
 				// Add Direct connection
 				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
 			}
-						
+
 			// Add BottleNeck
-			if(bottleneck == null) {
-				if(!useIpBottleNeck){
+			if (bottleneck == null) {
+				if (!useIpBottleNeck) {
 					bottleneck = new ProxyNoBottleneck();
-				}else{
-					ProxySpacedBottleneck ipBottleneck = new ProxySpacedBottleneck(bottleneckRetention);
+				} else {
+					ProxyCooldownBottleneck ipBottleneck = new ProxyCooldownBottleneck();
 					Thread bottleNeckThread = new Thread(ipBottleneck);
 					bottleNeckThread.setName("OfficerJenny(BottleNeck)");
 					bottleNeckThread.start();
 					bottleneck = ipBottleneck;
 				}
 			}
-			
+
 			// Add Proxy recycler and start thread
 			ProxyRecycler recycler = new ProxyRecycler(proxyManager);
 			recycler.setBottleneck(bottleneck);
@@ -157,7 +155,7 @@ public class Configuration {
 			recyclerThread.setName("NurseJoy(Recycler)");
 			recyclerThread.start();
 			proxyManager.setRecycler(recycler);
-			
+
 			if (resultLogger == null) {
 				resultLogger = new ResultLogger(new PrintWriter(new FileWriter(resultLogFilename, true)));
 			}
@@ -204,9 +202,9 @@ public class Configuration {
 				logger.error("No valid proxy given");
 				return false;
 			}
-			
+
 			logger.info("Validating {} given proxies", proxyManager.getProxies().size());
-			
+
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				if (!proxyTester.testProxy(proxy.getProvider())) {
 					logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
@@ -218,20 +216,20 @@ public class Configuration {
 			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
 				logger.info("{} valid proxies left", proxyManager.getProxies().size());
-				if(proxyManager.getProxies().size() == 0){
+				if (proxyManager.getProxies().size() == 0) {
 					return false;
 				}
 			}
 		}
-		
-		if(forceMaxThread){
+
+		if (forceMaxThread) {
 			// Max 3 times more thread then proxies
 			int maxThreads = proxyManager.getProxies().size() * 3;
-			if(nbThreads > maxThreads){
+			if (nbThreads > maxThreads) {
 				nbThreads = maxThreads;
 				logger.info("Too many thread compared to proxies, forcing thread count to {}", nbThreads);
 			}
-		}		
+		}
 
 		return true;
 	}
@@ -259,15 +257,14 @@ public class Configuration {
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
-			this.setBottleneckRetention(Integer.parseInt(prop.getProperty("proxy.bottleneck", String.valueOf(bottleneckRetention))));
-			
+
 			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
-			if(customPeriod != null && NumberUtils.isNumber(customPeriod)){
+			if (customPeriod != null && NumberUtils.isNumber(customPeriod)) {
 				proxyPolicy = new TimeLimitPolicy(5, Integer.parseInt(customPeriod) * 60);
 			}
 
 			this.loadProxies(prop.getProperty("proxies"));
-			
+
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
 		}
@@ -293,11 +290,11 @@ public class Configuration {
 			}
 
 			logger.info("ProxyManager setup with {} proxies : ", proxyManager.getProxies().size());
-			
+
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				logger.info(" - {}", proxy.toString());
 			}
-			
+
 		}
 
 	}
