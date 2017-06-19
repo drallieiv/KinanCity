@@ -189,15 +189,18 @@ public class TwoCaptchaProvider implements Runnable {
 					logger.info("Request new Captcha");
 					try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
 						String body = sendResponse.body().string();
+						try {
+							JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
 
-						JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
-
-						if (isValidResponse(jsonResponse)) {
-							String captchaId = jsonResponse.getString(JSON_RESPONSE);
-							logger.debug("New Captcha Request added in response queue");
-							challenges.add(new TwoCaptchaChallenge(captchaId));
-						} else {
-							logger.error("KO response when sending IN 2captcha : {}", body);
+							if (isValidResponse(jsonResponse)) {
+								String captchaId = jsonResponse.getString(JSON_RESPONSE);
+								logger.debug("New Captcha Request added in response queue");
+								challenges.add(new TwoCaptchaChallenge(captchaId));
+							} else {
+								logger.error("KO response when sending IN 2captcha : {}", body);
+							}
+						} catch (JsonParsingException e) {
+							logger.error("2captcha response was not a valid JSON : {}", body);
 						}
 					} catch (IOException e) {
 						logger.error("Error while calling IN 2captcha : {}", e.getMessage());
