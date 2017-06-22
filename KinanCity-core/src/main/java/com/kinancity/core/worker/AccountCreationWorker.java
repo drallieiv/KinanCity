@@ -171,14 +171,15 @@ public class AccountCreationWorker implements Runnable {
 							callbacks.onFailure(currentCreation);
 						}
 					} catch (IpSoftBanException e){
-						
 						if(bottleneck != null){
 							// Send error to the bottleneck too
 							logger.warn("PTC softban, put that IP on hold.");
 							bottleneck.onServerError(proxy);
 						}
-						
 						callbacks.onTechnicalIssue(currentCreation);
+						
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					} catch (CaptchaSolvingException e) {
 						logger.warn(e.getMessage());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.CAPTCHA_SOLVING));
@@ -195,7 +196,6 @@ public class AccountCreationWorker implements Runnable {
 
 						// Free that proxy slot for re-use
 						proxySlot.freeSlot();
-
 					} catch (TechnicalException e) {
 						if(e.getCause() != null){
 							logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
