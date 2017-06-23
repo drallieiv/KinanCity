@@ -1,5 +1,11 @@
 package com.kinancity.core;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -26,7 +32,17 @@ public class KinanCityCli {
 		t.setName("Kinan City");
 
 		try {
+			String banner = new String(Files.readAllBytes(Paths.get(KinanCityCli.class.getClassLoader().getResource("banner.txt").toURI())));
+			LOGGER.info("\n{}", banner);
+		} catch (IOException e1) {
 			LOGGER.info(" -- Start Kinan City CLI -- ");
+		} catch (URISyntaxException e) {
+			LOGGER.info(" -- Start Kinan City CLI -- ");
+		}
+		
+		LOGGER.info(" Runtime Args \n\n  {} \n ", String.join(" ", args));
+
+		try {
 
 			// Prepare the CLI Options
 			Options options = setupCliOptions();
@@ -43,7 +59,7 @@ public class KinanCityCli {
 
 				PtcAccountCreator creator = new PtcAccountCreator(config);
 				creator.start();
-				
+
 				LOGGER.info("Done. You will find the results in {}", config.getResultLogFilename());
 				System.exit(0);
 
@@ -83,7 +99,7 @@ public class KinanCityCli {
 			config.setProxyPolicy(new UnlimitedUsePolicy());
 			config.setBottleneck(new ProxyNoBottleneck());
 		}
-		
+
 		// -px/-proxies : list of proxy to use
 		if (cmd.hasOption(CliOptions.PROXIES.shortName)) {
 			config.loadProxies(cmd.getOptionValue(CliOptions.PROXIES.shortName));
