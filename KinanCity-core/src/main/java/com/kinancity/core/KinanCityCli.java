@@ -1,7 +1,9 @@
 package com.kinancity.core;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -12,6 +14,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,12 +34,11 @@ public class KinanCityCli {
 		Thread t = Thread.currentThread();
 		t.setName("Kinan City");
 
-		try {
-			String banner = new String(Files.readAllBytes(Paths.get(KinanCityCli.class.getClassLoader().getResource("banner.txt").toURI())));
+		try (InputStream bannerFile = KinanCityCli.class.getClassLoader().getResourceAsStream("banner.txt")){
+			
+			String banner = IOUtils.toString(bannerFile, Charset.defaultCharset());
 			LOGGER.info("\n{}", banner);
-		} catch (IOException e1) {
-			LOGGER.info(" -- Start Kinan City CLI -- ");
-		} catch (URISyntaxException e) {
+		} catch (IOException e) {
 			LOGGER.info(" -- Start Kinan City CLI -- ");
 		}
 		
