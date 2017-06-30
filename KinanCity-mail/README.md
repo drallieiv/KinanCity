@@ -48,3 +48,9 @@ A: To avoid spam, only emails incoming from pokemon are managed.
 
 Q: How can I check if my DNS entries are correct ?
 A: Use web based tools such as mxtoolbox.com
+
+Q: I want to use another IP then my direct connection, or I am getting 409 errors, what can I do
+A: Java supports native proxies : You can run Kinan Mail with additional command line parameters : 
+-Dhttps.proxyHost=http://123.123.123.123 -Dhttps.proxyPort=3128 
+(https after -D must be https, but you proxy, after = can be either http:// or https://)
+ 
