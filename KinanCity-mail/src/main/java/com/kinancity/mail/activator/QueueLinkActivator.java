@@ -103,6 +103,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 			return success;
 
 		} catch (IOException e) {
+			logger.error("IOException", e);
 			return false;
 		}
 	}
