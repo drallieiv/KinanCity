@@ -82,6 +82,12 @@ public class TwoCaptchaProvider implements Runnable {
 	 */
 	@Setter
 	private int maxWait = 600;
+	
+	/**
+	 * max number of captcha really waiting on 2captcha side
+	 */
+	@Setter
+	private int maxParallelChallenges = 20;
 
 	/**
 	 * Wait at least that time (in seconds) before sending first resolve request. (default 5s)
@@ -124,6 +130,10 @@ public class TwoCaptchaProvider implements Runnable {
 
 	@Override
 	public void run() {
+		
+		boolean missmatchRecovery = false;
+		int missmatchRecoverySize = 10;
+		
 		while (runFlag) {
 
 			LocalDateTime minDate = LocalDateTime.now().minusSeconds(minTimeBeforeFirstResolve);
@@ -135,6 +145,11 @@ public class TwoCaptchaProvider implements Runnable {
 			} else {
 				// Currently waiting for captcha
 				logger.debug("Check status of {} captchas", challengesToResolve.size());
+				
+				if(missmatchRecovery){
+					logger.info("MissmatchRecovery only check for {} captcha at once max", missmatchRecoverySize);
+					challengesToResolve.stream().limit(missmatchRecoverySize).collect(Collectors.toSet());
+				}
 
 				String captchaIds = challengesToResolve.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(","));
 				logger.debug("captchaIds {}", captchaIds);
@@ -153,7 +168,13 @@ public class TwoCaptchaProvider implements Runnable {
 
 							if (responses.length != challengesToResolve.size()) {
 								logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
+								logger.info("Switch to MissmatchRecovery mode");
+								missmatchRecovery = true;
 							} else {
+								if(missmatchRecovery){
+									logger.info("Disable MissmatchRecovery mode");
+									missmatchRecovery = false;
+								}
 								int i = 0;
 								for (TwoCaptchaChallenge challenge : challengesToResolve) {
 									String response = responses[i];
@@ -178,15 +199,21 @@ public class TwoCaptchaProvider implements Runnable {
 			}
 
 			// Update queue size
+			
+			// Number of elements waiting for a captcha
 			int nbInQueue = queue.size();
+			
+			// Number currently waiting at 2captcha
 			int nbWaiting = challenges.size();
+			
+			// How many more do we need
+			int nbNeeded = Math.min(nbInQueue, maxParallelChallenges);
 
-			int nbToRequest = Math.max(0, nbInQueue - nbWaiting);
+			int nbToRequest = Math.max(0, nbNeeded - nbWaiting);
 			if (nbToRequest > 0) {
 				// Send new captcha requests
 				Request sendRequest = buildSendCaptchaRequest();
 				for (int i = 0; i < nbToRequest; i++) {
-					logger.info("Request new Captcha");
 					try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
 						String body = sendResponse.body().string();
 						try {
@@ -194,7 +221,7 @@ public class TwoCaptchaProvider implements Runnable {
 
 							if (isValidResponse(jsonResponse)) {
 								String captchaId = jsonResponse.getString(JSON_RESPONSE);
-								logger.debug("New Captcha Request added in response queue");
+								logger.info("Requested new Captcha, id : {}", captchaId);
 								challenges.add(new TwoCaptchaChallenge(captchaId));
 							} else {
 								logger.error("KO response when sending IN 2captcha : {}", body);

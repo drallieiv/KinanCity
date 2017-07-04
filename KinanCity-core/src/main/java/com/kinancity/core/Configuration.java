@@ -76,6 +76,8 @@ public class Configuration {
 	private int maxRetry = 3;
 
 	private int captchaMaxTotalTime = 600;
+	
+	private int captchaMaxParallelChallenges = 20;
 
 	// If true, everything will be mocked
 	private boolean dryRun = false;
@@ -105,6 +107,7 @@ public class Configuration {
 							// Add 2 captcha Provider
 							TwoCaptchaProvider twoCaptchaProvider = new TwoCaptchaProvider(captchaQueue, twoCaptchaApiKey);
 							twoCaptchaProvider.setMaxWait(captchaMaxTotalTime);
+							twoCaptchaProvider.setMaxParallelChallenges(captchaMaxParallelChallenges);
 
 							double balance = twoCaptchaProvider.getBalance();
 							if (balance < 0) {
@@ -257,6 +260,8 @@ public class Configuration {
 			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
+			
+			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
 
 			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
 			if (customPeriod != null && NumberUtils.isNumber(customPeriod)) {
