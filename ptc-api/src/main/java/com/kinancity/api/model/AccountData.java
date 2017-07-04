@@ -92,7 +92,7 @@ public class AccountData implements Cloneable {
 	}
 
 	public static String randomDateOfBirth(int minAge, int maxAge) {
-		int randomDays = RandomUtils.nextInt(maxAge * 365);
+		int randomDays = RandomUtils.nextInt((maxAge-minAge) * 365);
 		LocalDateTime dobDate = LocalDateTime.now().minusYears(minAge).minusDays(randomDays);
 		return dobDate.format(DateTimeFormatter.ISO_DATE);
 	}

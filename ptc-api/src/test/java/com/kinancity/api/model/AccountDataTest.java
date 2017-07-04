@@ -37,6 +37,7 @@ public class AccountDataTest {
 
 			int age = LocalDateTime.now().getYear() - year;
 			assertThat(age).isGreaterThanOrEqualTo(18);
+			assertThat(age).isLessThanOrEqualTo(80);
 		}
 	}
 
