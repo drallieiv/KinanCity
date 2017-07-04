@@ -173,7 +173,7 @@ public class AccountCreationWorker implements Runnable {
 					} catch (IpSoftBanException e){
 						if(bottleneck != null){
 							// Send error to the bottleneck too
-							logger.warn("PTC softban, put that IP on hold.");
+							logger.warn("PTC softban, put that IP on hold. host:{}", proxy.getProvider().getHost());
 							bottleneck.onServerError(proxy);
 						}
 						callbacks.onTechnicalIssue(currentCreation);
