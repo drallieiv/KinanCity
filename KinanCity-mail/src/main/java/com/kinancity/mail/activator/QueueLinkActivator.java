@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.kinancity.mail.Activation;
 import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
+import com.kinancity.mail.proxy.HttpProxy;
 
 import lombok.Setter;
 import okhttp3.OkHttpClient;
@@ -38,8 +39,16 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	@Setter
 	private boolean stop = false;
 
+	@Setter
+	private HttpProxy httpProxy;
+
 	public QueueLinkActivator() {
-		client = new OkHttpClient.Builder().build();
+		if (httpProxy != null) {
+			client = httpProxy.getClient();
+		} else {
+			client = new OkHttpClient.Builder().build();
+		}
+
 		linkQueue = new ArrayDeque<>();
 
 		Thread process = new Thread(this);
@@ -103,7 +112,8 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 			return success;
 
 		} catch (IOException e) {
-			logger.error("IOException", e);
+			logger.error("IOException {}", e.getMessage());
+			FileLogger.logStatus(link, FileLogger.ERROR);
 			return false;
 		}
 	}
