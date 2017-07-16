@@ -39,15 +39,10 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	@Setter
 	private boolean stop = false;
 
-	@Setter
 	private HttpProxy httpProxy;
 
 	public QueueLinkActivator() {
-		if (httpProxy != null) {
-			client = httpProxy.getClient();
-		} else {
-			client = new OkHttpClient.Builder().build();
-		}
+		client = new OkHttpClient.Builder().build();
 
 		linkQueue = new ArrayDeque<>();
 
@@ -152,5 +147,10 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 				logger.info("{} link to activate remaining", linkQueue.size());
 			}
 		}
+	}
+
+	public void setHttpProxy(HttpProxy httpProxy) {
+		this.httpProxy = httpProxy;
+		this.client = httpProxy.getClient();
 	}
 }
