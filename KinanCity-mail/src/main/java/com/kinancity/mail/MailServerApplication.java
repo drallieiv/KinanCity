@@ -78,7 +78,12 @@ public class MailServerApplication {
 			wiser.setPort(25);
 			wiser.setHostname("localhost");
 
-			wiser.getServer().setMessageHandlerFactory(new KcMessageHandlerFactory(activator));
+			KcMessageHandlerFactory handlerFactory = new KcMessageHandlerFactory(activator);
+			boolean disableDomainFilter = config.getProperty("disableDomainFilter", "false").equals("true");
+			if (disableDomainFilter) {
+				handlerFactory.setAcceptAllFrom(true);
+			}
+			wiser.getServer().setMessageHandlerFactory(handlerFactory);
 			wiser.start();
 		}
 	}

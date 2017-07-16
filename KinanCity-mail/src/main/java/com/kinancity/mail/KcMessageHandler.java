@@ -20,6 +20,8 @@ import org.subethamail.smtp.TooMuchDataException;
 
 import com.kinancity.mail.activator.LinkActivator;
 
+import lombok.Setter;
+
 /**
  * Message Handler
  * 
@@ -35,11 +37,15 @@ public class KcMessageHandler implements MessageHandler {
 
 	private String recipient;
 	private String from;
-	
+
 	private LinkActivator activator;
+
+	@Setter
+	private boolean acceptAllFrom = false;
 
 	/**
 	 * Construct with a given Link Activator
+	 * 
 	 * @param activator
 	 */
 	public KcMessageHandler(LinkActivator activator) {
@@ -63,7 +69,7 @@ public class KcMessageHandler implements MessageHandler {
 	public void data(InputStream data) throws RejectException, TooMuchDataException, IOException {
 
 		// Only accept pokemon mails
-		if (from.endsWith(POKEMON_DOMAIN)) {
+		if (from.endsWith(POKEMON_DOMAIN) || acceptAllFrom) {
 
 			logger.debug("Received email from {} to {}", from, recipient);
 
@@ -81,10 +87,10 @@ public class KcMessageHandler implements MessageHandler {
 				if (m.find()) {
 					String activationLink = m.group(0);
 					logger.info("Activation link found  for email {} : [{}]", this.recipient, activationLink);
-					
+
 					// Link activation, may be sync or async
 					activator.activateLink(new Activation(activationLink, this.recipient));
-						
+
 				} else {
 					logger.error("No activation link found");
 				}

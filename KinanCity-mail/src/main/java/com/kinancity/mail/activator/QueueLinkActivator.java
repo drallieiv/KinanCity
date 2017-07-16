@@ -39,8 +39,6 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	@Setter
 	private boolean stop = false;
 
-	private HttpProxy httpProxy;
-
 	public QueueLinkActivator() {
 		client = new OkHttpClient.Builder().build();
 
@@ -150,7 +148,6 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	}
 
 	public void setHttpProxy(HttpProxy httpProxy) {
-		this.httpProxy = httpProxy;
 		this.client = httpProxy.getClient();
 	}
 }
