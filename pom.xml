@@ -4,7 +4,7 @@
 
 	<groupId>com.kinancity</groupId>
 	<artifactId>KinanCity-parent</artifactId>
-	<version>1.3.2-SNAPSHOT</version>
+	<version>1.3.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Kinan City</name>
@@ -21,6 +21,9 @@
 		<module>KinanCity-server</module>
 		<module>ptc-api</module>
 		<module>KinanCity-utils</module>
+		<module>KinanCity-captcha-ImageTypers</module>
+		<module>KinanCity-captcha-api</module>
+		<module>KinanCity-captcha-2captcha</module>
 	</modules>
 
 	<dependencies>

@@ -17,8 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.TwoCaptchaConfigurationException;
-import com.kinancity.api.errors.tech.CaptchaSolvingException;
+import com.kinancity.core.captcha.CaptchaException;
+import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
 
 import lombok.Getter;
@@ -28,7 +28,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class TwoCaptchaProvider implements Runnable {
+public class TwoCaptchaProvider extends CaptchaProvider {
 
 	private static final String JSON_RESPONSE = "request";
 
@@ -78,18 +78,6 @@ public class TwoCaptchaProvider implements Runnable {
 	private String softId = "1816";
 
 	/**
-	 * How much should we wait for each captcha in seconds. (default 600s, 0 for infinite)
-	 */
-	@Setter
-	private int maxWait = 600;
-	
-	/**
-	 * max number of captcha really waiting on 2captcha side
-	 */
-	@Setter
-	private int maxParallelChallenges = 20;
-
-	/**
 	 * Wait at least that time (in seconds) before sending first resolve request. (default 5s)
 	 */
 	@Setter
@@ -118,22 +106,26 @@ public class TwoCaptchaProvider implements Runnable {
 	@Getter
 	private int nbSent = 0;
 
-	public TwoCaptchaProvider(CaptchaQueue queue, String apiKey) throws CaptchaSolvingException {
+	public static CaptchaProvider getInstance(CaptchaQueue queue, String apiKey) throws CaptchaException {
+		return new TwoCaptchaProvider(queue, apiKey);
+	}
+
+	public TwoCaptchaProvider(CaptchaQueue queue, String apiKey) throws CaptchaException {
 		this.queue = queue;
 		this.apiKey = apiKey;
 		this.captchaClient = new OkHttpClient();
 
 		if (this.apiKey == null || this.apiKey.isEmpty()) {
-			throw new CaptchaSolvingException("Missing 2captcha API key");
+			throw new CaptchaException("Missing 2captcha API key");
 		}
 	}
 
 	@Override
 	public void run() {
-		
+
 		boolean missmatchRecovery = false;
 		int missmatchRecoverySize = 10;
-		
+
 		while (runFlag) {
 
 			LocalDateTime minDate = LocalDateTime.now().minusSeconds(minTimeBeforeFirstResolve);
@@ -145,8 +137,8 @@ public class TwoCaptchaProvider implements Runnable {
 			} else {
 				// Currently waiting for captcha
 				logger.debug("Check status of {} captchas", challengesToResolve.size());
-				
-				if(missmatchRecovery){
+
+				if (missmatchRecovery) {
 					logger.info("MissmatchRecovery only check for {} captcha at once max", missmatchRecoverySize);
 					challengesToResolve.stream().limit(missmatchRecoverySize).collect(Collectors.toSet());
 				}
@@ -171,7 +163,7 @@ public class TwoCaptchaProvider implements Runnable {
 								logger.info("Switch to MissmatchRecovery mode");
 								missmatchRecovery = true;
 							} else {
-								if(missmatchRecovery){
+								if (missmatchRecovery) {
 									logger.info("Disable MissmatchRecovery mode");
 									missmatchRecovery = false;
 								}
@@ -199,15 +191,15 @@ public class TwoCaptchaProvider implements Runnable {
 			}
 
 			// Update queue size
-			
+
 			// Number of elements waiting for a captcha
 			int nbInQueue = queue.size();
-			
+
 			// Number currently waiting at 2captcha
 			int nbWaiting = challenges.size();
-			
+
 			// How many more do we need
-			int nbNeeded = Math.min(nbInQueue, maxParallelChallenges);
+			int nbNeeded = Math.min(nbInQueue, getMaxParallelChallenges());
 
 			int nbToRequest = Math.max(0, nbNeeded - nbWaiting);
 			if (nbToRequest > 0) {
@@ -253,7 +245,7 @@ public class TwoCaptchaProvider implements Runnable {
 
 		if (CAPCHA_NOT_READY.equals(response)) {
 			// Captcha not ready, should wait
-			if (maxWait > 0 && LocalDateTime.now().isAfter(challenge.getSentTime().plusSeconds(maxWait))) {
+			if (getMaxWait() > 0 && LocalDateTime.now().isAfter(challenge.getSentTime().plusSeconds(getMaxWait()))) {
 				logger.error("This captcha has been waiting too long, drop it. Increase `maxWait` if that happens too often");
 				challenges.remove(challenge);
 			} else {
@@ -384,4 +376,5 @@ public class TwoCaptchaProvider implements Runnable {
 				.build();
 		return request;
 	}
+
 }

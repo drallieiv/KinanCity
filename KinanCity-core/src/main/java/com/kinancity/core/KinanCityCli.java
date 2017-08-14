@@ -91,9 +91,14 @@ public class KinanCityCli {
 			config.setDryRun(true);
 		}
 
-		// -ck/-captchaKey : 2captcha api key
+		// -ck/-captchaKey : captcha api key
 		if (cmd.hasOption(CliOptions.CK.shortName)) {
-			config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
+			config.setCaptchaKey(cmd.getOptionValue(CliOptions.CK.shortName));
+		}
+		
+		// -cp/-captchaProvider : captcha service provider
+		if (cmd.hasOption(CliOptions.CP.shortName)) {
+			config.setCaptchaKey(cmd.getOptionValue(CliOptions.CP.shortName));
 		}
 
 		// -nl/-noLimit : Use Unlimited Policy

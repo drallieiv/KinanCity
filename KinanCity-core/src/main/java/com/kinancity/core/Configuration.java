@@ -16,8 +16,10 @@ import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.PtcSession;
 import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.TwoCaptchaConfigurationException;
+import com.kinancity.core.captcha.CaptchaException;
+import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
+import com.kinancity.core.captcha.imageTypers.ImageTypersProvider;
 import com.kinancity.core.captcha.impl.LogCaptchaCollector;
 import com.kinancity.core.captcha.twoCaptcha.TwoCaptchaProvider;
 import com.kinancity.core.errors.ConfigurationException;
@@ -47,7 +49,9 @@ public class Configuration {
 
 	private static Configuration instance;
 
-	private String twoCaptchaApiKey;
+	private String captchaKey;
+
+	private String captchaProvider;
 
 	private int nbThreads = 3;
 
@@ -76,7 +80,7 @@ public class Configuration {
 	private int maxRetry = 3;
 
 	private int captchaMaxTotalTime = 600;
-	
+
 	private int captchaMaxParallelChallenges = 20;
 
 	// If true, everything will be mocked
@@ -102,28 +106,47 @@ public class Configuration {
 
 					captchaQueue = new CaptchaQueue(new LogCaptchaCollector());
 
-					if (twoCaptchaApiKey != null && !twoCaptchaApiKey.isEmpty()) {
+					if (captchaKey != null && !captchaKey.isEmpty()) {
 						try {
-							// Add 2 captcha Provider
-							TwoCaptchaProvider twoCaptchaProvider = new TwoCaptchaProvider(captchaQueue, twoCaptchaApiKey);
-							twoCaptchaProvider.setMaxWait(captchaMaxTotalTime);
-							twoCaptchaProvider.setMaxParallelChallenges(captchaMaxParallelChallenges);
 
-							double balance = twoCaptchaProvider.getBalance();
-							if (balance < 0) {
-								logger.warn("WARNING !! : Current 2 captcha balance is negative {}", balance);
+							CaptchaProvider provider = null;
+							String providerThreadName = "";
+
+							if ("2captcha".equals(captchaProvider)) {
+
+								// Add 2 captcha Provider
+								provider = TwoCaptchaProvider.getInstance(captchaQueue, captchaKey);
+								providerThreadName = "2captcha";
+
+							} else if ("imageTypers".equals(captchaProvider)) {
+								// Add imageTypers Provider
+								provider = ImageTypersProvider.getInstance(captchaQueue, captchaKey);
+								providerThreadName = "imageTypers";
 							} else {
-								logger.info("Catpcha Key is valid. Current 2 captcha balance is {}", balance);
+								throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 							}
 
-							Thread twoCaptchaThread = new Thread(twoCaptchaProvider);
-							twoCaptchaThread.setName("2captcha");
-							twoCaptchaThread.start();
-						} catch (TwoCaptchaConfigurationException e) {
+							// Proceed running captcha thread
+							
+							provider.setMaxWait(captchaMaxTotalTime);
+							provider.setMaxParallelChallenges(captchaMaxParallelChallenges);
+
+							double balance = provider.getBalance();
+							if (balance < 0) {
+								logger.warn("WARNING !! : Current captcha balance is negative {}", balance);
+							} else {
+								logger.info("Catpcha Key is valid. Current captcha balance is {}", balance);
+							}
+
+							Thread captchaThread = new Thread(provider);
+							captchaThread.setName(providerThreadName);
+							captchaThread.start();
+
+						} catch (CaptchaException e) {
 							throw new ConfigurationException(e);
 						}
 					} else {
-						throw new ConfigurationException("No Catpcha Provider found. Only supports 2 captcha for now");
+						throw new ConfigurationException("No Catpcha key given");
 					}
 
 				} catch (TechnicalException e) {
@@ -257,10 +280,11 @@ public class Configuration {
 			in.close();
 
 			// Load Config
-			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
+			this.setCaptchaKey(prop.getProperty("captcha.key"));
+			this.setCaptchaProvider(prop.getProperty("captcha.provider", "imageTypers"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
-			
+
 			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
 
 			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
