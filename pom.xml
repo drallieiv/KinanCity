@@ -18,7 +18,7 @@
 	<modules>
 		<module>KinanCity-core</module>
 		<module>KinanCity-mail</module>
-		<module>KinanCity-server</module>
+	<!-- <module>KinanCity-server</module> -->
 		<module>ptc-api</module>
 		<module>KinanCity-utils</module>
 		<module>KinanCity-captcha-ImageTypers</module>
