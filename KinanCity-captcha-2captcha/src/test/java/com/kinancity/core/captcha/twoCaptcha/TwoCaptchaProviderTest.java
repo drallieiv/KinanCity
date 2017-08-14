@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.TwoCaptchaConfigurationException;
+import com.kinancity.core.captcha.CaptchaException;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.captcha.CaptchaRequest;
 import com.kinancity.core.captcha.impl.LogCaptchaCollector;
@@ -26,7 +26,7 @@ public class TwoCaptchaProviderTest {
 
 	@Ignore
 	@Test
-	public void solvingTest() throws InterruptedException, TechnicalException, TwoCaptchaConfigurationException {
+	public void solvingTest() throws CaptchaException, TechnicalException, InterruptedException {
 
 		CaptchaQueue queue = new CaptchaQueue(new LogCaptchaCollector());
 
@@ -45,13 +45,13 @@ public class TwoCaptchaProviderTest {
 		CaptchaRequest request = queue.addRequest(new CaptchaRequest("test1"));
 		CaptchaRequest request2 = queue.addRequest(new CaptchaRequest("test2"));
 
-		while(request.getResponse() == null || request2.getResponse() == null ){
+		while (request.getResponse() == null || request2.getResponse() == null) {
 			Thread.sleep(500);
 		}
 
 		logger.info("Response 1 given : {}", request.getResponse());
 		logger.info("Response 2 given : {}", request2.getResponse());
-		
+
 		Thread.sleep(2000);
 
 	}

@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum CliOptions {
 
 	// OPTIONS
-	CK("ck", "captchaKey", true, "2 captcha API Key"),
+	CK("ck", "captchaKey", true, "captcha API Key / Access Token"),
+	CP("cp", "captchaProvider", true, "captcha service provider"),
 
 	EMAIL("m", "mail", true, "account email address"),
 	SINGLE_USERNAME("u", "username", true, "account username/login"),

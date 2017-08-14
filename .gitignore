@@ -19,3 +19,5 @@
 /bin/
 
 *.log
+
+KinanCity-captcha-ImageTypers/config\.properties
