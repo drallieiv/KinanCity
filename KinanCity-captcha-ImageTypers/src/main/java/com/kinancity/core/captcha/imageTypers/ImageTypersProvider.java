@@ -127,8 +127,11 @@ public class ImageTypersProvider extends CaptchaProvider {
 									// Keep the challenge in queue
 									challenge.setNbPolls(challenge.getNbPolls() + 1);
 								}
+							} else if (body.contains("IMAGE_TIMED_OUT")) {
+								logger.warn("ImageTypers IMAGE_TIMED_OUT. Try again");
+								challenges.remove(challenge);
 							} else {
-								logger.error("ImageTypers Error : " + body);
+								logger.error("Unknown I0mageTypers Error : " + body);
 							}
 						} else {
 							String response = body;
