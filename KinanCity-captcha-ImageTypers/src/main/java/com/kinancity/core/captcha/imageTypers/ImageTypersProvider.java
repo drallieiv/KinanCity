@@ -129,6 +129,7 @@ public class ImageTypersProvider extends CaptchaProvider {
 								}
 							} else {
 								logger.error("ImageTypers Error : " + body);
+								challenges.remove(challenge);
 							}
 						} else {
 							String response = body;
@@ -138,6 +139,7 @@ public class ImageTypersProvider extends CaptchaProvider {
 						}
 					} catch (IOException e) {
 						logger.error("ImageTypers Error : " + e.getMessage(), e);
+						challenges.remove(challenge);
 					}
 				}
 			}
