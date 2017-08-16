@@ -51,7 +51,7 @@ public class Configuration {
 
 	private String captchaKey;
 
-	private String captchaProvider;
+	private String captchaProvider = "imageTypers";
 
 	private int nbThreads = 3;
 
@@ -205,7 +205,8 @@ public class Configuration {
 			try {
 				init();
 			} catch (ConfigurationException e) {
-				logger.error("Configuration Init Failed", e);
+				logger.error("Configuration Init Failed : "+e.getMessage());
+				logger.debug("Stacktrace", e);
 				return false;
 			}
 		}
