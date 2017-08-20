@@ -56,7 +56,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	public boolean realActivateLink(Activation link) {
 		try {
 
-			logger.info("Start actvation of link : {}", link);
+			logger.info("Start activation of link : {}", link);
 
 			Request request = new Request.Builder()
 					.header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
