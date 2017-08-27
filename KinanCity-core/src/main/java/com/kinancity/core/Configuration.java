@@ -127,7 +127,7 @@ public class Configuration {
 							}
 
 							// Proceed running captcha thread
-							
+
 							provider.setMaxWait(captchaMaxTotalTime);
 							provider.setMaxParallelChallenges(captchaMaxParallelChallenges);
 
@@ -205,7 +205,7 @@ public class Configuration {
 			try {
 				init();
 			} catch (ConfigurationException e) {
-				logger.error("Configuration Init Failed : "+e.getMessage());
+				logger.error("Configuration Init Failed : " + e.getMessage());
 				logger.debug("Stacktrace", e);
 				return false;
 			}
@@ -320,7 +320,6 @@ public class Configuration {
 			}
 
 			logger.info("ProxyManager setup with {} proxies : ", proxyManager.getProxies().size());
-
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				logger.info(" - {}", proxy.toString());
 			}
@@ -334,6 +333,18 @@ public class Configuration {
 			proxyPolicy = new NintendoTimeLimitPolicy();
 		}
 		return proxyPolicy.clone();
+	}
+
+	/**
+	 * Make sure to use the given policy.
+	 */
+	public void reloadProxyPolicy() {
+		if (proxyManager != null) {
+			ProxyPolicy policy = getProxyPolicyInstance();
+			proxyManager.getProxies().stream().forEach(proxy -> proxy.setProxyPolicy(getProxyPolicyInstance()));
+			logger.info("ProxyManager reloaded with {} policy ", policy);
+		}
+
 	}
 
 }

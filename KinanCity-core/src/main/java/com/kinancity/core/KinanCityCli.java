@@ -105,6 +105,7 @@ public class KinanCityCli {
 		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
 			config.setProxyPolicy(new UnlimitedUsePolicy());
 			config.setBottleneck(new ProxyNoBottleneck());
+			config.reloadProxyPolicy();
 		}
 
 		// -px/-proxies : list of proxy to use

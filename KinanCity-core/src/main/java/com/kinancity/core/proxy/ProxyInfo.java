@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
 
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Proxy information
@@ -18,6 +19,7 @@ public class ProxyInfo {
 	/**
 	 * Policy that manages how much it is used and if we can use it now
 	 */
+	@Setter
 	private ProxyPolicy proxyPolicy;
 
 	/**
