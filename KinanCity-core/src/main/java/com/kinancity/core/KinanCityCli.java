@@ -192,6 +192,7 @@ public class KinanCityCli {
 
 		// Captcha key given at commandLine
 		options.addOption(CliOptions.CK.asOption());
+		options.addOption(CliOptions.CP.asOption());
 
 		// Number of Threads
 		options.addOption(CliOptions.NB_THREADS.asOption());
