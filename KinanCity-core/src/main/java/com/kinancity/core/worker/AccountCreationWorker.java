@@ -117,12 +117,13 @@ public class AccountCreationWorker implements Runnable {
 					ProxyInfo proxy = proxySlot.getInfo();
 					logger.debug("Use proxy : {}", proxy);
 
+					OkHttpClient httpclient = null;
 					try {
 						// Get a new HTTP Client instance with that proxy
-						OkHttpClient httclient = proxy.getProvider().getClient();
+						httpclient = proxy.getProvider().getClient();
 
 						// Initialize a PTC Creation session
-						PtcSession ptc = new PtcSession(httclient);
+						PtcSession ptc = new PtcSession(httpclient);
 						ptc.setDryRun(dryRun);
 						ptc.setDumpResult(dumpResult);
 
@@ -226,6 +227,10 @@ public class AccountCreationWorker implements Runnable {
 
 						// Free that proxy slot for re-use
 						proxySlot.freeSlot();
+					} finally {
+						if(httpclient != null){
+							httpclient.connectionPool().evictAll();
+						}
 					}
 				} catch (TechnicalException e) {
 					// Error when getAvailableProxy
