@@ -20,7 +20,7 @@ public class ProxyTester {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	private String url_ptc = "https://club.pokemon.com/us/pokemon-trainer-club";
+	private String url_ptc = "https://club.pokemon.com/us/pokemon-trainer-club/sign-up/";
 
 	public boolean testProxy(HttpProxyProvider provider) {
 
