@@ -1,6 +1,7 @@
 package com.kinancity.core.captcha.imageTypers;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -141,6 +142,8 @@ public class ImageTypersProvider extends CaptchaProvider {
 						}
 					} catch (IOException e) {
 						logger.error("ImageTypers Error : " + e.getMessage(), e);
+						logger.debug("ImageTypers Error details", e);
+						challenges.remove(challenge);
 					}
 				}
 			}
