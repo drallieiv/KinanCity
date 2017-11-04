@@ -19,6 +19,7 @@ import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.core.captcha.CaptchaException;
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
+import com.kinancity.core.captcha.antiCaptcha.AntiCaptchaProvider;
 import com.kinancity.core.captcha.imageTypers.ImageTypersProvider;
 import com.kinancity.core.captcha.impl.LogCaptchaCollector;
 import com.kinancity.core.captcha.twoCaptcha.TwoCaptchaProvider;
@@ -117,11 +118,14 @@ public class Configuration {
 								// Add 2 captcha Provider
 								provider = TwoCaptchaProvider.getInstance(captchaQueue, captchaKey);
 								providerThreadName = "2captcha";
-
 							} else if ("imageTypers".equals(captchaProvider)) {
 								// Add imageTypers Provider
 								provider = ImageTypersProvider.getInstance(captchaQueue, captchaKey);
 								providerThreadName = "imageTypers";
+							} else if ("antiCaptcha".equals(captchaProvider)) {
+								// Add imageTypers Provider
+								provider = AntiCaptchaProvider.getInstance(captchaQueue, captchaKey);
+								providerThreadName = "antiCaptcha";
 							} else {
 								throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 							}

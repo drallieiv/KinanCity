@@ -24,6 +24,7 @@
 		<module>KinanCity-captcha-ImageTypers</module>
 		<module>KinanCity-captcha-api</module>
 		<module>KinanCity-captcha-2captcha</module>
+		<module>KinanCity-captcha-AntiCaptcha</module>
 	</modules>
 
 	<dependencies>
