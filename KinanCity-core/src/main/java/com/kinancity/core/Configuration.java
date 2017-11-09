@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.PtcSession;
 import com.kinancity.api.errors.TechnicalException;
+import com.kinancity.captcha.client.ClientProvider;
 import com.kinancity.core.captcha.CaptchaException;
 import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
@@ -114,8 +115,7 @@ public class Configuration {
 							String providerThreadName = "";
 
 							if ("2captcha".equals(captchaProvider)) {
-
-								// Add 2 captcha Provider
+							// Add 2 captcha Provider
 								provider = TwoCaptchaProvider.getInstance(captchaQueue, captchaKey);
 								providerThreadName = "2captcha";
 							} else if ("imageTypers".equals(captchaProvider)) {
@@ -126,6 +126,10 @@ public class Configuration {
 								// Add imageTypers Provider
 								provider = AntiCaptchaProvider.getInstance(captchaQueue, captchaKey);
 								providerThreadName = "antiCaptcha";
+							} else if ("local".equals(captchaProvider)) {
+								// Add local server provider
+								provider = ClientProvider.getInstance(captchaQueue);
+								providerThreadName = "localCaptchaServer";
 							} else {
 								throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 							}

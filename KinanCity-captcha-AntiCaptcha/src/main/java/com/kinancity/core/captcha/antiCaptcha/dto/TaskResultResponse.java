@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TaskResultResponse {
-	private Integer errorId;
+	private Integer errorId = 0;
 	private String errorCode;
 	private String errorDescription;
-	private String status;
+	private String status = "UNKNOWN";
 	private CatpchaSolutionDto solution;
 	private Double cost;
 	private Integer solveCount;

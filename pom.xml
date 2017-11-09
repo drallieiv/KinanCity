@@ -25,6 +25,8 @@
 		<module>KinanCity-captcha-api</module>
 		<module>KinanCity-captcha-2captcha</module>
 		<module>KinanCity-captcha-AntiCaptcha</module>
+		<module>KinanCity-captcha-server</module>
+		<module>KinanCity-captcha-client</module>
 	</modules>
 
 	<dependencies>
