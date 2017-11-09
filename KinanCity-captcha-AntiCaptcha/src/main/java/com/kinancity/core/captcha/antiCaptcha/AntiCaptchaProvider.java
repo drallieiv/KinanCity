@@ -76,9 +76,16 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 
 	public static final String INSUFFICIENT_BALANCE = "INSUFFICIENT_BALANCE";
 
-	private static String RECAPTCHA_SUBMIT_ENDPOINT = "https://api.anti-captcha.com/createTask";
-	private static String RECAPTCHA_RETRIEVE_ENDPOINT = "https://api.anti-captcha.com/getTaskResult";
-	private static String BALANCE_ENDPOINT = "https://api.anti-captcha.com/getBalance ";
+	public String RECAPTCHA_SUBMIT_ENDPOINT = "https://api.anti-captcha.com/createTask";
+	public String RECAPTCHA_RETRIEVE_ENDPOINT = "https://api.anti-captcha.com/getTaskResult";
+	public String BALANCE_ENDPOINT = "https://api.anti-captcha.com/getBalance ";
+
+	@Setter
+	public String captchaSubmitUrl = RECAPTCHA_SUBMIT_ENDPOINT;
+	@Setter
+	public String captchaRetrieveUrl = RECAPTCHA_RETRIEVE_ENDPOINT;
+	@Setter
+	public String captchaBalanceUrl = BALANCE_ENDPOINT;
 
 	private OkHttpClient captchaClient = new OkHttpClient();
 
@@ -153,7 +160,7 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 												// Interrupted
 											}
 										}
-									}else if (ErrorCode.ERROR_NO_SLOT_AVAILABLE.equals(errorCode)){
+									} else if (ErrorCode.ERROR_NO_SLOT_AVAILABLE.equals(errorCode)) {
 										// No slots, wait for a bit
 										logger.warn("NO_SLOT_AVAILABLE, Wait for a bit");
 										try {
@@ -161,15 +168,15 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 										} catch (InterruptedException e1) {
 											// Interrupted
 										}
-									}else if (ErrorCode.ERROR_NO_SUCH_CAPCHA_ID.equals(errorCode)){
+									} else if (ErrorCode.ERROR_NO_SUCH_CAPCHA_ID.equals(errorCode)) {
 										logger.warn("ERROR_NO_SUCH_CAPCHA_ID : {}", captchaId);
 										challenges.remove(challenge);
-									}else if (ErrorCode.ERROR_CAPTCHA_UNSOLVABLE.equals(errorCode)){
+									} else if (ErrorCode.ERROR_CAPTCHA_UNSOLVABLE.equals(errorCode)) {
 										logger.warn("ERROR_CAPTCHA_UNSOLVABLE : {}", captchaId);
 										challenges.remove(challenge);
-									} else if (ErrorCode.ERROR_CAPTCHA_UNSOLVABLE.equals(errorCode)){
+									} else {
 										logger.warn("OTHER ERROR with code {}", errorCode);
-										// challenges.remove(challenge);
+										challenges.remove(challenge);
 									}
 
 								} catch (IllegalArgumentException e) {
@@ -220,41 +227,49 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 			int nbToRequest = Math.max(0, nbNeeded - nbWaiting);
 			if (nbToRequest > 0) {
 				// Send new captcha requests
+				
+				logger.info("{} new Captcha required", nbToRequest);
 
 				for (int i = 0; i < nbToRequest; i++) {
 					try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
-						String body = sendResponse.body().string();
-						CreateTaskResponse response = mapper.readValue(body, CreateTaskResponse.class);
 
-						if (response.getErrorId() == 0) {
-							// Okay
-							String captchaId = response.getTaskId().toString();
-							logger.info("Requested new Captcha, id : {}", captchaId);
-							challenges.add(new AntiCaptchaRequest(captchaId));
-						} else {
-							// Error
-							try {
-								ErrorCode errorCode = ErrorCode.valueOf(response.getErrorCode());
-								logger.error("Captcha Provider Error {}", response.getErrorCode());
+						if (sendResponse.isSuccessful()) {
 
-								if (errorCode == ErrorCode.ERROR_ZERO_BALANCE) {
-									if (stopOnInsufficientBalance) {
-										logger.error("STOP");
-										this.runFlag = false;
-										break;
-									} else {
-										logger.error("WAIT");
-										try {
-											Thread.sleep(30000);
-										} catch (InterruptedException e1) {
-											// Interrupted
+							String body = sendResponse.body().string();
+							CreateTaskResponse response = mapper.readValue(body, CreateTaskResponse.class);
+
+							if (response.getErrorId() == 0) {
+								// Okay
+								String captchaId = response.getTaskId().toString();
+								logger.info("Requested new Captcha, id : {}", captchaId);
+								challenges.add(new AntiCaptchaRequest(captchaId));
+							} else {
+								// Error
+								try {
+									ErrorCode errorCode = ErrorCode.valueOf(response.getErrorCode());
+									logger.error("Captcha Provider Error {}", response.getErrorCode());
+
+									if (errorCode == ErrorCode.ERROR_ZERO_BALANCE) {
+										if (stopOnInsufficientBalance) {
+											logger.error("STOP");
+											this.runFlag = false;
+											break;
+										} else {
+											logger.error("WAIT");
+											try {
+												Thread.sleep(30000);
+											} catch (InterruptedException e1) {
+												// Interrupted
+											}
 										}
 									}
-								}
 
-							} catch (IllegalArgumentException e) {
-								logger.error("Unknown Captcha Provider Error Code : {}", response.getErrorCode());
+								} catch (IllegalArgumentException e) {
+									logger.error("Unknown Captcha Provider Error Code : {}", response.getErrorCode());
+								}
 							}
+						} else{
+							logger.error("Captcha Provider Error HTTP {}", sendResponse.code());
 						}
 					} catch (IOException e2) {
 						logger.error("Unknown Captcha Provider Error : {}", e2.getMessage(), e2);
@@ -305,7 +320,7 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 		PtcCaptchaTask task = new PtcCaptchaTask();
 		CreateTaskRequest taskRequest = new CreateTaskRequest(apiKey, task, softId, "en");
 
-		HttpUrl url = HttpUrl.parse(RECAPTCHA_SUBMIT_ENDPOINT).newBuilder().build();
+		HttpUrl url = HttpUrl.parse(captchaSubmitUrl).newBuilder().build();
 		RequestBody body = RequestBody.create(MediaType.parse("application/json"), mapper.writeValueAsString(taskRequest));
 
 		Request request = new Request.Builder()
@@ -324,7 +339,7 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 	 */
 	private Request buildReceiveCaptchaRequest(String catpchaId) throws JsonProcessingException {
 		TaskResultRequest resultRequest = new TaskResultRequest(apiKey, catpchaId);
-		HttpUrl url = HttpUrl.parse(RECAPTCHA_RETRIEVE_ENDPOINT).newBuilder().build();
+		HttpUrl url = HttpUrl.parse(captchaRetrieveUrl).newBuilder().build();
 		RequestBody body = RequestBody.create(MediaType.parse("application/json"), mapper.writeValueAsString(resultRequest));
 
 		Request request = new Request.Builder()
@@ -342,7 +357,7 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 	 * @throws JsonProcessingException
 	 */
 	private Request buildBalanceCheckequestGet() throws JsonProcessingException {
-		HttpUrl url = HttpUrl.parse(BALANCE_ENDPOINT).newBuilder().build();
+		HttpUrl url = HttpUrl.parse(captchaBalanceUrl).newBuilder().build();
 		BalanceRequest balanceRequest = new BalanceRequest(apiKey);
 		RequestBody body = RequestBody.create(MediaType.parse("application/json"), mapper.writeValueAsString(balanceRequest));
 
