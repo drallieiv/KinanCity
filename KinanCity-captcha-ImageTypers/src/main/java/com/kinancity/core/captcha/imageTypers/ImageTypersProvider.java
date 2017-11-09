@@ -210,9 +210,18 @@ public class ImageTypersProvider extends CaptchaProvider {
 		try {
 			Request sendRequest = buildBalanceCheckequestGet();
 			Response sendResponse = captchaClient.newCall(sendRequest).execute();
-			String balance = sendResponse.body().string();
-			return Double.valueOf(balance.replaceAll("\\$", ""));
-		} catch (Exception e) {
+			
+			String body = sendResponse.body().string();
+			if(body.contains("ERROR")){
+				if(body.contains("AUTHENTICATION_FAILED")){
+					throw new ImageTypersConfigurationException("Authentication failed, captcha key might be bad");
+				}else{
+					throw new ImageTypersConfigurationException(body);
+				}
+			}
+		
+			return Double.valueOf(body.replaceAll("\\$", ""));
+		} catch (IOException e) {
 			throw new ImageTypersConfigurationException("Error getting account balance", e);
 		}
 	}

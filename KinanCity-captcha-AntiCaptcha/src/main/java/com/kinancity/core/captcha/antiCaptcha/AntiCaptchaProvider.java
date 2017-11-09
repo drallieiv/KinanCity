@@ -140,7 +140,7 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 									ErrorCode errorCode = ErrorCode.valueOf(response.getErrorCode());
 									logger.error("Captcha Provider Error {}", response.getErrorCode());
 
-									if (errorCode == ErrorCode.ERROR_ZERO_BALANCE) {
+									if (ErrorCode.ERROR_ZERO_BALANCE.equals(errorCode)) {
 										if (stopOnInsufficientBalance) {
 											logger.error("STOP");
 											this.runFlag = false;
@@ -153,10 +153,28 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 												// Interrupted
 											}
 										}
+									}else if (ErrorCode.ERROR_NO_SLOT_AVAILABLE.equals(errorCode)){
+										// No slots, wait for a bit
+										logger.warn("NO_SLOT_AVAILABLE, Wait for a bit");
+										try {
+											Thread.sleep(30000);
+										} catch (InterruptedException e1) {
+											// Interrupted
+										}
+									}else if (ErrorCode.ERROR_NO_SUCH_CAPCHA_ID.equals(errorCode)){
+										logger.warn("ERROR_NO_SUCH_CAPCHA_ID : {}", captchaId);
+										challenges.remove(challenge);
+									}else if (ErrorCode.ERROR_CAPTCHA_UNSOLVABLE.equals(errorCode)){
+										logger.warn("ERROR_CAPTCHA_UNSOLVABLE : {}", captchaId);
+										challenges.remove(challenge);
+									} else if (ErrorCode.ERROR_CAPTCHA_UNSOLVABLE.equals(errorCode)){
+										logger.warn("OTHER ERROR with code {}", errorCode);
+										// challenges.remove(challenge);
 									}
 
 								} catch (IllegalArgumentException e) {
 									logger.error("Unknown Captcha Provider Error Code : {}", response.getErrorCode());
+									challenges.remove(challenge);
 								}
 							} else {
 								// NO ERROR
