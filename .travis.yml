@@ -23,7 +23,7 @@ deploy:
   file:
     - "$TRAVIS_BUILD_DIR/KinanCity-core/target/KinanCity-core-*.zip"
     - "$TRAVIS_BUILD_DIR/KinanCity-mail/target/KinanCity-mail-*.zip"
-    - "$TRAVIS_BUILD_DIR/KinanCity-captcha-server/target/KinanCity-captcha-server-*.jar"
+    - "$TRAVIS_BUILD_DIR/KinanCity-captcha-server/target/KinanCity-captcha-server-*-SNAPSHOT.jar"
   skip_cleanup: true
   on:
     tags: true
