@@ -7,11 +7,17 @@ import com.kinancity.core.captcha.antiCaptcha.AntiCaptchaProvider;
 
 public class ClientProvider extends AntiCaptchaProvider {
 
-	private String captchaInUrl = "http://localhost:8888/captcha/in";
-	private String captchaOutUrl = "http://localhost:8888/captcha/out";
+	private static final String CAPTCHA_RETRIEIVE_URL = "http://localhost:8888/captcha/retrieive";
+	private static final String CAPTCHA_SUBMIT_URL = "http://localhost:8888/captcha/submit";
+	private static final String CAPTCHA_BALANCE_URL = "http://localhost:8888/captcha/balance";
 
 	public static CaptchaProvider getInstance(CaptchaQueue queue) throws CaptchaException {
-		return new ClientProvider(queue);
+		ClientProvider provider = new ClientProvider(queue);
+		provider.setCaptchaBalanceUrl(CAPTCHA_BALANCE_URL);
+		provider.setCaptchaSubmitUrl(CAPTCHA_SUBMIT_URL);
+		provider.setCaptchaRetrieveUrl(CAPTCHA_RETRIEIVE_URL);
+		provider.setWaitBeforeRetry(200);
+		return provider;
 	}
 
 	public ClientProvider(CaptchaQueue queue) throws CaptchaException {

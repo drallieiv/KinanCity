@@ -48,7 +48,7 @@ public class SolvingService {
 	}
 
 	public void addSolution(String solution) {
-		CaptchaJob job = jobs.values().stream().findFirst().orElse(null);
+		CaptchaJob job = jobs.values().stream().filter(j -> j.getSolution() == null).findFirst().orElse(null);
 		if (job != null) {
 			job.setSolution(solution);
 		}
@@ -60,7 +60,7 @@ public class SolvingService {
 
 	private Integer nextAvailableJobId() {
 		log.debug("Get next available counter value");
-		counter = counter++ % max;
+		counter = (counter + 1)  % max;
 		return counter;
 	}
 }
