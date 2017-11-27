@@ -367,5 +367,4 @@ public class AntiCaptchaProvider extends CaptchaProvider {
 				.build();
 		return request;
 	}
-
 }
