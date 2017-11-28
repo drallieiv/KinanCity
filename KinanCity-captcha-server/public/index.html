@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kinan City Server</title>
+</head>
+  <body style="width:660px; margin:40px auto;">
+    <h3>Manual captcha solving with Kinan Catpcha Server</h3>
+    <p>You can use the bookmarklet below to solve captchas manually</p>
+    <script>
+    document.write("<a href=\"javascript:(function(){if(window.location.href!='https://club.pokemon.com/us/pokemon-trainer-club/sign-up/'){window.location.href='https://club.pokemon.com/us/pokemon-trainer-club/sign-up/'}else{document.getElementsByTagName('head')[0].appendChild(document.createElement('script')).src='http://localhost:8888/inject.js?'+Math.random();}}());\" style=\"font-size:1.3em\">Kinan Manual Solver Bookmarklet</a>")
+    </script>
+    <p>You can drag the link directly to bookmarks menu in your browser.</p>
+    <p>Verify that the URL of the bookmark starts with <code>javascript:</code>.</p>
+    <p>To use it, clic on the bookmarklet 2 times, once to go to ptc, an another one to go to captcha page</p>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-package com.kinancity.captcha.server;
+package com.kinancity.captcha.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.kinancity.core.captcha.antiCaptcha.dto.PtcCaptchaTask;
