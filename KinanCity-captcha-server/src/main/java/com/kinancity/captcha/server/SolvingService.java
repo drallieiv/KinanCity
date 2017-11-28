@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import com.kinancity.captcha.server.dto.CaptchaJob;
 import com.kinancity.captcha.server.errors.SolvingException;
 import com.kinancity.captcha.server.errors.TaskNotFoundException;
 import com.kinancity.core.captcha.antiCaptcha.dto.PtcCaptchaTask;
@@ -52,6 +53,10 @@ public class SolvingService {
 		if (job != null) {
 			job.setSolution(solution);
 		}
+	}
+	
+	public long getNbJobsRemaining(){
+		return jobs.values().stream().filter(j -> j.getSolution() == null).count();
 	}
 	
 	public CaptchaJob getNextJob(){
