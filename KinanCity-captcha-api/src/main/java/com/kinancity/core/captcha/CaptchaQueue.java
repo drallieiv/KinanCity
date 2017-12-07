@@ -41,6 +41,9 @@ public class CaptchaQueue {
 	 * @throws InterruptedException
 	 */
 	public CaptchaRequest addRequest(CaptchaRequest request) {
+		if(request == null){
+			throw new IllegalArgumentException("Should not add null request in queue");
+		}
 		queue.add(request);
 		return request;
 	}
