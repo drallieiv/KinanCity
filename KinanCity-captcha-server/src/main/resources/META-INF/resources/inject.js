@@ -74,14 +74,21 @@ var fnc = function(str){
         if(res && last_res !== res){
             console.log(res);
             last_res = res;
-            $.post(domain + 'captcha/solve', {token: res}, function(data) {
-                if(data == "ok"){
-                    $('#status').text('Captcha token submitted.');
-                } else {
-                    $('#status').text('Failed to submit captcha token.');
-                }
-                $('#status').fadeIn(200);
-            });
+            $.ajax({
+        		type: "post",
+        		url: domain + 'captcha/solve',
+        		dataType:"text",
+        		data: {token: res},
+        		success: function(){
+        			$('#status').text('Captcha token submitted.');
+        		},
+        		error: function(jqXHR, status, err){
+        			$('#status').text('Failed to submit captcha token.');
+        		},
+        		complete: function(){
+        			$('#status').fadeIn(200);
+        		}
+        	});
             setTimeout(initCaptchaPage, 1500);
         }
     }, 1);
