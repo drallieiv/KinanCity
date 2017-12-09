@@ -74,7 +74,7 @@ public class CaptchaController {
 			if (captcha != null) {
 				response.setStatus(TaskResultResponse.READY);
 				CatpchaSolutionDto solution = new CatpchaSolutionDto();
-				solution.setGRecaptchaResponse("thisIsTheCaptchaResponse");
+				solution.setGRecaptchaResponse(captcha);
 				response.setSolution(solution);
 			} else {
 				response.setStatus(TaskResultResponse.PROCESSING);
