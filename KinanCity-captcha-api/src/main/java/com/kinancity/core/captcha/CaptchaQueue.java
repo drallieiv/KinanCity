@@ -67,6 +67,7 @@ public class CaptchaQueue {
 
 		if (firstInQueue == null) {
 			logger.debug("No first in queue, go to overflow");
+			logger.error("In most cases this should not happen. Current Queue Info : Size {}", queue.size());
 			overFlowCollector.manageCaptchaOverflow(response);
 		} else {
 			logger.debug("First in queue is {}", firstInQueue);
