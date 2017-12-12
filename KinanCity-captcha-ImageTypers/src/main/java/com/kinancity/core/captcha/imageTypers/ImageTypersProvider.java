@@ -131,8 +131,12 @@ public class ImageTypersProvider extends CaptchaProvider {
 							} else if (body.contains("IMAGE_TIMED_OUT")) {
 								logger.warn("ImageTypers IMAGE_TIMED_OUT. Try again");
 								challenges.remove(challenge);
+							} else if (body.contains("INVALID_CAPTCHA_ID")) {
+								logger.error("ImageTypers reported captcha ID as invdalid : " + captchaId);
+								challenges.remove(challenge);
 							} else {
-								logger.error("Unknown I0mageTypers Error : " + body);
+								logger.error("Unknown ImageTypers Error : " + body);
+								challenges.remove(challenge);
 							}
 						} else {
 							String response = body;
