@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.kinancity</groupId>
 		<artifactId>KinanCity-parent</artifactId>
-		<version>1.3.3-SNAPSHOT</version>
+		<version>1.4.2-SNAPSHOT</version>
 	</parent>
 	<artifactId>KinanCity-mail</artifactId>
 	<description>Email validation for KinanCity</description>
