@@ -170,23 +170,25 @@ public class ImageTypersProvider extends CaptchaProvider {
 				Request sendRequest = buildSendCaptchaRequest();
 				for (int i = 0; i < nbToRequest; i++) {
 					try (Response sendResponse = captchaClient.newCall(sendRequest).execute()) {
-						String captchaId = sendResponse.body().string();
-						logger.info("Requested new Captcha, id : {}", captchaId);
-						challenges.add(new ImageTypersRequest(captchaId));
+						String body = sendResponse.body().string();
+
+						if (body.contains("ERROR")) {
+							if (body.contains("INSUFFICIENT_BALANCE")) {
+								if (manageInsufficientBalanceStop()) {
+									break;
+								}
+							} else {
+								logger.error("Error while calling IN ImageTypers : {}", body);
+							}
+						} else {
+							String captchaId = body;
+							logger.info("Requested new Captcha, id : {}", captchaId);
+							challenges.add(new ImageTypersRequest(captchaId));
+						}
 					} catch (Exception e) {
 						if (INSUFFICIENT_BALANCE.equals(e.getMessage())) {
-							logger.error("Insufficient balance");
-							if (stopOnInsufficientBalance) {
-								logger.error("STOP");
-								this.runFlag = false;
+							if (manageInsufficientBalanceStop()) {
 								break;
-							} else {
-								logger.error("WAIT");
-								try {
-									Thread.sleep(30000);
-								} catch (InterruptedException e1) {
-									// Interrupted
-								}
 							}
 						} else {
 							logger.error("Error while calling IN ImageTypers : {}", e.getMessage());
@@ -205,6 +207,28 @@ public class ImageTypersProvider extends CaptchaProvider {
 	}
 
 	/**
+	 * Manage insufficient Balance
+	 * 
+	 * @return true if loop should stop
+	 */
+	private boolean manageInsufficientBalanceStop() {
+		logger.error("Insufficient balance");
+		if (stopOnInsufficientBalance) {
+			logger.error("STOP");
+			this.runFlag = false;
+			return true;
+		} else {
+			logger.error("WAIT");
+			try {
+				Thread.sleep(30000);
+			} catch (InterruptedException e1) {
+				// Interrupted
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Get Current Balance. Should be called at least once before use to check for valid key.
 	 * 
 	 * @return current balance in USD
@@ -214,16 +238,16 @@ public class ImageTypersProvider extends CaptchaProvider {
 		try {
 			Request sendRequest = buildBalanceCheckequestGet();
 			Response sendResponse = captchaClient.newCall(sendRequest).execute();
-			
+
 			String body = sendResponse.body().string();
-			if(body.contains("ERROR")){
-				if(body.contains("AUTHENTICATION_FAILED")){
+			if (body.contains("ERROR")) {
+				if (body.contains("AUTHENTICATION_FAILED")) {
 					throw new ImageTypersConfigurationException("Authentication failed, captcha key might be bad");
-				}else{
+				} else {
 					throw new ImageTypersConfigurationException(body);
 				}
 			}
-		
+
 			return Double.valueOf(body.replaceAll("\\$", ""));
 		} catch (IOException e) {
 			throw new ImageTypersConfigurationException("Error getting account balance", e);
