@@ -181,8 +181,8 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 
 								String[] responses = jsonResponse.getString(JSON_RESPONSE).split("\\|");
 
-								if (responses.length != challengesToResolve.size()) {
-									logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
+								if (responses.length != batch.size()) {
+									logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, batch.size(), jsonResponse.getString(JSON_RESPONSE));
 									logger.info("Switch to MissmatchRecovery mode");
 									missmatchRecovery = true;
 									recoveryModeTimer = new StopWatch();
@@ -193,7 +193,7 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 										missmatchRecovery = false;
 									}
 									int i = 0;
-									for (TwoCaptchaChallenge challenge : challengesToResolve) {
+									for (TwoCaptchaChallenge challenge : batch) {
 										String response = responses[i];
 										manageChallengeResponse(challenge, response);
 										i++;
