@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 import org.apache.commons.lang.math.NumberUtils;
@@ -90,6 +91,13 @@ public class Configuration {
 
 	private int dumpResult = PtcSession.NEVER;
 
+	/**
+	 * Custom values for batches processing
+	 */
+	private Integer customBatchMinTimeForRecovery = null;
+	private Integer customBatchMissmatchRecoverySize = null;
+	private Integer customBatchNormalBatchSize = null;
+
 	public static Configuration getInstance() {
 		if (instance == null) {
 			instance = new Configuration();
@@ -111,14 +119,25 @@ public class Configuration {
 					if ((captchaKey == null || captchaKey.isEmpty()) && !"local".equals(captchaProvider)) {
 						throw new ConfigurationException("No Catpcha key given");
 					}
-					
+
 					try {
 						CaptchaProvider provider = null;
 						String providerThreadName = "";
 
 						if ("2captcha".equals(captchaProvider)) {
-						// Add 2 captcha Provider
-							provider = TwoCaptchaProvider.getInstance(captchaQueue, captchaKey);
+							// Add 2 captcha Provider
+							TwoCaptchaProvider twocaptchaprovider = TwoCaptchaProvider.class.cast(TwoCaptchaProvider.getInstance(captchaQueue, captchaKey));
+							if (customBatchMinTimeForRecovery != null) {
+								twocaptchaprovider.setMinTimeForRecovery(customBatchMinTimeForRecovery);
+							}
+							if (customBatchMissmatchRecoverySize != null) {
+								twocaptchaprovider.setMissmatchRecoverySize(customBatchMissmatchRecoverySize);
+							}
+							if (customBatchNormalBatchSize != null) {
+								twocaptchaprovider.setNormalBatchSize(customBatchNormalBatchSize);
+							}
+
+							provider = twocaptchaprovider;
 							providerThreadName = "2captcha";
 						} else if ("imageTypers".equals(captchaProvider)) {
 							// Add imageTypers Provider
@@ -292,6 +311,9 @@ public class Configuration {
 			this.setCaptchaProvider(prop.getProperty("captcha.provider", "imageTypers"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
+			Optional.ofNullable(prop.getProperty("batch.recovery.time")).ifPresent(value -> this.setCustomBatchMinTimeForRecovery(Integer.parseInt(value)));
+			Optional.ofNullable(prop.getProperty("batch.recovery.size")).ifPresent(value -> this.setCustomBatchMissmatchRecoverySize(Integer.parseInt(value)));
+			Optional.ofNullable(prop.getProperty("batch.normal.size")).ifPresent(value -> this.setCustomBatchNormalBatchSize(Integer.parseInt(value)));
 
 			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
 

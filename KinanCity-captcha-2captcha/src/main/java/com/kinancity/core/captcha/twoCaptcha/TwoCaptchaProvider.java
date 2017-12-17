@@ -13,6 +13,8 @@ import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParsingException;
 
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang.time.StopWatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +107,20 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	// Count the number of captcha sent
 	@Getter
 	private int nbSent = 0;
+	
+	private StopWatch recoveryModeTimer;
+
+	// Minimum number of seconds to stay in Recovery mode
+	@Setter
+	private int minTimeForRecovery = 30;
+	
+	// Batch size if in recovery mode
+	@Setter
+	private int missmatchRecoverySize = 5;
+	
+	// Default batch size
+	@Setter
+	private int normalBatchSize = 12;
 
 	public static CaptchaProvider getInstance(CaptchaQueue queue, String apiKey) throws CaptchaException {
 		return new TwoCaptchaProvider(queue, apiKey);
@@ -124,7 +140,6 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	public void run() {
 
 		boolean missmatchRecovery = false;
-		int missmatchRecoverySize = 10;
 
 		while (runFlag) {
 
@@ -138,55 +153,66 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 				// Currently waiting for captcha
 				logger.debug("Check status of {} captchas", challengesToResolve.size());
 
+				// Build a list of chucks
+				List<List<TwoCaptchaChallenge>> batchList = new ArrayList<>();
+				
 				if (missmatchRecovery) {
 					logger.info("MissmatchRecovery only check for {} captcha at once max", missmatchRecoverySize);
-					challengesToResolve.stream().limit(missmatchRecoverySize).collect(Collectors.toSet());
+					batchList.add(challengesToResolve.stream().limit(missmatchRecoverySize).collect(Collectors.toList()));
+				}else {
+					logger.debug("Normal mode only check for {} captcha at once max", normalBatchSize);
+					Set<TwoCaptchaChallenge> fullList = challengesToResolve.stream().collect(Collectors.toSet());
+					batchList.addAll(ListUtils.partition(fullList.stream().collect(Collectors.toList()), normalBatchSize));
 				}
+				
+				for (List<TwoCaptchaChallenge> batch : batchList) {
+					String captchaIds = batch.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(","));
+					logger.debug("captchaIds {}", captchaIds);
 
-				String captchaIds = challengesToResolve.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(","));
-				logger.debug("captchaIds {}", captchaIds);
+					Request resolveRequest = buildReceiveCaptchaRequest(captchaIds);
+					
+					try (Response solveResponse = captchaClient.newCall(resolveRequest).execute()) {
+						String body = solveResponse.body().string();
 
-				Request resolveRequest = buildReceiveCaptchaRequest(captchaIds);
+						try {
+							JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
+							if (isValidResponse(jsonResponse)) {
+								logger.debug("response : {}", body);
 
-				try (Response solveResponse = captchaClient.newCall(resolveRequest).execute()) {
-					String body = solveResponse.body().string();
+								String[] responses = jsonResponse.getString(JSON_RESPONSE).split("\\|");
 
-					try {
-						JsonObject jsonResponse = Json.createReader(new StringReader(body)).readObject();
-						if (isValidResponse(jsonResponse)) {
-							logger.debug("response : {}", body);
+								if (responses.length != challengesToResolve.size()) {
+									logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
+									logger.info("Switch to MissmatchRecovery mode");
+									missmatchRecovery = true;
+									recoveryModeTimer = new StopWatch();
+									recoveryModeTimer.start();
+								} else {
+									if (missmatchRecovery && recoveryModeTimer.getSplitTime() < minTimeForRecovery * 1000) {
+										logger.info("Disable MissmatchRecovery mode");
+										missmatchRecovery = false;
+									}
+									int i = 0;
+									for (TwoCaptchaChallenge challenge : challengesToResolve) {
+										String response = responses[i];
+										manageChallengeResponse(challenge, response);
+										i++;
+									}
+								}
 
-							String[] responses = jsonResponse.getString(JSON_RESPONSE).split("\\|");
+								logger.debug("Remaining Challenges : {}", challenges.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(",")));
 
-							if (responses.length != challengesToResolve.size()) {
-								logger.error("Number of responses [{}] do not match number of requests [{}] : {}", responses.length, challengesToResolve.size(), jsonResponse.getString(JSON_RESPONSE));
-								logger.info("Switch to MissmatchRecovery mode");
-								missmatchRecovery = true;
 							} else {
-								if (missmatchRecovery) {
-									logger.info("Disable MissmatchRecovery mode");
-									missmatchRecovery = false;
-								}
-								int i = 0;
-								for (TwoCaptchaChallenge challenge : challengesToResolve) {
-									String response = responses[i];
-									manageChallengeResponse(challenge, response);
-									i++;
-								}
+								logger.error("Invalid response : {}", body);
 							}
-
-							logger.debug("Remaining Challenges : {}", challenges.stream().map(c -> c.getCaptchaId()).collect(Collectors.joining(",")));
-
-						} else {
-							logger.error("Invalid response : {}", body);
+						} catch (JsonParsingException e) {
+							logger.error("2captcha response was not a valid JSON : {}", body);
 						}
-					} catch (JsonParsingException e) {
-						logger.error("2captcha response was not a valid JSON : {}", body);
-					}
 
-				} catch (IOException e) {
-					logger.error("Error while calling RES 2captcha : {}", e.getMessage());
-				}
+					} catch (IOException e) {
+						logger.error("Error while calling RES 2captcha : {}", e.getMessage());
+					}
+				}				
 
 			}
 
