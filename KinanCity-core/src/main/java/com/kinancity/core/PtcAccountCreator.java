@@ -49,6 +49,10 @@ public class PtcAccountCreator {
 
 	public PtcAccountCreator(Configuration config) {
 		this.config = config;
+		
+		if(config.getNbThreads() > accountCreationWorkerFactory.getTrainerNames().size()){
+			accountCreationWorkerFactory.setUseThreadNumber(true);
+		}
 	}
 
 	public void start() {
