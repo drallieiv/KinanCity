@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import org.subethamail.wiser.Wiser;
@@ -11,6 +13,8 @@ import org.subethamail.wiser.Wiser;
 import com.kinancity.mail.activator.LinkActivator;
 import com.kinancity.mail.activator.QueueLinkActivator;
 import com.kinancity.mail.activator.ToFileLinkActivator;
+import com.kinancity.mail.activator.limiter.ActivationLimiter;
+import com.kinancity.mail.activator.limiter.RateLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 import com.kinancity.mail.tester.ThrottleTester;
 
@@ -110,10 +114,48 @@ public class MailServerApplication {
 
 		String proxy = config.getProperty("proxy");
 		if (proxy != null) {
-			HttpProxy httpProxy = HttpProxy.fromURI(proxy);
-			System.out.println("Using proxy " + httpProxy);
-			activator.setHttpProxy(httpProxy);
+			if (proxy.contains("|")) {
+				List<String> proxies = Arrays.asList(proxy.split("|"));
+				String initialProxy = proxies.get(0);
+				HttpProxy httpProxy = HttpProxy.fromURI(initialProxy);
+				System.out.println("Using proxy " + httpProxy);
+				activator.setHttpProxy(httpProxy);
+
+				proxies.remove(0);
+				for (String backupProxyStr : proxies) {
+					HttpProxy backupProxy = HttpProxy.fromURI(backupProxyStr);
+					httpProxy.getOtherProxies().add(backupProxy);
+					System.out.println("with backup proxy " + backupProxy);
+				}
+
+			} else {
+				HttpProxy httpProxy = HttpProxy.fromURI(proxy);
+				System.out.println("Using proxy " + httpProxy);
+				activator.setHttpProxy(httpProxy);
+			}
 		}
+
+		String limiterActive = config.getProperty("limiter.enable");
+		if (limiterActive != null && limiterActive.equals("false")) {
+			String period = config.getProperty("limiter.period");
+			String nb = config.getProperty("limiter.nb");
+			String pause = config.getProperty("limiter.pause");
+
+			RateLimiter limiter = new RateLimiter();
+			if (period != null) {
+				limiter.setPeriodInSeconds(Integer.parseInt(period));
+			}
+			if (nb != null) {
+				limiter.setNbPerPeriod(Integer.parseInt(nb));
+			}
+			if (pause != null) {
+				limiter.setLimiterPause(Integer.parseInt(pause));
+			}
+			
+			System.out.println("Using limiter " + limiter);
+			activator.setLimiter(limiter);
+		}
+
 		return activator;
 	}
 

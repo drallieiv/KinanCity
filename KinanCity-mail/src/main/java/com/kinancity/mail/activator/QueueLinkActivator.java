@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.kinancity.mail.Activation;
 import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
+import com.kinancity.mail.activator.limiter.ActivationLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 
 import lombok.Setter;
@@ -38,6 +39,10 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	@Setter
 	private boolean stop = false;
+	private HttpProxy proxy;
+	
+	@Setter
+	private ActivationLimiter limiter;
 
 	public QueueLinkActivator() {
 		client = new OkHttpClient.Builder().build();
@@ -54,6 +59,11 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	}
 
 	public boolean realActivateLink(Activation link) {
+		
+		if(limiter != null){
+			limiter.waitIfNecessary();
+		}
+		
 		try {
 
 			logger.info("Start activation of link : {}", link);
@@ -93,6 +103,16 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						logger.warn("HTTP 503. Your validation request was throttled, wait 60s");
 						isFinal = false;
 						throttlePause();
+					}else if (response.code() == 403 && strResponse.contains(THROTTLE_MSG)) {
+						
+						isFinal = false;
+						if(!proxy.getOtherProxies().isEmpty()){
+							logger.warn("HTTP 403. Your validation request was blocked, switch proxy");
+							this.setHttpProxy(proxy.switchProxies());
+						}else{
+							logger.warn("HTTP 403. Your validation request was throttled, wait 60s");
+							throttlePause();
+						}
 					} else {
 						logger.error("Unexpected Error {} : {}", response.code(), strResponse);
 						FileLogger.logStatus(link, FileLogger.ERROR);
@@ -148,6 +168,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	}
 
 	public void setHttpProxy(HttpProxy httpProxy) {
+		this.proxy = httpProxy;
 		this.client = httpProxy.getClient();
 	}
 }
