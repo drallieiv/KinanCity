@@ -17,4 +17,9 @@ public class ToFileLinkActivator implements LinkActivator {
 		return true;
 	}
 
+	@Override
+	public void start() {
+		// Nothing to start
+	}
+
 }

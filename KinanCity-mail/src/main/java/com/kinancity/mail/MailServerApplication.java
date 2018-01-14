@@ -13,9 +13,9 @@ import java.util.regex.Pattern;
 import org.subethamail.wiser.Wiser;
 
 import com.kinancity.mail.activator.LinkActivator;
+import com.kinancity.mail.activator.MultiThreadQueueLinkActivator;
 import com.kinancity.mail.activator.QueueLinkActivator;
 import com.kinancity.mail.activator.ToFileLinkActivator;
-import com.kinancity.mail.activator.limiter.ActivationLimiter;
 import com.kinancity.mail.activator.limiter.RateLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 import com.kinancity.mail.tester.ThrottleTester;
@@ -66,6 +66,7 @@ public class MailServerApplication {
 			}
 
 			LinkActivator activator = getQueueLinkActivator();
+			activator.start();
 
 			System.out.println("Started in file Mode");
 			new SkippedFileProcessor(activator, filePath).process();
@@ -78,6 +79,7 @@ public class MailServerApplication {
 			} else {
 				System.out.println("Started in Direct Mode");
 			}
+			activator.start();
 
 			// Start Wiser server
 			Wiser wiser = new Wiser();
@@ -112,7 +114,21 @@ public class MailServerApplication {
 	}
 
 	public static LinkActivator getQueueLinkActivator() {
-		QueueLinkActivator activator = new QueueLinkActivator();
+
+		QueueLinkActivator activator;
+
+		String multithreadActive = config.getProperty("multithread.enable");
+		if (multithreadActive != null && !multithreadActive.equals("false")) {
+			MultiThreadQueueLinkActivator mtactivator = new MultiThreadQueueLinkActivator();
+			
+			String multithreadNbThread = config.getProperty("multithread.nbThread");
+			if(multithreadNbThread != null){
+				mtactivator.setNbThreads(Integer.parseInt(multithreadNbThread));	
+			}
+			activator = mtactivator;
+		} else {
+			activator = new QueueLinkActivator();
+		}
 
 		String proxy = config.getProperty("proxy");
 		if (proxy != null) {
@@ -138,7 +154,7 @@ public class MailServerApplication {
 		}
 
 		String limiterActive = config.getProperty("limiter.enable");
-		if (limiterActive != null && limiterActive.equals("false")) {
+		if (limiterActive != null && !limiterActive.equals("false")) {
 			String period = config.getProperty("limiter.period");
 			String nb = config.getProperty("limiter.nb");
 			String pause = config.getProperty("limiter.pause");
@@ -153,7 +169,7 @@ public class MailServerApplication {
 			if (pause != null) {
 				limiter.setLimiterPause(Integer.parseInt(pause));
 			}
-			
+
 			System.out.println("Using limiter " + limiter);
 			activator.setLimiter(limiter);
 		}

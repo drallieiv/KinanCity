@@ -12,5 +12,7 @@ public interface LinkActivator {
 	 * @return true if activation successfull
 	 */
 	boolean activateLink(Activation link);
+	
+	void start();
 
 }

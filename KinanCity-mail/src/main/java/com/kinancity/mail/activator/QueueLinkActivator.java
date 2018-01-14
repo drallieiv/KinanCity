@@ -12,6 +12,7 @@ import com.kinancity.mail.MailConstants;
 import com.kinancity.mail.activator.limiter.ActivationLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 
+import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -33,9 +34,8 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	private static final String INVALID_TOKEN_MSG = "We cannot find an account matching the confirmation email.";
 	private static final String THROTTLE_MSG = "403 Forbidden";
 
-	private okhttp3.OkHttpClient client;
-
-	private ArrayDeque<Activation> linkQueue;
+	protected okhttp3.OkHttpClient client;
+	protected ArrayDeque<Activation> linkQueue;
 
 	@Setter
 	private boolean stop = false;
@@ -46,11 +46,12 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	public QueueLinkActivator() {
 		client = new OkHttpClient.Builder().build();
-
 		linkQueue = new ArrayDeque<>();
-
-		Thread process = new Thread(this);
-		process.start();
+	}
+	
+	public QueueLinkActivator(OkHttpClient client, ArrayDeque<Activation> linkQueue) {
+		this.client = client;
+		this.linkQueue = linkQueue;
 	}
 
 	public boolean activateLink(Activation link) {
@@ -149,6 +150,9 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 
 	@Override
 	public void run() {
+		
+		logger.info("Activator Started");
+		
 		while (!stop || !linkQueue.isEmpty()) {
 			if (linkQueue.isEmpty()) {
 				try {
@@ -170,5 +174,11 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	public void setHttpProxy(HttpProxy httpProxy) {
 		this.proxy = httpProxy;
 		this.client = httpProxy.getClient();
+	}
+
+	@Override
+	public void start() {
+		Thread process = new Thread(this);
+		process.start();
 	}
 }
