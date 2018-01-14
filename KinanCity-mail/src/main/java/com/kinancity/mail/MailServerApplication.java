@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.subethamail.wiser.Wiser;
 
@@ -115,7 +117,7 @@ public class MailServerApplication {
 		String proxy = config.getProperty("proxy");
 		if (proxy != null) {
 			if (proxy.contains("|")) {
-				List<String> proxies = Arrays.asList(proxy.split("|"));
+				List<String> proxies = new LinkedList<String>(Arrays.asList(proxy.split(Pattern.quote("|"))));
 				String initialProxy = proxies.get(0);
 				HttpProxy httpProxy = HttpProxy.fromURI(initialProxy);
 				System.out.println("Using proxy " + httpProxy);
