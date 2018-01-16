@@ -33,6 +33,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	private static final String ALREADY_DONE_MSG = "Your account has already been activated.";
 	private static final String INVALID_TOKEN_MSG = "We cannot find an account matching the confirmation email.";
 	private static final String THROTTLE_MSG = "403 Forbidden";
+	private static final String BLOCKED_MSG = "Request blocked";
 
 	protected okhttp3.OkHttpClient client;
 	protected ArrayDeque<Activation> linkQueue;
@@ -104,14 +105,14 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						logger.warn("HTTP 503. Your validation request was throttled, wait 60s");
 						isFinal = false;
 						throttlePause();
-					}else if (response.code() == 403 && strResponse.contains(THROTTLE_MSG)) {
+					}else if (response.code() == 403 && strResponse.contains(BLOCKED_MSG)) {
 						
 						isFinal = false;
 						if(!proxy.getOtherProxies().isEmpty()){
 							logger.warn("HTTP 403. Your validation request was blocked, switch proxy");
 							this.setHttpProxy(proxy.switchProxies());
 						}else{
-							logger.warn("HTTP 403. Your validation request was throttled, wait 60s");
+							logger.warn("HTTP 403. Your validation request was blocked, wait 60s");
 							throttlePause();
 						}
 					} else {
