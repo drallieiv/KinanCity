@@ -108,7 +108,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 					}else if (response.code() == 403 && strResponse.contains(BLOCKED_MSG)) {
 						
 						isFinal = false;
-						if(!proxy.getOtherProxies().isEmpty()){
+						if(proxy.getOtherProxies() != null && !proxy.getOtherProxies().isEmpty()){
 							logger.warn("HTTP 403. Your validation request was blocked, switch proxy");
 							this.setHttpProxy(proxy.switchProxies());
 						}else{
