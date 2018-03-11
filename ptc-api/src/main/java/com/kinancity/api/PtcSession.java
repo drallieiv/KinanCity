@@ -59,7 +59,7 @@ public class PtcSession {
 	private String pathSignup = "/parents/sign-up";
 
 	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}$";
-	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]{4,15}$";
+	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]{6,16}$";
 
 	private OkHttpClient client;
 
@@ -111,7 +111,7 @@ public class PtcSession {
 		}
 
 		if (!Pattern.matches(PTC_USENAME_EXPREG, username)) {
-			logger.error("Invalid username '{}', The username may contains illegal values and must be between 4 and 15 characters long", username);
+			logger.error("Invalid username '{}', The username may contains illegal values and must be between 6 and 16 characters long", username);
 			return false;
 		}
 
