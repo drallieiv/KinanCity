@@ -4,17 +4,11 @@ cache:
  directories:
    - $HOME/.m2
 
-sudo: false
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
-
-jdk:
-  - oraclejdk8
-
-os:
-  - linux
+matrix:
+  include:
+    - os: linux
+      sudo: false
+      jdk: oraclejdk8 # JDK 9+175 or newer
 
 deploy:
   provider: releases
