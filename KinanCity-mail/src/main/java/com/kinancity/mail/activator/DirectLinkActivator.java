@@ -93,4 +93,9 @@ public class DirectLinkActivator implements LinkActivator {
 		}
 	}
 
+	@Override
+	public void start() {
+		// Nothing to do
+	}
+
 }

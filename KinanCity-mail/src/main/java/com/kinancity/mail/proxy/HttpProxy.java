@@ -3,8 +3,10 @@ package com.kinancity.mail.proxy;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +56,9 @@ public class HttpProxy {
 	// Connction timeout, default is 60s
 	@Setter
 	private int connectionTimeout = 60;
+	
+	// Backup list
+	private List<HttpProxy> otherProxies = new ArrayList<>();
 
 	public static final String URI_REGEXP = "^(?:(?<protocol>[\\w\\.\\-\\+]+):\\/{2})?" +
 			"(?:(?<login>[\\w\\d\\.\\-%]+):(?<pass>[\\w\\d\\.\\-%]+)@)?" +
@@ -220,6 +225,26 @@ public class HttpProxy {
 
 	public String getHost() {
 		return host;
+	}
+	
+	/**
+	 * Switch to another proxy
+	 * @return new proxy to use or same one if no others
+	 */
+	public HttpProxy switchProxies(){	
+		List<HttpProxy> others = this.getOtherProxies();
+		if(otherProxies.isEmpty()){
+			return this;
+		}
+		
+		HttpProxy next = otherProxies.get(0);
+		others.remove(next);
+		others.add(this);
+		this.otherProxies.clear();
+		
+		next.getOtherProxies().addAll(others);
+		
+		return next;
 	}
 
 }
