@@ -179,12 +179,13 @@ public class Configuration {
 					throw new ConfigurationException(e);
 				}
 			}
-
+			
 			if (proxyManager == null) {
-				logger.info("ProxyManager using direct connection with Nintendo policy");
+				ProxyPolicy policy = getProxyPolicyInstance();
+				logger.info("ProxyManager using direct connection with policy : {}", policy);
 				proxyManager = new ProxyManager();
 				// Add Direct connection
-				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
+				proxyManager.addProxy(new ProxyInfo(policy, new NoProxy()));
 			}
 
 			// Add BottleNeck
@@ -317,10 +318,21 @@ public class Configuration {
 
 			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
 
-			String customPeriod = prop.getProperty("proxyPolicy.custom.period");
-			if (customPeriod != null && NumberUtils.isNumber(customPeriod)) {
-				proxyPolicy = new TimeLimitPolicy(5, Integer.parseInt(customPeriod) * 60);
+			if(prop.getProperty("proxyPolicy.custom.period") != null || prop.getProperty("proxyPolicy.custom.count") != null){
+				String customPeriodConfig = prop.getProperty("proxyPolicy.custom.period");
+				String customCountConfig = prop.getProperty("proxyPolicy.custom.count");
+				int customPeriod = 16 * 60;
+				int customCount = 5;
+				if (customPeriodConfig != null && NumberUtils.isNumber(customPeriodConfig)) {
+					customPeriod = Integer.parseInt(customPeriodConfig);
+				}
+				if (customCountConfig != null && NumberUtils.isNumber(customCountConfig)) {
+					customCount = Integer.parseInt(customCountConfig);
+				}
+
+				proxyPolicy = new TimeLimitPolicy(customCount, customPeriod);
 			}
+			
 
 			this.loadProxies(prop.getProperty("proxies"));
 

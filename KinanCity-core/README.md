@@ -77,3 +77,6 @@ proxy with auth format is `login:pass@ip:port` like `root:admin@127.0.0.1:80`
 * `-t <12>` or `-thread <12>` to change the number of thread to 12 (default 5)
 * `-npc` or `-noProxyCheck` will skip proxy check step at startup
 * `-nl` or `-noLimit` will remove the policy that limits to 5 accounts per IP per 10 minutes
+
+# Configuration File :
+Additional configuration can be set using a config.properties file. You can start from the given config.example.properties and change values
