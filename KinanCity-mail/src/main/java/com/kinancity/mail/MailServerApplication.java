@@ -173,7 +173,17 @@ public class MailServerApplication {
 			System.out.println("Using limiter " + limiter);
 			activator.setLimiter(limiter);
 		}
-
+		
+		String proxyBanActive = config.getProperty("proxy.banProxyOn403");
+		if (proxyBanActive != null && !proxyBanActive.equals("false")) {
+			activator.setBanProxyOn403(true);
+		}
+		
+		String alwaysSwitchActive = config.getProperty("proxy.switchProxyOnSuccess");
+		if (alwaysSwitchActive != null && !alwaysSwitchActive.equals("false")) {
+			activator.setSwitchProxyOnSuccess(true);
+		}
+		
 		return activator;
 	}
 

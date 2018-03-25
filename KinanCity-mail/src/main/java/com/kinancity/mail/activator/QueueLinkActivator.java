@@ -12,7 +12,6 @@ import com.kinancity.mail.MailConstants;
 import com.kinancity.mail.activator.limiter.ActivationLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 
-import lombok.Getter;
 import lombok.Setter;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -41,6 +40,12 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	@Setter
 	private boolean stop = false;
 	private HttpProxy proxy;
+	
+	@Setter
+	private boolean switchProxyOnSuccess = false;
+	
+	@Setter
+	private boolean banProxyOn403 = false;
 	
 	@Setter
 	private ActivationLimiter limiter;
@@ -100,6 +105,10 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						logger.warn("OK response but missing confirmation.");
 						logger.debug("Body : \n {}", strResponse);
 					}
+					if(switchProxyOnSuccess) {
+						logger.debug("Success, Switch Proxy");
+						this.setHttpProxy(proxy.switchProxies());
+					}
 				} else {
 					if (response.code() == 503 && strResponse.contains(THROTTLE_MSG)) {
 						logger.warn("HTTP 503. Your validation request was throttled, wait 60s");
@@ -110,7 +119,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						isFinal = false;
 						if(proxy.getOtherProxies() != null && !proxy.getOtherProxies().isEmpty()){
 							logger.warn("HTTP 403. Your validation request was blocked, switch proxy");
-							this.setHttpProxy(proxy.switchProxies());
+							this.setHttpProxy(proxy.switchProxies(banProxyOn403));
 						}else{
 							logger.warn("HTTP 403. Your validation request was blocked, wait 60s");
 							throttlePause();

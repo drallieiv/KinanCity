@@ -232,6 +232,14 @@ public class HttpProxy {
 	 * @return new proxy to use or same one if no others
 	 */
 	public HttpProxy switchProxies(){	
+		return switchProxies(false);
+	}
+	
+	/**
+	 * Switch to another proxy
+	 * @return new proxy to use or same one if no others
+	 */
+	public HttpProxy switchProxies(boolean banProxy){	
 		List<HttpProxy> others = this.getOtherProxies();
 		if(otherProxies.isEmpty()){
 			return this;
@@ -239,7 +247,11 @@ public class HttpProxy {
 		
 		HttpProxy next = otherProxies.get(0);
 		others.remove(next);
-		others.add(this);
+		if(banProxy){
+			logger.warn("Ban proxy from rotation : {}", this.toString());
+		}else{
+			others.add(this);
+		}
 		this.otherProxies.clear();
 		
 		next.getOtherProxies().addAll(others);
