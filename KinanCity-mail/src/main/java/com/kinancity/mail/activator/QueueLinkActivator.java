@@ -105,7 +105,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 						logger.warn("OK response but missing confirmation.");
 						logger.debug("Body : \n {}", strResponse);
 					}
-					if(switchProxyOnSuccess) {
+					if(proxy != null && switchProxyOnSuccess) {
 						logger.debug("Success, Switch Proxy");
 						this.setHttpProxy(proxy.switchProxies());
 					}
@@ -117,7 +117,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 					}else if (response.code() == 403 && strResponse.contains(BLOCKED_MSG)) {
 						
 						isFinal = false;
-						if(proxy.getOtherProxies() != null && !proxy.getOtherProxies().isEmpty()){
+						if(proxy !=null && proxy.getOtherProxies() != null && !proxy.getOtherProxies().isEmpty()){
 							logger.warn("HTTP 403. Your validation request was blocked, switch proxy");
 							this.setHttpProxy(proxy.switchProxies(banProxyOn403));
 						}else{
