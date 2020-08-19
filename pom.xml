@@ -28,15 +28,7 @@
 		<module>KinanCity-captcha-server</module>
 		<module>KinanCity-captcha-client</module>
 	</modules>
-
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/drallieiv/KinanCity</url>
-		</repository>
-	</distributionManagement>
-
+	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
