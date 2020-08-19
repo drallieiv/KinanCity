@@ -27,6 +27,7 @@
 		<module>KinanCity-captcha-AntiCaptcha</module>
 		<module>KinanCity-captcha-server</module>
 		<module>KinanCity-captcha-client</module>
+		<module>KinanCity-captcha-xevil</module>
 	</modules>
 
 	<dependencies>
