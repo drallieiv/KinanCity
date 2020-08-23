@@ -32,7 +32,7 @@ The advantages of KinanCity :
 
 ## How to install KinanCity ?
 
-You can **download** the latest builds [here](https://github.com/drallieiv/KinanCity/releases)  
+You can **download** the latest version of each module [here](https://github.com/drallieiv/KinanCity/packages)
 or  
 You can **compile** it yourself using a **maven** goal : `mvn package`  
 

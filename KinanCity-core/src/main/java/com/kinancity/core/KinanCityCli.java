@@ -94,7 +94,7 @@ public class KinanCityCli {
 		
 		// -cp/-captchaProvider : captcha service provider
 		if (cmd.hasOption(CliOptions.CP.shortName)) {
-			config.setCaptchaKey(cmd.getOptionValue(CliOptions.CP.shortName));
+			config.setCaptchaProvider(cmd.getOptionValue(CliOptions.CP.shortName));
 		}
 
 		// -nl/-noLimit : Use Unlimited Policy
