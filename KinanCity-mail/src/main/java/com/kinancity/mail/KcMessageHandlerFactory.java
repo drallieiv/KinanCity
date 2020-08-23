@@ -1,5 +1,6 @@
 package com.kinancity.mail;
 
+import com.kinancity.mail.mailchanger.EmailChanger;
 import org.subethamail.smtp.MessageContext;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.MessageHandlerFactory;
@@ -18,6 +19,8 @@ public class KcMessageHandlerFactory implements MessageHandlerFactory {
 
 	private LinkActivator activator;
 
+	private EmailChanger emailChanger;
+
 	@Setter
 	private boolean acceptAllFrom = false;
 
@@ -25,9 +28,14 @@ public class KcMessageHandlerFactory implements MessageHandlerFactory {
 		this.activator = activator;
 	}
 
+	public KcMessageHandlerFactory(LinkActivator activator, EmailChanger emailChanger) {
+		this.activator = activator;
+		this.emailChanger = emailChanger;
+	}
+
 	@Override
 	public MessageHandler create(MessageContext ctx) {
-		KcMessageHandler handler = new KcMessageHandler(activator);
+		KcMessageHandler handler = new KcMessageHandler(activator, emailChanger);
 		handler.setAcceptAllFrom(acceptAllFrom);
 		return handler;
 	}

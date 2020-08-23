@@ -21,7 +21,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.kinancity.captcha.server.Application</mainClass>
+                  <mainClass>com.kinancity.captcha.server.CaptchaServer</mainClass>
                 </transformer>
                 <transformer>
                   <resource>META-INF/spring.handlers</resource>
