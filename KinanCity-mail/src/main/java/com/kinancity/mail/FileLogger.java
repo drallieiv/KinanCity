@@ -1,5 +1,6 @@
 package com.kinancity.mail;
 
+import com.kinancity.mail.mailchanger.ToFileEmailChanger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,13 +11,15 @@ public class FileLogger {
 	public static final String BAD = "BAD";
 	public static final String THROTTLED = "THROTTLED";
 	public static final String ERROR = "ERROR";
+	public static final String EXPIRED = "EXPIRED";
 	
 	public static final String SKIPPED = "SKIPPED";
 
 	private static Logger LOGGER = LoggerFactory.getLogger("LINKS");
 
 	public static void logStatus(Activation link, String status) {
-		LOGGER.info("{};{};{}", link.getLink(), link.getEmail(), status);
+		String type = (link instanceof EmailChangeRequest) ? "MAILCHANGE" : "ACTIVATION";
+		LOGGER.info("{};{};{};{}", type, link.getLink(), link.getEmail(), status);
 	}
 
 	public static Activation fromLog(String line) {
