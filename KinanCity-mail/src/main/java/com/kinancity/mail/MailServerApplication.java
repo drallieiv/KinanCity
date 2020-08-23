@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import com.kinancity.mail.mailchanger.*;
+import com.kinancity.mail.mailchanger.impl.StaticPasswordProvider;
 import org.subethamail.wiser.Wiser;
 
 import com.kinancity.mail.activator.LinkActivator;
@@ -73,11 +75,15 @@ public class MailServerApplication {
 
 		} else {
 			LinkActivator activator = getQueueLinkActivator();
+			EmailChanger emailChanger = null;
+
 			if (mode.equals("log")) {
 				System.out.println("Started in Log Mode");
 				activator = new ToFileLinkActivator();
+				emailChanger = new ToFileEmailChanger();
 			} else {
 				System.out.println("Started in Direct Mode");
+				emailChanger = getEmailChanger();
 			}
 			activator.start();
 
@@ -86,11 +92,20 @@ public class MailServerApplication {
 			wiser.setPort(25);
 			wiser.setHostname("localhost");
 
-			KcMessageHandlerFactory handlerFactory = new KcMessageHandlerFactory(activator);
+			KcMessageHandlerFactory handlerFactory = new KcMessageHandlerFactory(activator, emailChanger);
 			boolean disableDomainFilter = config.getProperty("disableDomainFilter", "false").equals("true");
 			if (disableDomainFilter) {
 				handlerFactory.setAcceptAllFrom(true);
 			}
+
+			if(activator != null ) {
+				System.out.println("Email Activation is Enabled");
+			}
+
+			if(emailChanger != null) {
+				System.out.println("Email Change is Enabled");
+			}
+
 			wiser.getServer().setMessageHandlerFactory(handlerFactory);
 			wiser.start();
 		}
@@ -110,6 +125,17 @@ public class MailServerApplication {
 			in.close();
 		} catch (IOException e) {
 			System.out.println("Error loading configuration file " + CONFIG_FILE);
+		}
+	}
+
+	private static EmailChanger getEmailChanger() {
+		String isActive = config.getProperty("emailChanger.active");
+		if(isActive == null || isActive.equals("true")) {
+			String mailPasswordConfig = config.getProperty("emailChanger.password");
+			PasswordProvider passwordProvider = PasswordProviderFactory.getPasswordProvider(mailPasswordConfig);
+			return new DirectEmailChanger(passwordProvider);
+		} else {
+			return null;
 		}
 	}
 
