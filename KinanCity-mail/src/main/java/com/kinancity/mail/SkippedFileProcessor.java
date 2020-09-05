@@ -11,6 +11,7 @@ import java.util.Arrays;
 import com.kinancity.mail.activator.LinkActivator;
 import com.kinancity.mail.activator.QueueLinkActivator;
 
+import com.kinancity.mail.mailchanger.EmailChanger;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,14 +37,16 @@ public class SkippedFileProcessor {
 
 			String line;
 			while ((line = reader.readLine()) != null) {
-				// CSV or not ?
-				if (line.contains(";")) {
-					Activation activation = FileLogger.fromLog(line);
-					if (processStatus.contains(activation.getStatus().toUpperCase())) {
-						activator.activateLink(activation);
+				if(!line.isEmpty()) {
+					// CSV or not ?
+					if (line.contains(";")) {
+						Activation activation = FileLogger.fromLog(line);
+						if (processStatus.contains(activation.getStatus().toUpperCase())) {
+							activator.activateLink(activation);
+						}
+					} else {
+						activator.activateLink(new Activation(line, ""));
 					}
-				} else {
-					activator.activateLink(new Activation(line, ""));
 				}
 			}
 

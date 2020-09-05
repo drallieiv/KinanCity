@@ -11,8 +11,10 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import com.kinancity.mail.mailchanger.*;
-import com.kinancity.mail.mailchanger.impl.StaticPasswordProvider;
-import org.subethamail.wiser.Wiser;
+import com.kinancity.mail.mailchanger.password.PasswordProvider;
+import com.kinancity.mail.config.PasswordProviderFactory;
+import com.kinancity.mail.wiser.KinanWiser;
+import lombok.extern.slf4j.Slf4j;
 
 import com.kinancity.mail.activator.LinkActivator;
 import com.kinancity.mail.activator.MultiThreadQueueLinkActivator;
@@ -22,6 +24,7 @@ import com.kinancity.mail.activator.limiter.RateLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 import com.kinancity.mail.tester.ThrottleTester;
 
+@Slf4j
 public class MailServerApplication {
 
 	private static final String CONFIG_FILE = "config.properties";
@@ -39,7 +42,7 @@ public class MailServerApplication {
 		}
 
 		if (mode.equals("test")) {
-			System.out.println("Start in Tester Mode");
+			log.info("Start in Tester Mode");
 
 			ThrottleTester tester = new ThrottleTester();
 
@@ -68,29 +71,46 @@ public class MailServerApplication {
 			}
 
 			LinkActivator activator = getQueueLinkActivator();
-			activator.start();
+			EmailChanger mailChanger = getEmailChanger();
 
-			System.out.println("Started in file Mode");
-			new SkippedFileProcessor(activator, filePath).process();
+			HybridActivator hybrid = new HybridActivator(activator, mailChanger);
+			hybrid.start();
+
+			log.info("Started in file Mode");
+			SkippedFileProcessor processor = new SkippedFileProcessor(hybrid, filePath);
+			processor.process();
 
 		} else {
 			LinkActivator activator = getQueueLinkActivator();
 			EmailChanger emailChanger = null;
 
 			if (mode.equals("log")) {
-				System.out.println("Started in Log Mode");
+				log.info("Started in Log Mode");
 				activator = new ToFileLinkActivator();
 				emailChanger = new ToFileEmailChanger();
 			} else {
-				System.out.println("Started in Direct Mode");
+				log.info("Started in Direct Mode");
 				emailChanger = getEmailChanger();
 			}
 			activator.start();
 
 			// Start Wiser server
-			Wiser wiser = new Wiser();
-			wiser.setPort(25);
-			wiser.setHostname("localhost");
+			KinanWiser wiser = new KinanWiser();
+			int port = Integer.parseInt(config.getProperty("port", "25"));
+			wiser.setPort(port);
+			wiser.setHostname(config.getProperty("hostname", ""));
+
+			// Additional Setup
+			wiser.getServer().setSoftwareName("Kinan Mail Server");
+
+
+			log.info("SMTP server started on port {}", port);
+
+			String allowedDomains = config.getProperty("allowedDomains");
+			if(allowedDomains != null) {
+				log.info("Only accept emails for " + allowedDomains);
+				wiser.setAllowedDomain(allowedDomains);
+			}
 
 			KcMessageHandlerFactory handlerFactory = new KcMessageHandlerFactory(activator, emailChanger);
 			boolean disableDomainFilter = config.getProperty("disableDomainFilter", "false").equals("true");
@@ -99,12 +119,13 @@ public class MailServerApplication {
 			}
 
 			if(activator != null ) {
-				System.out.println("Email Activation is Enabled");
+				log.info("Email Activation is Enabled");
 			}
 
 			if(emailChanger != null) {
-				System.out.println("Email Change is Enabled");
+				log.info("Email Change is Enabled");
 			}
+
 
 			wiser.getServer().setMessageHandlerFactory(handlerFactory);
 			wiser.start();
@@ -117,22 +138,21 @@ public class MailServerApplication {
 		try {
 			File configFile = new File(CONFIG_FILE);
 			if (!configFile.exists()) {
-				System.out.println("Missing configuration file " + CONFIG_FILE);
+				log.info("Missing configuration file " + CONFIG_FILE);
 				return;
 			}
 			InputStream in = new FileInputStream(configFile);
 			config.load(in);
 			in.close();
 		} catch (IOException e) {
-			System.out.println("Error loading configuration file " + CONFIG_FILE);
+			log.info("Error loading configuration file " + CONFIG_FILE);
 		}
 	}
 
 	private static EmailChanger getEmailChanger() {
 		String isActive = config.getProperty("emailChanger.active");
 		if(isActive == null || isActive.equals("true")) {
-			String mailPasswordConfig = config.getProperty("emailChanger.password");
-			PasswordProvider passwordProvider = PasswordProviderFactory.getPasswordProvider(mailPasswordConfig);
+			PasswordProvider passwordProvider = PasswordProviderFactory.getPasswordProvider(config);
 			return new DirectEmailChanger(passwordProvider);
 		} else {
 			return null;
@@ -162,19 +182,19 @@ public class MailServerApplication {
 				List<String> proxies = new LinkedList<String>(Arrays.asList(proxy.split(Pattern.quote("|"))));
 				String initialProxy = proxies.get(0);
 				HttpProxy httpProxy = HttpProxy.fromURI(initialProxy);
-				System.out.println("Using proxy " + httpProxy);
+				log.info("Using proxy " + httpProxy);
 				activator.setHttpProxy(httpProxy);
 
 				proxies.remove(0);
 				for (String backupProxyStr : proxies) {
 					HttpProxy backupProxy = HttpProxy.fromURI(backupProxyStr);
 					httpProxy.getOtherProxies().add(backupProxy);
-					System.out.println("with backup proxy " + backupProxy);
+					log.info("with backup proxy " + backupProxy);
 				}
 
 			} else {
 				HttpProxy httpProxy = HttpProxy.fromURI(proxy);
-				System.out.println("Using proxy " + httpProxy);
+				log.info("Using proxy " + httpProxy);
 				activator.setHttpProxy(httpProxy);
 			}
 		}
@@ -196,7 +216,7 @@ public class MailServerApplication {
 				limiter.setLimiterPause(Integer.parseInt(pause));
 			}
 
-			System.out.println("Using limiter " + limiter);
+			log.info("Using limiter " + limiter);
 			activator.setLimiter(limiter);
 		}
 		

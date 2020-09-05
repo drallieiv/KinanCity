@@ -2,6 +2,8 @@ package com.kinancity.mail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.RejectException;
-import org.subethamail.smtp.TooMuchDataException;
 
 import com.kinancity.mail.activator.LinkActivator;
 
@@ -78,10 +79,10 @@ public class KcMessageHandler implements MessageHandler {
 	}
 
 	/**
-	 * Parse email, exctact activation link and call Link Activator
+	 * Parse email, extract activation link and call Link Activator
 	 */
 	@Override
-	public void data(InputStream data) throws RejectException, TooMuchDataException, IOException {
+	public void data(InputStream data) throws RejectException, IOException {
 
 		// Only accept pokemon mails
 		if (from.endsWith(POKEMON_DOMAIN) || acceptAllFrom) {
@@ -93,26 +94,27 @@ public class KcMessageHandler implements MessageHandler {
 				MimeMessage message = new MimeMessage(session, data);
 
 				MimeMultipart mpart = (MimeMultipart) message.getContent();
+				List<BodyPart> parts = getAllMsgParts(mpart);
 
-				BodyPart part = mpart.getBodyPart(0);
-				String content = (String) part.getContent();
+				String textMsg = getTextPart(parts);
+				String htmlMsg = getHtmlPart(parts);
 
 				boolean done = false;
 
 				if(handleActivation) {
-					if(searchForActivationLink(content)) {
+					if(searchForActivationLink(textMsg)) {
 						done = true;
 					}
 				}
 
 				if(handleEmailChange && !done) {
-					if(searchForEmailChangeRequestLink(content)) {
+					if(searchForEmailChangeRequestLink(htmlMsg)) {
 						done = true;
 					}
 				}
 
 				if(logOtherMessages && !done) {
-					logger.info("Other unknown mail received with content : {}", content);
+					logger.info("Other unknown mail received with content : {}", textMsg);
 				}
 
 			} catch (MessagingException e) {
@@ -122,6 +124,15 @@ public class KcMessageHandler implements MessageHandler {
 			throw new RejectException(200, "Kinan : Email rejected");
 		}
 
+	}
+
+	private List<BodyPart> getAllMsgParts(MimeMultipart mpart) throws MessagingException {
+		List<BodyPart> parts = new ArrayList<>();
+		int nbParts = mpart.getCount();
+		for (int i = 0 ; i < nbParts; i++) {
+			parts.add(mpart.getBodyPart(i));
+		}
+		return parts;
 	}
 
 	private boolean searchForActivationLink(String content) {
@@ -155,6 +166,36 @@ public class KcMessageHandler implements MessageHandler {
 			return false;
 		}
 	}
+
+
+	private String getTextPart(List<BodyPart> parts) throws IOException, MessagingException {
+		BodyPart part = parts.stream().filter(this::isTextPart).findFirst().orElse(null);
+		return (String) part.getContent();
+	}
+	private String getHtmlPart(List<BodyPart> parts) throws IOException, MessagingException {
+		BodyPart part = parts.stream().filter(this::isHtmlPart).findFirst().orElse(null);
+		return (String) part.getContent();
+	}
+
+
+	private boolean isTextPart(BodyPart bodyPart) {
+		try {
+			return bodyPart.isMimeType("text/plain");
+		} catch ( MessagingException e ) {
+			logger.error("Error extracting text part form Email");
+			return false;
+		}
+	}
+
+	private boolean isHtmlPart(BodyPart bodyPart) {
+		try {
+			return bodyPart.isMimeType("text/html");
+		} catch ( MessagingException e ) {
+			logger.error("Error extracting html part form Email");
+			return false;
+		}
+	}
+
 
 	@Override
 	public void done() {

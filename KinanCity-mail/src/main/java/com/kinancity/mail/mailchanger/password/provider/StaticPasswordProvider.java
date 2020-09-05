@@ -1,6 +1,6 @@
-package com.kinancity.mail.mailchanger.impl;
+package com.kinancity.mail.mailchanger.password.provider;
 
-import com.kinancity.mail.mailchanger.PasswordProvider;
+import com.kinancity.mail.mailchanger.password.PasswordProvider;
 
 public class StaticPasswordProvider implements PasswordProvider {
 
