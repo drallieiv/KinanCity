@@ -7,7 +7,7 @@ public class Activation {
 
 	private String link;
 	private String email;
-	private String status;
+	private String status = "UNDEF";
 
 	public Activation(String link, String email) {
 		this.link = link;

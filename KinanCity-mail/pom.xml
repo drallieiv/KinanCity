@@ -7,7 +7,7 @@
 		<version>1.4.2-SNAPSHOT</version>
 	</parent>
 	<artifactId>KinanCity-mail</artifactId>
-	<version>2.0.1</version>
+	<version>2.0.2</version>
 	
 	<description>Email validation for KinanCity</description>
 
