@@ -3,6 +3,8 @@ package com.kinancity.mail.mailchanger;
 import com.kinancity.mail.EmailChangeRequest;
 import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
+import com.kinancity.mail.SaveAllCookieJar;
+import com.kinancity.mail.mailchanger.password.PasswordProvider;
 import okhttp3.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -27,8 +29,11 @@ public class DirectEmailChanger implements EmailChanger{
 
     private PasswordProvider passwordProvider;
 
+    private SaveAllCookieJar cookieJar;
+
     public DirectEmailChanger(PasswordProvider passwordProvider) {
-        this.client = new OkHttpClient.Builder().build();
+        cookieJar = new SaveAllCookieJar();
+        this.client = new OkHttpClient.Builder().cookieJar(cookieJar).build();
         this.passwordProvider = passwordProvider;
     }
 
@@ -43,6 +48,7 @@ public class DirectEmailChanger implements EmailChanger{
 
             Response response = client.newCall(request).execute();
             String strResponse = response.body().string();
+            response.body().close();
 
             if (response.isSuccessful()) {
                 // Now check the page itself
@@ -55,14 +61,19 @@ public class DirectEmailChanger implements EmailChanger{
                 if (strResponse.contains(REQUEST_TXT)) {
                     logger.info("Email Change Link Valid");
                     // Parse the response
-                    Document doc = Jsoup.parse(response.body().string());
-                    response.body().close();
+                    Document doc = Jsoup.parse(strResponse);
+
                     // Grab all data
                     String crsfToken = this.getCrsfToken(doc);
                     String currentEmail = this.getField(doc, "current_email");
                     String newEmail = this.getField(doc, "new_email");
                     // Add the password
                     String password = passwordProvider.getPassword(currentEmail);
+                    if(password == null) {
+                        logger.error("Mail Change failed : missing password for email {}", currentEmail);
+                        FileLogger.logStatus(emailChangeRequest, FileLogger.ERROR);
+                        return false;
+                    }
 
                     // Send everything
                     FormBody body = new FormBody.Builder()
@@ -72,13 +83,18 @@ public class DirectEmailChanger implements EmailChanger{
                             .add("new_email", newEmail)
                             .add("current_password", password)
                             .build();
+
                     Request acceptRequest = new Request.Builder()
                             .header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
+                            .header("Origin", "https://club.pokemon.com")
+                            .header("referer", emailChangeRequest.getLink())
                             .url(emailChangeRequest.getLink())
                             .post(body)
                             .build();
 
                     Response acceptResponse = client.newCall(acceptRequest).execute();
+                    cookieJar.getCookies().clear();
+
                     if (response.isSuccessful()) {
                         String strAcceptResponse = acceptResponse.body().string();
 
@@ -91,7 +107,6 @@ public class DirectEmailChanger implements EmailChanger{
                             FileLogger.logStatus(emailChangeRequest, FileLogger.ERROR);
                             return false;
                         }
-
 
                     } else {
                         logger.error("Mail Change failed : Failed to call PTC to accept");
@@ -133,4 +148,5 @@ public class DirectEmailChanger implements EmailChanger{
             return tokenField.get(0).val();
         }
     }
+
 }

@@ -24,10 +24,6 @@ public class KcMessageHandlerFactory implements MessageHandlerFactory {
 	@Setter
 	private boolean acceptAllFrom = false;
 
-	public KcMessageHandlerFactory(LinkActivator activator) {
-		this.activator = activator;
-	}
-
 	public KcMessageHandlerFactory(LinkActivator activator, EmailChanger emailChanger) {
 		this.activator = activator;
 		this.emailChanger = emailChanger;
