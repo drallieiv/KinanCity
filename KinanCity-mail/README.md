@@ -1,12 +1,34 @@
 # KinanCity-mail : Email Activator
 
+## About activation emails
+
+Here is how activations emails work in a standard way : 
+
+There are 2 part in an email address : after the @ symbol, is the internet domain where the email should be sent. And before the @ symbol is the username who this email should be delivered to.
+
+![](../docs/3_email.png)
+
+PTC sends and email to the address you gave it.
+It arrives to the DNS server of that domain, that defines to which server the the emails should be sent.
+
+On that email server, there is a program setup with mailboxes for each user and the emails are stored.
+
+Then the user connects to that mailbox and retreives his emails. He will then find the email with the activation link and open it in his browser.
+
 ## What this module does
+
+If you have your own domain, you can run your own email server.
+Instead of running a standard email server, you can run Kinan Mail instead.
 
 This module can be run as a standalone service and will :
 
 - Start a **Mail server** listening to default port 25
 - For each mail received from nintendo, the **activation link** is grabbed
 - A web request is made to the **activation** link
+
+![](../docs/4_kinanMail.png)
+
+Using Kinan Mail, you don't need to create a mailbox for each account before hand. And the activation links are taken care automatically.
 
 ## How to setup
 

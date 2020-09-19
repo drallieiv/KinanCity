@@ -2,12 +2,31 @@
 
 **TABLE OF CONTENTS**
 
+- [What does Kinan Core do ?](#what-does-kinan-core-do)
 - [Main usage and tips](#main-usage-and-tips)
 - Configuration examples
   - [Create a sequence of accounts](#create-a-sequence-of-accounts)
   - [Create a batch from a csv](#create-a-batch-from-a-csv)
   - [Create a single account](#create-a-single-account)
 - [Additional parameters](#additional-parameters)
+
+# What does Kinan Core do ?
+
+Instead of manually going to the PTC website, Kinan Core automates all the requests needed to create the account itself.
+
+The captcha challenge still needs to be done, but you can use a third party provider (see below) or implement your own (see kinanCity-captcha-server).
+
+![](../docs/1_KinanCore.png)
+
+In the end you will still need to take care of the activation link that will be sent by email.
+
+Instead of doing these steps one by one, Kinan core does multi-thread the process (see -thread option below).
+
+However PTC has some restrictions that only allows to create 5 accounts per 15 minutes from the same IP. 
+
+![](../docs/2_IPrestrictions.png)
+
+To overcome that limit, Kinan Core includes an embedded cooldown system, and allows using multiple proxies to call PTC from several different IP addresses.
 
 # Main usage and tips
 
