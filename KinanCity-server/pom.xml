@@ -3,10 +3,10 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.kinancity</groupId>
-		<artifactId>KinanCity-parent</artifactId>
+		<artifactId>kinancity-parent</artifactId>
 		<version>1.3.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>KinanCity-server</artifactId>
+	<artifactId>kinancity-server</artifactId>
 
 	<dependencyManagement>
 		<dependencies>
@@ -25,7 +25,7 @@
 
 		<dependency>
 			<groupId>com.kinancity</groupId>
-			<artifactId>KinanCity-core</artifactId>
+			<artifactId>kinancity-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
