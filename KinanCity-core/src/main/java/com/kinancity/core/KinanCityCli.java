@@ -15,9 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.model.AccountData;
+import com.kinancity.core.generator.PasswordGenerator;
 import com.kinancity.core.generator.account.CsvReaderAccountGenerator;
 import com.kinancity.core.generator.account.SequenceAccountGenerator;
 import com.kinancity.core.generator.account.SingleAccountGenerator;
+import com.kinancity.core.generator.password.RandomPasswordGenerator;
+import com.kinancity.core.generator.password.SinglePasswordGenerator;
 import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
 import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
 
@@ -126,22 +129,36 @@ public class KinanCityCli {
 
 		// 3 types of generation : unique, csv and sequence
 
-		if (cmd.hasOption(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName) && cmd.hasOption(CliOptions.SEQ_ACCOUNTS_COUNT.shortName) && cmd.hasOption(CliOptions.EMAIL.shortName) && cmd.hasOption(CliOptions.PASSWORD.shortName)) {
+		if (cmd.hasOption(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName) && cmd.hasOption(CliOptions.SEQ_ACCOUNTS_COUNT.shortName) && cmd.hasOption(CliOptions.EMAIL.shortName)) {
 			LOGGER.info("Use a Sequence Account Generator");
 			SequenceAccountGenerator sequenceGenerator = new SequenceAccountGenerator();
 			sequenceGenerator.setBaseEmail(cmd.getOptionValue(CliOptions.EMAIL.shortName));
-			sequenceGenerator.setStaticPassword(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
 			sequenceGenerator.setUsernamePattern(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_FORMAT.shortName));
 			sequenceGenerator.setNbAccounts(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_COUNT.shortName)));
 			sequenceGenerator.setStartFrom(Integer.parseInt(cmd.getOptionValue(CliOptions.SEQ_ACCOUNTS_START.shortName, "0")));
+			if (cmd.hasOption(CliOptions.PASSWORD.shortName)) {
+				sequenceGenerator.setPasswordGenerator(new SinglePasswordGenerator(cmd.getOptionValue(CliOptions.PASSWORD.shortName)));
+			}
+			else {
+				Integer length = Integer.valueOf(cmd.getOptionValue(CliOptions.PASSWORD_LENGTH.shortName, "-1"));
+				sequenceGenerator.setPasswordGenerator(new RandomPasswordGenerator(length));
+			}
 			config.setAccountGenerator(sequenceGenerator);
-
-		} else if (cmd.hasOption(CliOptions.EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName) && cmd.hasOption(CliOptions.PASSWORD.shortName)) {
+		} 
+		else if (cmd.hasOption(CliOptions.EMAIL.shortName) && cmd.hasOption(CliOptions.SINGLE_USERNAME.shortName)) {
 			LOGGER.info("Create a single account");
 			AccountData account = new AccountData();
 			account.setEmail(cmd.getOptionValue(CliOptions.EMAIL.shortName));
 			account.setUsername(cmd.getOptionValue(CliOptions.SINGLE_USERNAME.shortName));
-			account.setPassword(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
+			PasswordGenerator pwGen;
+			if (cmd.hasOption(CliOptions.PASSWORD.shortName)) {
+				pwGen = new SinglePasswordGenerator(cmd.getOptionValue(CliOptions.PASSWORD.shortName));
+			}
+			else {
+				Integer length = Integer.valueOf(cmd.getOptionValue(CliOptions.PASSWORD_LENGTH.shortName, "-1"));
+				pwGen = new RandomPasswordGenerator(length);
+			}
+			account.setPassword(pwGen.generatePassword());
 			config.setAccountGenerator(new SingleAccountGenerator(account));
 
 			// No need to use multiple thread for 1 account only
@@ -154,9 +171,9 @@ public class KinanCityCli {
 
 			HelpFormatter formatter = new HelpFormatter();
 			String cmdLineSyntax = " one of \n"
-					+ "  -m <email>  -u <username> -p <password> \n"
+					+ "  -m <email>  -u <username> (-p <password> -pl <passwordLength>) \n"
 					+ "  -a <accounts.csv> \n"
-					+ "  -m <email> -c <#ofAccounts> -f <format**> -p <password> (-s <first#>)\n"
+					+ "  -m <email> -c <#ofAccounts> -f <format**> (-p <password> -pl <passwordLength> -s <first#>)\n"
 					+ " and optional : -ck <captchakey> \n\n";
 			formatter.setWidth(180);
 			formatter.printHelp(cmdLineSyntax, options);
@@ -177,6 +194,7 @@ public class KinanCityCli {
 		options.addOption(CliOptions.EMAIL.asOption());
 		options.addOption(CliOptions.SINGLE_USERNAME.asOption());
 		options.addOption(CliOptions.PASSWORD.asOption());
+		options.addOption(CliOptions.PASSWORD_LENGTH.asOption());
 
 		// Create Multiple accounts
 		options.addOption(CliOptions.CSV_ACCOUNTS.asOption());

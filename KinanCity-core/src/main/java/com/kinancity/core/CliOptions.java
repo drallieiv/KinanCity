@@ -14,6 +14,7 @@ public enum CliOptions {
 	EMAIL("m", "mail", true, "account email address"),
 	SINGLE_USERNAME("u", "username", true, "account username/login"),
 	PASSWORD("p", "password", true, "account password"),
+	PASSWORD_LENGTH("pl", "passwordLength", true, "random account password length"),
 
 	SEQ_ACCOUNTS_COUNT("c", "count", true, "number of accounts to generate"),
 	SEQ_ACCOUNTS_START("s", "startnum", true, "number of the first one"),

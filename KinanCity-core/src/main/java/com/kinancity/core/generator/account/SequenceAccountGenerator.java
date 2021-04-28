@@ -6,7 +6,6 @@ import com.kinancity.core.generator.EmailGenerator;
 import com.kinancity.core.generator.PasswordGenerator;
 import com.kinancity.core.generator.UsernameGenerator;
 import com.kinancity.core.generator.email.PlusTrickEmailGenerator;
-import com.kinancity.core.generator.password.SinglePasswordGenerator;
 import com.kinancity.core.generator.username.SequenceUsernameGenerator;
 
 import lombok.Setter;
@@ -22,9 +21,6 @@ public class SequenceAccountGenerator implements AccountGenerator {
 	@Setter
 	// Format with prefix and suffix. use * instead of the number sequence
 	private String usernamePattern;
-
-	@Setter
-	private String staticPassword;
 
 	@Setter
 	private String baseEmail;
@@ -59,9 +55,6 @@ public class SequenceAccountGenerator implements AccountGenerator {
 			throw new IllegalArgumentException("Sequence would overflow format, use more *");
 		}
 		usernameGenerator = seqUsernameGenerator;
-
-		passwordGenerator = new SinglePasswordGenerator(staticPassword);
-
 		initDone = true;
 	}
 
