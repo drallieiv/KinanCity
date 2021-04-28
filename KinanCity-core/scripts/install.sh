@@ -1,2 +1,0 @@
-#!/bin/sh
-curl -s https://api.github.com/repos/drallieiv/KinanCity/releases | grep "browser_download_url" | grep "KinanCity-core" | grep "jar" | head -n 1 | cut -d '"' -f 4 | xargs wget -O KinanCity-core.jar
