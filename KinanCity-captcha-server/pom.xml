@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.kinancity</groupId>
-		<artifactId>KinanCity-parent</artifactId>
-		<version>1.4.2-SNAPSHOT</version>
+		<artifactId>kinancity-parent</artifactId>
+		<version>1.5.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>KinanCity-captcha-server</artifactId>
+	<artifactId>kinancity-captcha-server</artifactId>
 
 	<repositories>
 		<repository>
@@ -40,8 +40,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.kinancity</groupId>
-			<artifactId>KinanCity-captcha-AntiCaptcha</artifactId>
-			<version>1.4.2-SNAPSHOT</version>
+			<artifactId>kinancity-captcha-anticaptcha</artifactId>
+			<version>1.5.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
