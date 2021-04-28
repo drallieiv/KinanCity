@@ -33,8 +33,9 @@ import lombok.Setter;
 public class KcMessageHandler implements MessageHandler {
 
 	private static final String POKEMON_DOMAIN = "@pokemon.com";
-	private static final String ACTIVATION_EXP = "https://club.pokemon.com/us/pokemon-trainer-club/activated/.*";
-	private static final String EMAIL_CHANGE_EXP = "https://club.pokemon.com/us/pokemon-trainer-club/email-change-approval/[a-zA-Z0-9]+";
+
+	private static final String ACTIVATION_EXP = "https://club.pokemon.com/([a-zA-Z\\-]+)/pokemon-trainer-club/activated/.*";
+  private static final String EMAIL_CHANGE_EXP = "https://club.pokemon.com/([a-zA-Z\\-]+)/pokemon-trainer-club/email-change-approval/[a-zA-Z0-9]+";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,6 +48,8 @@ public class KcMessageHandler implements MessageHandler {
 
 	@Setter
 	private boolean acceptAllFrom = false;
+	
+	private String workLocale = "us";
 
 	private boolean handleActivation = true;
 
@@ -140,7 +143,15 @@ public class KcMessageHandler implements MessageHandler {
 		Matcher m = p.matcher(content);
 		if (m.find()) {
 			String activationLink = m.group(0);
-			logger.info("Activation link found  for email {} : [{}]", this.recipient, activationLink);
+      String locale = m.group(1);
+
+      logger.info("Activation link found  for email {} : [{}]", this.recipient, activationLink);
+      
+      if(!locale.equals(workLocale)){
+        logger.info("Attemp converting activation link locale");
+        activationLink = activationLink.replace("/"+locale+"/", "/"+workLocale+"/");
+        logger.info("Activation link to use : [{}]", activationLink);
+      }
 
 			// Link activation, may be sync or async
 			activator.activateLink(new Activation(activationLink, this.recipient));
@@ -156,7 +167,15 @@ public class KcMessageHandler implements MessageHandler {
 		Matcher m = p.matcher(content);
 		if (m.find()) {
 			String emailChangeLink = m.group(0);
-			logger.info("Email Change Request link found  for email {} : [{}]", this.recipient, emailChangeLink);
+      String locale = m.group(1);
+
+      logger.info("Email Change Request link found  for email {} : [{}]", this.recipient, emailChangeLink);
+      
+      if(!locale.equals(workLocale)){
+        logger.info("Attemp converting Email Change Request link locale");
+        emailChangeLink = emailChangeLink.replace("/"+locale+"/", "/"+workLocale+"/");
+        logger.info("Email Change Request link to use : [{}]", emailChangeLink);
+      }			
 
 			// Email Change acceptation, may be sync or async
 			emailChanger.acceptChange(new EmailChangeRequest(emailChangeLink, this.recipient));
