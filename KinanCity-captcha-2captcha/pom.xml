@@ -3,16 +3,16 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.kinancity</groupId>
-		<artifactId>KinanCity-parent</artifactId>
-		<version>1.4.2-SNAPSHOT</version>
+		<artifactId>kinancity-parent</artifactId>
+		<version>1.5.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>KinanCity-captcha-2captcha</artifactId>
+	<artifactId>kinancity-captcha-2captcha</artifactId>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.kinancity</groupId>
-			<artifactId>KinanCity-captcha-api</artifactId>
-			<version>1.4.2-SNAPSHOT</version>
+			<artifactId>kinancity-captcha-api</artifactId>
+			<version>1.5.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
