@@ -6,6 +6,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.kinancity.core.throttle.Bottleneck;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,15 +25,27 @@ public class ProxyRecycler implements Runnable {
 	@Getter
 	@Setter
 	private int wait = 5 * 60 * 1000;
+	
+	// Pass every 1 minutes
+	@Getter
+	@Setter
+	private int fastwait = 1 * 60 * 1000;
 
 	@Setter
 	private boolean runFlag = true;
+	
+	// mode that makes retry faster until one proxy gets back up
+	@Setter
+	private boolean fastMode = false;
 
 	private ProxyManager proxyManager;
 
 	@Getter
 	@Setter
 	private ProxyTester tester;
+	
+	@Setter
+	private Bottleneck<ProxyInfo> bottleneck;
 
 	public ProxyRecycler(ProxyManager proxyManager) {
 		this.proxyManager = proxyManager;
@@ -44,7 +58,7 @@ public class ProxyRecycler implements Runnable {
 		while (runFlag) {
 			// Sleep First
 			try {
-				Thread.sleep(wait);
+				Thread.sleep(fastMode ? fastwait : wait);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -53,7 +67,7 @@ public class ProxyRecycler implements Runnable {
 		}
 	}
 
-	public void checkAndRecycleAllBenched() {
+	public synchronized void checkAndRecycleAllBenched() {
 		List<ProxyInfo> benchedProxies = proxyManager.getProxyBench();
 		if (benchedProxies.isEmpty()) {
 			logger.debug("No benched proxies");
@@ -65,17 +79,19 @@ public class ProxyRecycler implements Runnable {
 		}
 	}
 
-	public void checkAndRecycle(ProxyInfo proxy) {
+	public synchronized void checkAndRecycle(ProxyInfo proxy) {
 		if (proxyManager.getProxyBench().contains(proxy)) {
+			bottleneck.syncUseOf(proxy);
 			boolean valid = tester.testProxy(proxy.getProvider());
 			if (valid) {
 				logger.info("Proxy [{}] is working again, set it back in rotation", proxy.getProvider());
+				fastMode = false;
 				// move proxy from bench back in rotation
 				proxyManager.getProxyBench().remove(proxy);
 				proxyManager.getProxies().add(proxy);
 			}
 		} else {
-			logger.debug("Only benched proxies should be checked");
+			logger.debug("Proxy is not benched, or already removed from bench");
 		}
 
 	}

@@ -1,11 +1,16 @@
 package com.kinancity.core;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +18,7 @@ import com.kinancity.api.model.AccountData;
 import com.kinancity.core.generator.account.CsvReaderAccountGenerator;
 import com.kinancity.core.generator.account.SequenceAccountGenerator;
 import com.kinancity.core.generator.account.SingleAccountGenerator;
+import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
 import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
 
 public class KinanCityCli {
@@ -24,8 +30,17 @@ public class KinanCityCli {
 		Thread t = Thread.currentThread();
 		t.setName("Kinan City");
 
-		try {
+		try (InputStream bannerFile = KinanCityCli.class.getClassLoader().getResourceAsStream("banner.txt")){
+			
+			String banner = IOUtils.toString(bannerFile, Charset.defaultCharset());
+			LOGGER.info("\n{}", banner);
+		} catch (IOException e) {
 			LOGGER.info(" -- Start Kinan City CLI -- ");
+		}
+		
+		LOGGER.info(" Runtime Args \n\n  {} \n ", String.join(" ", args));
+
+		try {
 
 			// Prepare the CLI Options
 			Options options = setupCliOptions();
@@ -42,7 +57,7 @@ public class KinanCityCli {
 
 				PtcAccountCreator creator = new PtcAccountCreator(config);
 				creator.start();
-				
+
 				LOGGER.info("Done. You will find the results in {}", config.getResultLogFilename());
 				System.exit(0);
 
@@ -72,9 +87,21 @@ public class KinanCityCli {
 			config.setDryRun(true);
 		}
 
-		// -ck/-captchaKey : 2captcha api key
+		// -ck/-captchaKey : captcha api key
 		if (cmd.hasOption(CliOptions.CK.shortName)) {
-			config.setTwoCaptchaApiKey(cmd.getOptionValue(CliOptions.CK.shortName));
+			config.setCaptchaKey(cmd.getOptionValue(CliOptions.CK.shortName));
+		}
+		
+		// -cp/-captchaProvider : captcha service provider
+		if (cmd.hasOption(CliOptions.CP.shortName)) {
+			config.setCaptchaProvider(cmd.getOptionValue(CliOptions.CP.shortName));
+		}
+
+		// -nl/-noLimit : Use Unlimited Policy
+		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
+			config.setProxyPolicy(new UnlimitedUsePolicy());
+			config.setBottleneck(new ProxyNoBottleneck());
+			config.reloadProxyPolicy();
 		}
 
 		// -px/-proxies : list of proxy to use
@@ -90,11 +117,6 @@ public class KinanCityCli {
 		// -npc/-noProxyCheck : Skip proxy check at startup
 		if (cmd.hasOption(CliOptions.NO_PROXY_CHECK.shortName)) {
 			config.setSkipProxyTest(true);
-		}
-
-		// -nl/-noLimit : Use Unlimited Policy
-		if (cmd.hasOption(CliOptions.NO_LIMIT.shortName)) {
-			config.setProxyPolicy(new UnlimitedUsePolicy());
 		}
 
 		// -t/-thread : Customize number of thread for parallel processing
@@ -166,6 +188,7 @@ public class KinanCityCli {
 
 		// Captcha key given at commandLine
 		options.addOption(CliOptions.CK.asOption());
+		options.addOption(CliOptions.CP.asOption());
 
 		// Number of Threads
 		options.addOption(CliOptions.NB_THREADS.asOption());

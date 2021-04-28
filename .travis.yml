@@ -4,17 +4,11 @@ cache:
  directories:
    - $HOME/.m2
 
-sudo: false
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
-
-jdk:
-  - oraclejdk8
-
-os:
-  - linux
+matrix:
+  include:
+    - os: linux
+      sudo: false
+      jdk: oraclejdk8 # JDK 9+175 or newer
 
 deploy:
   provider: releases
@@ -22,7 +16,8 @@ deploy:
   file_glob: true
   file:
     - "$TRAVIS_BUILD_DIR/KinanCity-core/target/KinanCity-core-*.zip"
-    - "$TRAVIS_BUILD_DIR/KinanCity-mail/target/KinanCity-mail-*.jar"
+    - "$TRAVIS_BUILD_DIR/KinanCity-mail/target/KinanCity-mail-*.zip"
+    - "$TRAVIS_BUILD_DIR/KinanCity-captcha-server/target/KinanCity-captcha-server-*-SNAPSHOT.jar"
   skip_cleanup: true
   on:
     tags: true

@@ -61,6 +61,7 @@ public class CsvReaderAccountGenerator extends ListAccountGenerator implements A
 				}
 			} else {
 				logger.error("CSV file is missing header line.");
+				return;
 			}
 
 			// Read all other lines
@@ -100,6 +101,15 @@ public class CsvReaderAccountGenerator extends ListAccountGenerator implements A
 		account.setUsername(fieldMap.get(CsvHeaderConstants.USERNAME));
 		account.setPassword(fieldMap.get(CsvHeaderConstants.PASSWORD));
 		account.setEmail(fieldMap.get(CsvHeaderConstants.EMAIL));
+
+		if (fieldMap.containsKey(CsvHeaderConstants.DOB)) {
+			account.setDob(fieldMap.get(CsvHeaderConstants.DOB));
+		}
+
+		if (fieldMap.containsKey(CsvHeaderConstants.COUNTRY)) {
+			account.setCountry(fieldMap.get(CsvHeaderConstants.COUNTRY));
+		}
+
 		return account;
 	}
 }

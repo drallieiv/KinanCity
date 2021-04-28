@@ -12,9 +12,25 @@ It is known as **Kiloude City** is the English version and **Batisques** in Fren
 
 Kinan City is known for its **Friend Safari** where many trainer come to find pokemon. This is a good place if you want to meet a **lot of new trainers**.
 
-## What does KinanCity do?
+## How does one get a Pokemon Trainer Club account ?
 
-**KinanCity** is a tool that automates the creation of Pokemon Trainer Club Accounts and contains multiple modules.
+In order to get a PTC account you need to go the pokemon website and request to create a new account, and complete theses steps.
+
+![](docs/0_PTCsignup.png)
+
+You then first have to fill some personal informations such as your country and birthdate. Then information about the account you want.
+
+You also need to complete a Captcha task to prove that you are a human.
+
+One the subscription is done, the account still needs to be activated in the next 48 hours. An email will be sent to the given address with a link. You need to follow that link to activate the account.
+
+NOTE : You cannot use the same email twice for multiple PTC account, they each need their own email address.
+
+Theses steps must be done for each PTC account you want to create.
+
+## What does KinanCity do ?
+
+**KinanCity** is a tool that automates the creation of Pokemon Trainer Accounts and contains multiple modules when you need to create a lot of accounts, fast.
 
 - **KinanCity-core** is the core module that can also be used in command line. [more info here](KinanCity-core/README.md)
 - **KinanCity-mail** is a minimalist Email server that does auto-activation. [more info here](KinanCity-mail/README.md)
@@ -32,7 +48,7 @@ The advantages of KinanCity:
 
 ## How to install KinanCity ?
 
-You can **download** the latest builds [here](https://github.com/drallieiv/KinanCity/releases)  
+You can **download** the latest version of each module [here](https://github.com/drallieiv/KinanCity/packages)
 or  
 You can **compile** it yourself using a **maven** goal: `mvn package`  
 

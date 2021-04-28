@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
+
 /**
  * Manager that holds a set of proxies
  * 
@@ -71,14 +73,16 @@ public class ProxyManager {
 	}
 
 	public void benchProxy(ProxyInfo proxy) {
-		proxies.remove(proxy);
-		proxyBench.add(proxy);
-		logger.warn("Proxy [{}] moved out of rotation, {} proxy left",proxy, proxies.size());
-		
-		if(recycler != null && getNbProxyInRotation() == 0){
-			recycler.checkAndRecycleAllBenched();
+		if (!(proxy.getProxyPolicy() instanceof UnlimitedUsePolicy) && proxies.contains(proxy) && !proxyBench.contains(proxy)) {
+			proxies.remove(proxy);
+			proxyBench.add(proxy);
+			logger.warn("Proxy [{}] moved out of rotation, {} proxy left",proxy, proxies.size());
+			
+			if(recycler != null && getNbProxyInRotation() == 0){
+				recycler.setFastMode(true);
+				recycler.checkAndRecycleAllBenched();
+			}
 		}
-		
 	}
 	
 	public int getNbProxyInRotation(){

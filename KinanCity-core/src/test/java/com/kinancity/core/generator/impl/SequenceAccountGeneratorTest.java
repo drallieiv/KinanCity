@@ -22,15 +22,15 @@ public class SequenceAccountGeneratorTest {
 		
 		data = generator.next();
 		assertThat(data).isNotNull();
-		assertThat(data.username).isEqualTo("pref01234suf");
+		assertThat(data.getUsername()).isEqualTo("pref01234suf");
 		
 		data = generator.next();
 		assertThat(data).isNotNull();
-		assertThat(data.username).isEqualTo("pref01235suf");
+		assertThat(data.getUsername()).isEqualTo("pref01235suf");
 		
 		data = generator.next();
 		assertThat(data).isNotNull();
-		assertThat(data.username).isEqualTo("pref01236suf");
+		assertThat(data.getUsername()).isEqualTo("pref01236suf");
 		
 		data = generator.next();
 		assertThat(data).isNull();

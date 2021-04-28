@@ -27,8 +27,10 @@ import org.slf4j.LoggerFactory;
 import com.kinancity.api.errors.FatalException;
 import com.kinancity.api.errors.TechnicalException;
 import com.kinancity.api.errors.fatal.AccountDuplicateException;
+import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
+import com.kinancity.api.errors.tech.IpSoftBanException;
 import com.kinancity.api.model.AccountData;
 
 import lombok.Setter;
@@ -39,7 +41,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-
 
 /**
  * Session for creating a PTC account.
@@ -58,13 +59,16 @@ public class PtcSession {
 	private String pathSignup = "/parents/sign-up";
 
 	private final String PTC_PWD_EXPREG = "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[#?!@$%^&><+`*()\\-\\]])[A-Za-z0-9#?!@$%^&><+`*()\\-\\]]{8,50}$";
-	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]+$";
+	private final String PTC_USENAME_EXPREG = "^[a-zA-Z0-9]{6,16}$";
 
-	
 	private OkHttpClient client;
 
 	@Setter
 	private boolean dryRun;
+
+	// Should the age form be really sent ?
+	@Setter
+	private boolean sendAgeCheck = false;
 
 	// Dump Result
 	public static final int NEVER = 0;
@@ -105,17 +109,17 @@ public class PtcSession {
 			logger.error("Invalid password '{}', The password must include uppercase and lowercase letters, numbers, and symbols between 8 and 50 chars", password);
 			return false;
 		}
-		
+
 		if (!Pattern.matches(PTC_USENAME_EXPREG, username)) {
-			logger.error("Invalid username '{}', The username contains illegal values.", username);
+			logger.error("Invalid username '{}', The username may contains illegal values and must be between 6 and 16 characters long", username);
 			return false;
-		}	
-		
+		}
+
 		// All passed and went OK
 		return true;
-		
+
 	}
-	
+
 	/**
 	 * Check if the account is valid
 	 * 
@@ -130,13 +134,14 @@ public class PtcSession {
 			logger.info("Dry-Run : Check if username and password are okay");
 			return true;
 		}
-		
+
 		String username = account.getUsername();
 
 		// Check username validity with API
 		Request request = buildUsernameCheckApiRequest(username);
 
 		// Send a request to the Nintendo REST API
+		logger.debug("Execute Request [AccountValid] on proxy {}", client.proxy());
 		try (Response response = client.newCall(request).execute()) {
 			if (response.isSuccessful()) {
 
@@ -158,8 +163,11 @@ public class PtcSession {
 				return true;
 
 			} else {
-				logger.error("Validation API response is an HTTP{} error", response.code());
-				throw new TechnicalException("Validation API did not respond");
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+				manageError(account, response, doc, "Validation API");
+				throw new TechnicalException("Validation API, unknown error");
 			}
 
 		} catch (IOException e) {
@@ -170,11 +178,13 @@ public class PtcSession {
 	/**
 	 * Simulate new account creation age check and dump CRSF token.
 	 * 
+	 * @param account
+	 * 
 	 * @return a valid CRSF token
 	 * @throws TechnicalException
 	 *             if the token could not be retrieived
 	 */
-	public String sendAgeCheckAndGrabCrsfToken() throws TechnicalException {
+	public String sendAgeCheckAndGrabCrsfToken(AccountData account) throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Grab CRSF token from PTC web");
@@ -182,24 +192,38 @@ public class PtcSession {
 		}
 
 		// Send HTTP Request
+		logger.debug("Execute Request [AgeCheck] on proxy {}", client.proxy());
 		try (Response response = client.newCall(buildAgeCheckRequest()).execute()) {
 
-			if (response.isSuccessful()) {
-				// Parse the response
-				Document doc = Jsoup.parse(response.body().string());
+			// Parse the response
+			Document doc = Jsoup.parse(response.body().string());
+			response.body().close();
 
+			if (response.isSuccessful()) {
 				// Look for the CRSF
 				Elements tokenField = doc.select("[name=csrfmiddlewaretoken]");
 
 				if (tokenField.isEmpty()) {
 					logger.error("CSRF Token not found");
+
+					if (dumpResult == ALWAYS) {
+						Path dumpPath = dumpResult(doc, account);
+						logger.error("Response dump saved in {}", dumpPath);
+					}
+
+					throw new TechnicalException("Age verification call failed");
 				} else {
 					String crsfToken = tokenField.get(0).val();
-					sendAgeCheck(crsfToken);
+					if (sendAgeCheck) {
+						sendAgeCheck(account, crsfToken);
+					}
+
 					return crsfToken;
 				}
+			}else{
+				manageError(account, response, doc, "Age verification");
+				throw new TechnicalException("Age verification, unknown error");
 			}
-			throw new TechnicalException("Age verification call or CSRF extraction failed");
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
 			throw new HttpConnectionException("Technical error getting CSRF Token : " + e.getMessage(), e);
@@ -211,7 +235,7 @@ public class PtcSession {
 	 * 
 	 * NOTE: Maybe this step may skipped by manually adding the dod cookie.
 	 */
-	public void sendAgeCheck(String crsfToken) throws TechnicalException {
+	public void sendAgeCheck(AccountData account, String crsfToken) throws TechnicalException {
 
 		if (dryRun) {
 			logger.info("Dry-Run : Pass age validation");
@@ -220,22 +244,55 @@ public class PtcSession {
 
 		try {
 			// Create Request
-			Request request = this.buildAgeCheckSubmitRequest(crsfToken);
+			Request request = this.buildAgeCheckSubmitRequest(account, crsfToken);
 
 			// Send Request
 			logger.debug("Sending age check request");
 
+			logger.debug("Execute Request [sendAgeCheck] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
+
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+
 				// Parse Response
 				if (response.isSuccessful()) {
 					logger.debug("Age check done");
 					return;
+				}else{
+					manageError(account, response, doc, "Age check");
 				}
-				throw new TechnicalException("Age check request failed. HTTP "+response.code());
 			}
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Age check request failed : "+e.getMessage(), e);
+			throw new HttpConnectionException("Age check request failed : " + e.getMessage(), e);
+		}
+	}
+
+	/**
+	 * Common Error management
+	 * 
+	 * @param account
+	 * @param response
+	 * @param doc
+	 * @param step
+	 * @throws IpSoftBanException
+	 * @throws TechnicalException
+	 */
+	public void manageError(AccountData account, Response response, Document doc, String step) throws IpSoftBanException, TechnicalException {
+		if (response.code() == 503) {
+			// Check if we encountered a 503 error
+			Elements title = doc.getElementsByTag("title");
+			if (title != null && title.contains("403 Forbidden")) {
+				throw new IpSoftBanException(step + " HTTP 503 error with 403 Forbidden message");
+			} else {
+				throw new IpSoftBanException(step + " HTTP 503 error may be Ip SoftBan");
+			}
+		} else {
+			// If it is another error
+			dumpResult(doc, account);
+			throw new TechnicalException(step + " Request failed. HTTP " + response.code());
 		}
 	}
 
@@ -257,29 +314,27 @@ public class PtcSession {
 			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
 
 			// Send Request
-			logger.debug("Sending creation request");
+			logger.debug("Execute Request [createAccount] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
 
+				// Parse the response
+				Document doc = Jsoup.parse(response.body().string());
+				response.body().close();
+
+				if (dumpResult == ALWAYS) {
+					dumpResult(doc, account);
+				}
+
 				if (response.isSuccessful()) {
-
-					// Parse the response
-					Document doc = Jsoup.parse(response.body().string());
-					response.body().close();
-
-					if (dumpResult == ALWAYS) {
-						dumpResult(doc, account);
-					}
-
 					checkForErrors(account, doc);
-
-				} else {
-					throw new TechnicalException("PTC server bad response, HTTP " + response.code());
+				}else{
+					manageError(account, response, doc, "Creation");
 				}
 			}
 
 		} catch (IOException e) {
 			// Will happend if connection failed or timed out
-			throw new HttpConnectionException("Create account request failed : "+e.getMessage(), e);
+			throw new HttpConnectionException("Create account request failed : " + e.getMessage(), e);
 		}
 	}
 
@@ -296,6 +351,7 @@ public class PtcSession {
 
 		boolean isUsernameUsed = false;
 		boolean isQuotaExceeded = false;
+		boolean isEmailError = false;
 
 		// If we have some
 		if (!errors.isEmpty()) {
@@ -303,11 +359,10 @@ public class PtcSession {
 			if (dumpResult == ON_FAILURE) {
 				dumpResult(doc, account);
 			}
-					
 
 			// If there is only one that says required, it's the captcha.
-			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required")) {
-				throw new TechnicalException("Invalid or missing Captcha");
+			if (errors.size() == 1 && errors.get(0).child(0).text().trim().equals("This field is required.")) {
+				throw new TechnicalException("Invalid or missing Captcha. Captcha may have expired, try reducing captchaMaxTotalTime");
 			} else {
 				// List all the errors we had
 				List<String> errorMessages = new ArrayList<>();
@@ -319,30 +374,28 @@ public class PtcSession {
 						isUsernameUsed = true;
 					} else if (errorTxt.contains("Account Creation Rate Limit Exceeded")) {
 						isQuotaExceeded = true;
+					} else if (errorTxt.contains("There is a problem with your email address")) {
+						isEmailError = true;
 					}
 
 					errorMessages.add(errorTxt);
 				}
-				logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.username, errorMessages);
+				logger.warn("{} error(s) found creating account {} : {}", errors.size(), account.getUsername(), errorMessages);
 
 				// Throw specific exception for name duplicate
 				if (isUsernameUsed) {
 					throw new AccountDuplicateException();
 				}
 
+				// Throw specific exception for email blocked or duplicate
+				if (isEmailError) {
+					throw new EmailDuplicateOrBlockedException();
+				}
+
 				// Throw specific exception for quota exceeded
 				if (isQuotaExceeded) {
 					throw new AccountRateLimitExceededException();
 				}
-				
-				/* Should we keep that ?
-					// Specific check for email error
-					Element idEmail = doc.getElementById("id_email");
-					if(idEmail != null && idEmail.hasClass("alert-error")){
-						logger.warn("Email Error, this could be IP throttle, consider as Account Rate Limited");
-						throw new AccountRateLimitExceededException();
-					}
-				*/
 
 				// Else we have another unknown error
 				throw new TechnicalException("Unknown creation error : " + errorMessages);
@@ -352,7 +405,7 @@ public class PtcSession {
 		logger.debug("SUCCESS : Account created");
 	}
 
-	private void dumpResult(Document doc, AccountData account) {
+	private Path dumpResult(Document doc, AccountData account) {
 		String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 		if (Files.notExists(Paths.get("dump"))) {
 			try {
@@ -364,12 +417,14 @@ public class PtcSession {
 		Path dumpName = Paths.get("dump/" + account.getUsername() + "_" + time + ".html");
 		try (BufferedWriter writer = Files.newBufferedWriter(dumpName)) {
 			String html = doc.outerHtml();
-			// Cleanup Scripts 
+			// Cleanup Scripts
 			html = html.replaceAll("<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>", "");
 			writer.write(html);
 		} catch (IOException e) {
 			logger.warn("Error dumping file {}", dumpName);
 		}
+
+		return dumpName.toAbsolutePath();
 	}
 
 	/**
@@ -383,6 +438,7 @@ public class PtcSession {
 
 		Request request = new Request.Builder()
 				.url(url_verify_api)
+				.headers(getHeaders())
 				.method("POST", body)
 				.build();
 		return request;
@@ -390,14 +446,17 @@ public class PtcSession {
 
 	// Http Request for account creation start page with age check
 	private Request buildAgeCheckRequest() {
-		return new Request.Builder().url(url_ptc + pathAgeCheck).headers(getHeaders()).build();
+		return new Request.Builder()
+				.url(url_ptc + pathAgeCheck)
+				.headers(getHeaders())
+				.build();
 	}
 
 	// Http Request for age check submit
-	private Request buildAgeCheckSubmitRequest(String csrfToken) throws UnsupportedEncodingException {
+	private Request buildAgeCheckSubmitRequest(AccountData account, String csrfToken) throws UnsupportedEncodingException {
 		RequestBody body = new FormBody.Builder()
-				.add("dob", "1985-01-16")
-				.add("country", "US")
+				.add("dob", account.getDob())
+				.add("country", account.getCountry())
 				.add("csrfmiddlewaretoken", csrfToken)
 				.build();
 
@@ -414,11 +473,11 @@ public class PtcSession {
 	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
 		RequestBody body = new FormBody.Builder()
 				// Given login and password
-				.add("username", account.username)
-				.add("email", account.email)
-				.add("confirm_email", account.email)
-				.add("password", account.password)
-				.add("confirm_password", account.password)
+				.add("username", account.getUsername())
+				.add("email", account.getEmail())
+				.add("confirm_email", account.getEmail())
+				.add("password", account.getPassword())
+				.add("confirm_password", account.getPassword())
 
 				// Technical Tokens
 				.add("csrfmiddlewaretoken", crsfToken)
@@ -439,7 +498,7 @@ public class PtcSession {
 	}
 
 	// Add all HTTP headers
-	private Headers getHeaders() {
+	public static Headers getHeaders() {
 
 		Map<String, String> headersMap = new HashMap<>();
 		// Base browser User Agent

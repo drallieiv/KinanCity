@@ -13,6 +13,7 @@ import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
 import com.kinancity.api.errors.tech.CaptchaSolvingException;
 import com.kinancity.api.errors.tech.HttpConnectionException;
+import com.kinancity.api.errors.tech.IpSoftBanException;
 import com.kinancity.api.model.AccountData;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.captcha.CaptchaRequest;
@@ -24,6 +25,7 @@ import com.kinancity.core.proxy.ProxySlot;
 import com.kinancity.core.scheduling.AccountCreationQueue;
 import com.kinancity.core.status.ErrorCode;
 import com.kinancity.core.status.RunnerStatus;
+import com.kinancity.core.throttle.Bottleneck;
 import com.kinancity.core.worker.callbacks.CreationCallbacks;
 
 import lombok.Getter;
@@ -77,13 +79,20 @@ public class AccountCreationWorker implements Runnable {
 	@Setter
 	private int dumpResult = PtcSession.NEVER;
 
-	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks) {
+	// Wait at least this time before requesting a captcha
+	@Setter
+	private long minWaitBeforeCaptcha = 5000;
+	
+	private Bottleneck<ProxyInfo> bottleneck;
+
+	public AccountCreationWorker(AccountCreationQueue accountCreationQueue, String name, CaptchaQueue captchaQueue, ProxyManager proxyManager, CreationCallbacks callbacks, Bottleneck<ProxyInfo> bottleneck) {
 		this.status = RunnerStatus.IDLE;
 		this.accountCreationQueue = accountCreationQueue;
 		this.name = name;
 		this.callbacks = callbacks;
 		this.captchaQueue = captchaQueue;
 		this.proxyManager = proxyManager;
+		this.bottleneck = bottleneck;
 	}
 
 	public void run() {
@@ -108,26 +117,49 @@ public class AccountCreationWorker implements Runnable {
 					ProxyInfo proxy = proxySlot.getInfo();
 					logger.debug("Use proxy : {}", proxy);
 
+					OkHttpClient httpclient = null;
 					try {
 						// Get a new HTTP Client instance with that proxy
-						OkHttpClient httclient = proxy.getProvider().getClient();
+						httpclient = proxy.getProvider().getClient();
 
 						// Initialize a PTC Creation session
-						PtcSession ptc = new PtcSession(httclient);
+						PtcSession ptc = new PtcSession(httpclient);
 						ptc.setDryRun(dryRun);
 						ptc.setDumpResult(dumpResult);
 
 						// 1. Check password and username before we start
 						if (ptc.isAccountValid(account)) {
-							// 2. Start session
-							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken();
-
+							
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
+							// 2A. Start session : get CRSF Token
+							String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
+							
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
+							// 2B. Start session : send age check
+							ptc.sendAgeCheck(account, crsfToken);
+							
+							try {
+								Thread.sleep(minWaitBeforeCaptcha);
+							} catch (InterruptedException e) {
+								// Interrupted
+							}
+							
 							// 3. Captcha
 							CaptchaRequest captchaRequest = new CaptchaRequest(account.getUsername());
 							captchaQueue.addRequest(captchaRequest);
 							String captcha = captchaRequest.getResponse();
 							logger.debug("Use Captcha : {}", captcha);
 
+							if(bottleneck != null){
+								bottleneck.syncUseOf(proxy);
+							}
+							
 							// 4. Account Creation
 							proxySlot.markUsed();
 							ptc.createAccount(account, crsfToken, captcha);
@@ -139,6 +171,16 @@ public class AccountCreationWorker implements Runnable {
 							currentCreation.getFailures().add(new CreationFailure(ErrorCode.BAD_USERNAME_OR_PASSWORD));
 							callbacks.onFailure(currentCreation);
 						}
+					} catch (IpSoftBanException e){
+						if(bottleneck != null){
+							// Send error to the bottleneck too
+							logger.warn("PTC softban, put that IP on hold. host:{}", proxy.getProvider().getHost());
+							bottleneck.onServerError(proxy);
+						}
+						callbacks.onTechnicalIssue(currentCreation);
+						
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					} catch (CaptchaSolvingException e) {
 						logger.warn(e.getMessage());
 						currentCreation.getFailures().add(new CreationFailure(ErrorCode.CAPTCHA_SOLVING));
@@ -150,6 +192,11 @@ public class AccountCreationWorker implements Runnable {
 						logger.warn("HttpConnectionException, proxy [{}] might be bad, move it out of rotation : {}", proxy.getProvider(), e.getMessage());
 						proxyManager.benchProxy(proxy);
 
+						currentCreation.getFailures().add(new CreationFailure(ErrorCode.NETWORK_ERROR, e.getMessage(), e));
+						callbacks.onTechnicalIssue(currentCreation);
+
+						// Free that proxy slot for re-use
+						proxySlot.freeSlot();
 					} catch (TechnicalException e) {
 						if(e.getCause() != null){
 							logger.warn("Technical Error : {} caused by {} ", e.getMessage(), e.getCause());
@@ -180,6 +227,10 @@ public class AccountCreationWorker implements Runnable {
 
 						// Free that proxy slot for re-use
 						proxySlot.freeSlot();
+					} finally {
+						if(httpclient != null){
+							httpclient.connectionPool().evictAll();
+						}
 					}
 				} catch (TechnicalException e) {
 					// Error when getAvailableProxy
@@ -191,6 +242,7 @@ public class AccountCreationWorker implements Runnable {
 			} else if (stopWithQueueEnd) {
 				status = RunnerStatus.STOP;
 				loopStatus = RunnerStatus.STOP;
+				logger.info("End of account creation queue reached. Stop worker");
 			} else {
 				status = RunnerStatus.IDLE;
 				try {

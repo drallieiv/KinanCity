@@ -6,7 +6,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.api.captcha.CaptchaProvider;
 import com.kinancity.api.model.AccountData;
 import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.generator.AccountGenerator;
@@ -14,6 +13,7 @@ import com.kinancity.core.model.AccountCreation;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.scheduling.AccountCreationQueue;
 import com.kinancity.core.status.RunnerStatus;
+import com.kinancity.core.throttle.Bottleneck;
 import com.kinancity.core.worker.AccountCreationWorker;
 import com.kinancity.core.worker.AccountCreationWorkerFactory;
 import com.kinancity.core.worker.WorkerOverseer;
@@ -49,6 +49,10 @@ public class PtcAccountCreator {
 
 	public PtcAccountCreator(Configuration config) {
 		this.config = config;
+		
+		if(config.getNbThreads() > accountCreationWorkerFactory.getTrainerNames().size()){
+			accountCreationWorkerFactory.setUseThreadNumber(true);
+		}
 	}
 
 	public void start() {
@@ -95,10 +99,13 @@ public class PtcAccountCreator {
 		
 		// Proxy Manager from config
 		ProxyManager proxyManager = config.getProxyManager();
+		
+		// Bottleneck for proxies
+		Bottleneck bottleneck = config.getBottleneck();
 
 		// Start multiple workers that will consume the queue
 		for (int i = 0; i < config.getNbThreads(); i++) {
-			AccountCreationWorker worker = accountCreationWorkerFactory.createWorker(queue, captchaQueue, proxyManager, callbacks);
+			AccountCreationWorker worker = accountCreationWorkerFactory.createWorker(queue, captchaQueue, proxyManager, callbacks, bottleneck);
 			worker.setDryRun(config.isDryRun());
 			worker.setDumpResult(config.getDumpResult());
 			workerOverseer.addWorker(worker);

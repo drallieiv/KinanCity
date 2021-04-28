@@ -1,6 +1,5 @@
 package com.kinancity.core.worker.callbacks;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -42,7 +41,7 @@ public class SaveOrRetryCallbacks implements CreationCallbacks {
 	public void onTechnicalIssue(AccountCreation accountCreation) {
 		if (accountCreation.getFailures().size() < nbMaxTries) {
 			logger.info("Will retry");
-			queue.add(accountCreation);
+			queue.addFirst(accountCreation);
 		} else {
 			logger.warn("Will not retry, max tries reached.");
 			CreationFailure lastFailure = accountCreation.getFailures().get(accountCreation.getFailures().size() - 1);

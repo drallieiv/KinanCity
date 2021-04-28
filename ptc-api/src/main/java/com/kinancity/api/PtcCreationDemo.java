@@ -3,12 +3,9 @@ package com.kinancity.api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.kinancity.api.captcha.CaptchaProvider;
-import com.kinancity.api.captcha.TwoCaptchaService;
 import com.kinancity.api.cookies.SaveAllCookieJar;
 import com.kinancity.api.errors.FatalException;
 import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.TwoCaptchaConfigurationException;
 import com.kinancity.api.errors.fatal.AccountDuplicateException;
 import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
 import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
@@ -45,7 +42,7 @@ public class PtcCreationDemo {
 				account.setEmail(args[2]);
 
 				// Setup a provider service for Captchas
-				CaptchaProvider captchaProvider = new TwoCaptchaService(args[3]);
+				// TODO
 
 				// Create a HTTP Client with cookies
 				OkHttpClient httclient = new OkHttpClient.Builder().cookieJar(new SaveAllCookieJar()).build();
@@ -60,10 +57,11 @@ public class PtcCreationDemo {
 				// 1. Check password and username before we start
 				if (ptc.isAccountValid(account)) {
 					// 2. Start session
-					String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken();
+					String crsfToken = ptc.sendAgeCheckAndGrabCrsfToken(account);
 
 					// 3. Captcha
-					String captcha = captchaProvider.getCaptcha();
+					// TODO String captcha = captchaProvider.getCaptcha();
+					String captcha = "TEST";
 
 					// 4. Account Creation
 					ptc.createAccount(account, crsfToken, captcha);
@@ -93,8 +91,6 @@ public class PtcCreationDemo {
 					System.out.println("Other technical exception : " + e.getMessage());
 					e.printStackTrace();
 				}
-			} catch (TwoCaptchaConfigurationException e) {
-				System.out.println("Configuration Error : " + e.getMessage());
 			}
 		}
 	}

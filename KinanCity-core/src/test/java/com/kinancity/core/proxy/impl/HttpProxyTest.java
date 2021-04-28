@@ -24,6 +24,20 @@ public class HttpProxyTest {
 		assertThat(proxy.getHost()).isEqualTo("127.0.0.1");
 		assertThat(proxy.getPort()).isEqualTo(3128);
 	}
+	
+	
+	/**
+	 * Encoded char in username
+	 */
+	@Test
+	public void encodedCharUriTest() {
+		// Given
+		String uri = "user:p%40ss@127.0.0.1:3128";
+		// When
+		HttpProxy proxy = HttpProxy.fromURI(uri);
+		// Then
+		assertThat(proxy).isNotNull();
+	}
 
 	/**
 	 * Build an HTTP Proxy from URI

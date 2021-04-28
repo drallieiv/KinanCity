@@ -8,15 +8,21 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
+import org.apache.commons.lang.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.kinancity.api.PtcSession;
 import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.TwoCaptchaConfigurationException;
+import com.kinancity.captcha.client.ClientProvider;
+import com.kinancity.core.captcha.CaptchaException;
+import com.kinancity.core.captcha.CaptchaProvider;
 import com.kinancity.core.captcha.CaptchaQueue;
+import com.kinancity.core.captcha.antiCaptcha.AntiCaptchaProvider;
+import com.kinancity.core.captcha.imageTypers.ImageTypersProvider;
 import com.kinancity.core.captcha.impl.LogCaptchaCollector;
 import com.kinancity.core.captcha.twoCaptcha.TwoCaptchaProvider;
 import com.kinancity.core.errors.ConfigurationException;
@@ -25,10 +31,14 @@ import com.kinancity.core.proxy.ProxyInfo;
 import com.kinancity.core.proxy.ProxyManager;
 import com.kinancity.core.proxy.ProxyRecycler;
 import com.kinancity.core.proxy.ProxyTester;
+import com.kinancity.core.proxy.bottleneck.ProxyCooldownBottleneck;
+import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
 import com.kinancity.core.proxy.impl.HttpProxy;
 import com.kinancity.core.proxy.impl.NoProxy;
 import com.kinancity.core.proxy.policies.NintendoTimeLimitPolicy;
 import com.kinancity.core.proxy.policies.ProxyPolicy;
+import com.kinancity.core.proxy.policies.TimeLimitPolicy;
+import com.kinancity.core.throttle.Bottleneck;
 import com.kinancity.core.worker.callbacks.ResultLogger;
 
 import lombok.Data;
@@ -42,9 +52,17 @@ public class Configuration {
 
 	private static Configuration instance;
 
-	private String twoCaptchaApiKey;
+	private String captchaKey;
 
-	private int nbThreads = 5;
+	private String captchaProvider = "imageTypers";
+
+	private int nbThreads = 3;
+
+	private boolean forceMaxThread = false;
+
+	private Bottleneck<ProxyInfo> bottleneck;
+
+	private boolean useIpBottleNeck = true;
 
 	private CaptchaQueue captchaQueue;
 
@@ -66,10 +84,19 @@ public class Configuration {
 
 	private int captchaMaxTotalTime = 600;
 
+	private int captchaMaxParallelChallenges = 20;
+
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 
 	private int dumpResult = PtcSession.NEVER;
+
+	/**
+	 * Custom values for batches processing
+	 */
+	private Integer customBatchMinTimeForRecovery = null;
+	private Integer customBatchMissmatchRecoverySize = null;
+	private Integer customBatchNormalBatchSize = null;
 
 	public static Configuration getInstance() {
 		if (instance == null) {
@@ -89,43 +116,94 @@ public class Configuration {
 
 					captchaQueue = new CaptchaQueue(new LogCaptchaCollector());
 
-					if (twoCaptchaApiKey != null && !twoCaptchaApiKey.isEmpty()) {
-						try {
-							// Add 2 captcha Provider
-							TwoCaptchaProvider twoCaptchaProvider = new TwoCaptchaProvider(captchaQueue, twoCaptchaApiKey);
-							twoCaptchaProvider.setMaxWait(captchaMaxTotalTime);
+					if ((captchaKey == null || captchaKey.isEmpty()) && !"local".equals(captchaProvider)) {
+						throw new ConfigurationException("No Catpcha key given");
+					}
 
-							double balance = twoCaptchaProvider.getBalance();
-							if (balance < 0) {
-								logger.warn("WARNING !! : Current 2 captcha balance is negative {}", balance);
-							} else {
-								logger.info("Catpcha Key is valid. Current 2 captcha balance is {}", balance);
+					try {
+						CaptchaProvider provider = null;
+						String providerThreadName = "";
+
+						if ("2captcha".equals(captchaProvider)) {
+							// Add 2 captcha Provider
+							TwoCaptchaProvider twocaptchaprovider = TwoCaptchaProvider.class.cast(TwoCaptchaProvider.getInstance(captchaQueue, captchaKey));
+							if (customBatchMinTimeForRecovery != null) {
+								twocaptchaprovider.setMinTimeForRecovery(customBatchMinTimeForRecovery);
+							}
+							if (customBatchMissmatchRecoverySize != null) {
+								twocaptchaprovider.setMissmatchRecoverySize(customBatchMissmatchRecoverySize);
+							}
+							if (customBatchNormalBatchSize != null) {
+								twocaptchaprovider.setNormalBatchSize(customBatchNormalBatchSize);
 							}
 
-							Thread twoCaptchaThread = new Thread(twoCaptchaProvider);
-							twoCaptchaThread.setName("2captcha");
-							twoCaptchaThread.start();
-						} catch (TwoCaptchaConfigurationException e) {
-							throw new ConfigurationException(e);
+							provider = twocaptchaprovider;
+							providerThreadName = "2captcha";
+						} else if ("imageTypers".equals(captchaProvider)) {
+							// Add imageTypers Provider
+							provider = ImageTypersProvider.getInstance(captchaQueue, captchaKey);
+							providerThreadName = "imageTypers";
+						} else if ("antiCaptcha".equals(captchaProvider)) {
+							// Add imageTypers Provider
+							provider = AntiCaptchaProvider.getInstance(captchaQueue, captchaKey);
+							providerThreadName = "antiCaptcha";
+						} else if ("local".equals(captchaProvider)) {
+							// Add local server provider
+							provider = ClientProvider.getInstance(captchaQueue);
+							providerThreadName = "localCaptchaServer";
+						} else {
+							throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 						}
-					} else {
-						throw new ConfigurationException("No Catpcha Provider found. Only supports 2 captcha for now");
+
+						// Proceed running captcha thread
+
+						provider.setMaxWait(captchaMaxTotalTime);
+						provider.setMaxParallelChallenges(captchaMaxParallelChallenges);
+
+						double balance = provider.getBalance();
+						if (balance < 0) {
+							logger.warn("WARNING !! : Current captcha balance is negative {}", balance);
+						} else {
+							logger.info("Catpcha Key is valid. Current captcha balance is {}", balance);
+						}
+
+						Thread captchaThread = new Thread(provider);
+						captchaThread.setName(providerThreadName);
+						captchaThread.start();
+
+					} catch (CaptchaException e) {
+						throw new ConfigurationException(e);
 					}
 
 				} catch (TechnicalException e) {
 					throw new ConfigurationException(e);
 				}
 			}
-
+			
 			if (proxyManager == null) {
-				logger.info("ProxyManager using direction connection with Nintendo policy");
+				ProxyPolicy policy = getProxyPolicyInstance();
+				logger.info("ProxyManager using direct connection with policy : {}", policy);
 				proxyManager = new ProxyManager();
 				// Add Direct connection
-				proxyManager.addProxy(new ProxyInfo(getProxyPolicyInstance(), new NoProxy()));
+				proxyManager.addProxy(new ProxyInfo(policy, new NoProxy()));
 			}
-			
+
+			// Add BottleNeck
+			if (bottleneck == null) {
+				if (!useIpBottleNeck) {
+					bottleneck = new ProxyNoBottleneck();
+				} else {
+					ProxyCooldownBottleneck ipBottleneck = new ProxyCooldownBottleneck();
+					Thread bottleNeckThread = new Thread(ipBottleneck);
+					bottleNeckThread.setName("OfficerJenny(BottleNeck)");
+					bottleNeckThread.start();
+					bottleneck = ipBottleneck;
+				}
+			}
+
 			// Add Proxy recycler and start thread
 			ProxyRecycler recycler = new ProxyRecycler(proxyManager);
+			recycler.setBottleneck(bottleneck);
 			Thread recyclerThread = new Thread(recycler);
 			recyclerThread.setName("NurseJoy(Recycler)");
 			recyclerThread.start();
@@ -154,7 +232,8 @@ public class Configuration {
 			try {
 				init();
 			} catch (ConfigurationException e) {
-				logger.error("Configuration Init Failed", e);
+				logger.error("Configuration Init Failed : " + e.getMessage());
+				logger.debug("Stacktrace", e);
 				return false;
 			}
 		}
@@ -170,7 +249,6 @@ public class Configuration {
 		}
 
 		if (!skipProxyTest) {
-			logger.info("Validating given proxies");
 
 			ProxyTester proxyTester = new ProxyTester();
 			List<ProxyInfo> invalidProxies = new ArrayList<>();
@@ -178,6 +256,9 @@ public class Configuration {
 				logger.error("No valid proxy given");
 				return false;
 			}
+
+			logger.info("Validating {} given proxies", proxyManager.getProxies().size());
+
 			for (ProxyInfo proxy : proxyManager.getProxies()) {
 				if (!proxyTester.testProxy(proxy.getProvider())) {
 					logger.warn("Proxy test for {} failed, remove proxy", proxy.getProvider());
@@ -189,6 +270,18 @@ public class Configuration {
 			} else {
 				proxyManager.getProxies().removeAll(invalidProxies);
 				logger.info("{} valid proxies left", proxyManager.getProxies().size());
+				if (proxyManager.getProxies().size() == 0) {
+					return false;
+				}
+			}
+		}
+
+		if (forceMaxThread) {
+			// Max 3 times more thread then proxies
+			int maxThreads = proxyManager.getProxies().size() * 3;
+			if (nbThreads > maxThreads) {
+				nbThreads = maxThreads;
+				logger.info("Too many thread compared to proxies, forcing thread count to {}", nbThreads);
 			}
 		}
 
@@ -215,10 +308,33 @@ public class Configuration {
 			in.close();
 
 			// Load Config
-			this.setTwoCaptchaApiKey(prop.getProperty("twoCaptcha.key"));
-			this.loadProxies(prop.getProperty("proxies"));
+			this.setCaptchaKey(prop.getProperty("captcha.key"));
+			this.setCaptchaProvider(prop.getProperty("captcha.provider", "imageTypers"));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
-			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", "600")));
+			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
+			Optional.ofNullable(prop.getProperty("batch.recovery.time")).ifPresent(value -> this.setCustomBatchMinTimeForRecovery(Integer.parseInt(value)));
+			Optional.ofNullable(prop.getProperty("batch.recovery.size")).ifPresent(value -> this.setCustomBatchMissmatchRecoverySize(Integer.parseInt(value)));
+			Optional.ofNullable(prop.getProperty("batch.normal.size")).ifPresent(value -> this.setCustomBatchNormalBatchSize(Integer.parseInt(value)));
+
+			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
+
+			if(prop.getProperty("proxyPolicy.custom.period") != null || prop.getProperty("proxyPolicy.custom.count") != null){
+				String customPeriodConfig = prop.getProperty("proxyPolicy.custom.period");
+				String customCountConfig = prop.getProperty("proxyPolicy.custom.count");
+				int customPeriod = 16 * 60;
+				int customCount = 5;
+				if (customPeriodConfig != null && NumberUtils.isNumber(customPeriodConfig)) {
+					customPeriod = Integer.parseInt(customPeriodConfig);
+				}
+				if (customCountConfig != null && NumberUtils.isNumber(customCountConfig)) {
+					customCount = Integer.parseInt(customCountConfig);
+				}
+
+				proxyPolicy = new TimeLimitPolicy(customCount, customPeriod);
+			}
+			
+
+			this.loadProxies(prop.getProperty("proxies"));
 
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
@@ -244,7 +360,11 @@ public class Configuration {
 				}
 			}
 
-			logger.info("ProxyManager setup with {} proxies", proxyManager.getProxies().size());
+			logger.info("ProxyManager setup with {} proxies : ", proxyManager.getProxies().size());
+			for (ProxyInfo proxy : proxyManager.getProxies()) {
+				logger.info(" - {}", proxy.toString());
+			}
+
 		}
 
 	}
@@ -254,6 +374,18 @@ public class Configuration {
 			proxyPolicy = new NintendoTimeLimitPolicy();
 		}
 		return proxyPolicy.clone();
+	}
+
+	/**
+	 * Make sure to use the given policy.
+	 */
+	public void reloadProxyPolicy() {
+		if (proxyManager != null) {
+			ProxyPolicy policy = getProxyPolicyInstance();
+			proxyManager.getProxies().stream().forEach(proxy -> proxy.setProxyPolicy(getProxyPolicyInstance()));
+			logger.info("ProxyManager reloaded with {} policy ", policy);
+		}
+
 	}
 
 }
