@@ -190,6 +190,9 @@ public class KinanCityCli {
 		options.addOption(CliOptions.CK.asOption());
 		options.addOption(CliOptions.CP.asOption());
 
+    // Output File
+    options.addOption(CliOptions.OUTPUT.asOption());
+
 		// Number of Threads
 		options.addOption(CliOptions.NB_THREADS.asOption());
 
