@@ -5,7 +5,8 @@ name: Maven Package Release
 
 on:
   push:
-    branches: [ release ]
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -21,13 +22,15 @@ jobs:
         server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml -DskipTests
+
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+        files: |
+          KinanCity-core/target/kinancity-core-*.jar
+          KinanCity-mail/target/kinancity-mail-*.jar
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
