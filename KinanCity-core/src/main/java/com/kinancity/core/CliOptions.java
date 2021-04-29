@@ -29,9 +29,13 @@ public enum CliOptions {
 	// FLAGS
 	NO_PROXY_CHECK("npc", "noProxyCheck", false, "Skip Proxy Checking"),
 	NO_LIMIT("nl", "noLimit", false, "use a no limit proxy policy"),
+
+	INTERACTIVE("i", "interactive", false, "Interactive Mode"),
+
 	DRY_RUN("dryrun", "dryrun", false, "Dry-Run");
 
-	public String shortName;
+
+    public String shortName;
 	public String longName;
 	public String description;
 	public boolean hasValue;
