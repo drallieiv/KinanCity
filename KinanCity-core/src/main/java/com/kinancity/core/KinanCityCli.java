@@ -11,6 +11,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.beryx.textio.TextIO;
+import org.beryx.textio.TextIoFactory;
+import org.beryx.textio.TextTerminal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +25,13 @@ import com.kinancity.core.generator.account.SingleAccountGenerator;
 import com.kinancity.core.proxy.bottleneck.ProxyNoBottleneck;
 import com.kinancity.core.proxy.policies.UnlimitedUsePolicy;
 
+import static com.kinancity.core.Configuration.PROVIDER_2CAPTCHA;
+
 public class KinanCityCli {
 
 	private static Logger LOGGER = LoggerFactory.getLogger(KinanCityCli.class);
+
+	private static final String REFERAL_2CAPTCHA = "https://2captcha.com?from=2219901";
 
 	public static void main(String[] args) {
 
@@ -149,6 +157,9 @@ public class KinanCityCli {
 		} else if (cmd.hasOption(CliOptions.CSV_ACCOUNTS.shortName)) {
 			String accountFileName = cmd.getOptionValue(CliOptions.CSV_ACCOUNTS.shortName);
 			config.setAccountGenerator(new CsvReaderAccountGenerator(accountFileName));
+		} else if (cmd.hasOption(CliOptions.INTERACTIVE.shortName)) {
+			LOGGER.debug("Start Interactive config");
+			config = getInteractiveConfig(config);
 		} else {
 			LOGGER.error("invalid arguments\n");
 
@@ -166,9 +177,64 @@ public class KinanCityCli {
 		return config;
 	}
 
+	private static Configuration getInteractiveConfig(Configuration config) {
+		TextIO textIO = TextIoFactory.getTextIO();
+
+		if (PROVIDER_2CAPTCHA.equals(config.getCaptchaProvider())) {
+			TextTerminal terminal = textIO.getTextTerminal();
+			terminal.printf("If you don't have a 2captcha account yet,"
+							+ " support KinanCity by using our referral link : \n %s \n\n",REFERAL_2CAPTCHA);
+		}
+
+		if (StringUtils.isBlank(config.getCaptchaKey())) {
+			String captchaKey = textIO.newStringInputReader()
+					.read("Enter your " + config.getCaptchaProvider() + " key");
+			config.setCaptchaKey(captchaKey);
+		}
+
+		if (config.getAccountGenerator() == null) {
+
+			textIO.getTextTerminal().print("Option for Creation of an account sequence");
+
+			String emailDomain = textIO.newStringInputReader()
+					.withDefaultValue("@kinan.yourdomain.com")
+					.read("email domain");
+
+			String staticPassword = textIO.newStringInputReader()
+					.read("Password (Must match PTC requirements)");
+
+			String usernamePattern = textIO.newStringInputReader()
+					.read("Username Format (Must contains enough * for the sequence)");
+
+			int nbAccounts = textIO.newIntInputReader()
+					.withMinVal(1)
+					.read("Number of accounts to create");
+
+			int startFrom = textIO.newIntInputReader()
+					.withDefaultValue(0)
+					.read("Start from 0, or specify a number");
+
+			// Sequence only
+			SequenceAccountGenerator sequenceGenerator = new SequenceAccountGenerator();
+			sequenceGenerator.setBaseEmail(emailDomain);
+			sequenceGenerator.setStaticPassword(staticPassword);
+			sequenceGenerator.setUsernamePattern(usernamePattern);
+			sequenceGenerator.setNbAccounts(nbAccounts);
+			sequenceGenerator.setStartFrom(startFrom);
+			config.setAccountGenerator(sequenceGenerator);
+
+			textIO.dispose();
+		}
+
+		return config;
+	}
+
 	private static Options setupCliOptions() {
 		// CLI Options
 		Options options = new Options();
+
+		// Dry Run Mode
+		options.addOption(CliOptions.INTERACTIVE.asOption());
 
 		// Dry Run Mode
 		options.addOption(CliOptions.DRY_RUN.asOption());
@@ -190,8 +256,8 @@ public class KinanCityCli {
 		options.addOption(CliOptions.CK.asOption());
 		options.addOption(CliOptions.CP.asOption());
 
-    // Output File
-    options.addOption(CliOptions.OUTPUT.asOption());
+        // Output File
+        options.addOption(CliOptions.OUTPUT.asOption());
 
 		// Number of Threads
 		options.addOption(CliOptions.NB_THREADS.asOption());
