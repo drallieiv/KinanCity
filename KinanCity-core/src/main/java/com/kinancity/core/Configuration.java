@@ -46,6 +46,11 @@ import lombok.Data;
 @Data
 public class Configuration {
 
+	public static final String PROVIDER_2CAPTCHA = "2captcha";
+	public static final String PROVIDER_IMAGETYPERS = "imageTypers";
+	public static final String PROVIDER_ANTICAPTCHA = "antiCaptcha";
+	public static final String PROVIDER_LOCAL = "local";
+
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	private static final String CONFIG_FILE = "config.properties";
@@ -54,7 +59,7 @@ public class Configuration {
 
 	private String captchaKey;
 
-	private String captchaProvider = "imageTypers";
+	private String captchaProvider = PROVIDER_2CAPTCHA;
 
 	private int nbThreads = 3;
 
@@ -124,7 +129,7 @@ public class Configuration {
 						CaptchaProvider provider = null;
 						String providerThreadName = "";
 
-						if ("2captcha".equals(captchaProvider)) {
+						if (PROVIDER_2CAPTCHA.equals(captchaProvider)) {
 							// Add 2 captcha Provider
 							TwoCaptchaProvider twocaptchaprovider = TwoCaptchaProvider.class.cast(TwoCaptchaProvider.getInstance(captchaQueue, captchaKey));
 							if (customBatchMinTimeForRecovery != null) {
@@ -138,16 +143,16 @@ public class Configuration {
 							}
 
 							provider = twocaptchaprovider;
-							providerThreadName = "2captcha";
-						} else if ("imageTypers".equals(captchaProvider)) {
+							providerThreadName = PROVIDER_2CAPTCHA;
+						} else if (PROVIDER_IMAGETYPERS.equals(captchaProvider)) {
 							// Add imageTypers Provider
 							provider = ImageTypersProvider.getInstance(captchaQueue, captchaKey);
-							providerThreadName = "imageTypers";
-						} else if ("antiCaptcha".equals(captchaProvider)) {
+							providerThreadName = PROVIDER_IMAGETYPERS;
+						} else if (PROVIDER_ANTICAPTCHA.equals(captchaProvider)) {
 							// Add imageTypers Provider
 							provider = AntiCaptchaProvider.getInstance(captchaQueue, captchaKey);
-							providerThreadName = "antiCaptcha";
-						} else if ("local".equals(captchaProvider)) {
+							providerThreadName = PROVIDER_ANTICAPTCHA;
+						} else if (PROVIDER_LOCAL.equals(captchaProvider)) {
 							// Add local server provider
 							provider = ClientProvider.getInstance(captchaQueue);
 							providerThreadName = "localCaptchaServer";
@@ -309,7 +314,7 @@ public class Configuration {
 
 			// Load Config
 			this.setCaptchaKey(prop.getProperty("captcha.key"));
-			this.setCaptchaProvider(prop.getProperty("captcha.provider", "imageTypers"));
+			this.setCaptchaProvider(prop.getProperty("captcha.provider", PROVIDER_2CAPTCHA));
 			this.setDumpResult(Integer.parseInt(prop.getProperty("dumpResult", String.valueOf(PtcSession.NEVER))));
 			this.setCaptchaMaxTotalTime(Integer.parseInt(prop.getProperty("captchaMaxTotalTime", String.valueOf(captchaMaxTotalTime))));
 			Optional.ofNullable(prop.getProperty("batch.recovery.time")).ifPresent(value -> this.setCustomBatchMinTimeForRecovery(Integer.parseInt(value)));
