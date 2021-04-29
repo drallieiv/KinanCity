@@ -1,2 +1,2 @@
-#!/bin/sh
-java -jar kinancity-core.jar -o /opt/data/result.csv
+#!/bin/bash
+java -jar /kinan/bin/kinancity-core.jar -o /kinan/data/result.csv -i
