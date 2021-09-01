@@ -86,6 +86,12 @@ jill141237;fhJ3%hfsd;jill141237@example.com;1987-10-03;GB
 
 will create 1 account with given parameters.
 
+## Interactive mode
+
+`-i`
+
+will start Kinan Core in inderactive mode, where just have to follow prompts.
+
 # Additional parameters :
 
 * `-ck <captchaKey>` or `-captchaKey <captchaKey>` to give a specific apiKey add
