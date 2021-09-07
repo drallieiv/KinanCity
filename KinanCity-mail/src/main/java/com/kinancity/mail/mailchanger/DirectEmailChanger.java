@@ -117,6 +117,7 @@ public class DirectEmailChanger implements EmailChanger{
 
             } else {
                 logger.error("Mail Change failed : Failed to call PTC");
+                logger.error("Mail Change Response : " + response.toString());
                 FileLogger.logStatus(emailChangeRequest, FileLogger.ERROR);
                 return false;
             }
