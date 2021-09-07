@@ -5,6 +5,7 @@ import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
 import com.kinancity.mail.SaveAllCookieJar;
 import com.kinancity.mail.mailchanger.password.PasswordProvider;
+import com.kinancity.mail.proxy.HttpProxy;
 import okhttp3.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,6 +27,8 @@ public class DirectEmailChanger implements EmailChanger{
      */
 
     private okhttp3.OkHttpClient client;
+
+    private HttpProxy proxy;
 
     private PasswordProvider passwordProvider;
 
@@ -148,6 +151,12 @@ public class DirectEmailChanger implements EmailChanger{
         } else {
             return tokenField.get(0).val();
         }
+    }
+
+
+    public void setHttpProxy(HttpProxy httpProxy) {
+        this.proxy = httpProxy;
+        this.client = httpProxy.getClient();
     }
 
 }

@@ -35,7 +35,7 @@ public class KcMessageHandler implements MessageHandler {
 	private static final String POKEMON_DOMAIN = "@pokemon.com";
 
 	private static final String ACTIVATION_EXP = "https://club.pokemon.com/([a-zA-Z\\-]+)/pokemon-trainer-club/activated/.*";
-  private static final String EMAIL_CHANGE_EXP = "https://club.pokemon.com/([a-zA-Z\\-]+)/pokemon-trainer-club/email-change-approval/[a-zA-Z0-9]+";
+    private static final String EMAIL_CHANGE_EXP = "https://club.pokemon.com/([a-zA-Z\\-]+)/pokemon-trainer-club/email-change-approval/[a-zA-Z0-9]+";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
