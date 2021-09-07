@@ -82,7 +82,7 @@ public class MailServerApplication {
 
 		} else {
 			LinkActivator activator = getQueueLinkActivator();
-			EmailChanger emailChanger = null;
+			EmailChanger emailChanger;
 
 			if (mode.equals("log")) {
 				log.info("Started in Log Mode");
@@ -153,7 +153,31 @@ public class MailServerApplication {
 		String isActive = config.getProperty("emailChanger.active");
 		if(isActive == null || isActive.equals("true")) {
 			PasswordProvider passwordProvider = PasswordProviderFactory.getPasswordProvider(config);
-			return new DirectEmailChanger(passwordProvider);
+			DirectEmailChanger emailChanger = new DirectEmailChanger(passwordProvider);
+
+			String proxy = config.getProperty("proxy");
+			if (proxy != null) {
+				if (proxy.contains("|")) {
+					List<String> proxies = new LinkedList<String>(Arrays.asList(proxy.split(Pattern.quote("|"))));
+					String initialProxy = proxies.get(0);
+					HttpProxy httpProxy = HttpProxy.fromURI(initialProxy);
+					log.info("Mailchanger using proxy " + httpProxy);
+					emailChanger.setHttpProxy(httpProxy);
+
+					proxies.remove(0);
+					for (String backupProxyStr : proxies) {
+						HttpProxy backupProxy = HttpProxy.fromURI(backupProxyStr);
+						httpProxy.getOtherProxies().add(backupProxy);
+						log.info("Mailchanger with backup proxy " + backupProxy);
+					}
+
+				} else {
+					HttpProxy httpProxy = HttpProxy.fromURI(proxy);
+					log.info("Mailchanger using proxy " + httpProxy);
+					emailChanger.setHttpProxy(httpProxy);
+				}
+			}
+			return emailChanger;
 		} else {
 			return null;
 		}
@@ -182,19 +206,19 @@ public class MailServerApplication {
 				List<String> proxies = new LinkedList<String>(Arrays.asList(proxy.split(Pattern.quote("|"))));
 				String initialProxy = proxies.get(0);
 				HttpProxy httpProxy = HttpProxy.fromURI(initialProxy);
-				log.info("Using proxy " + httpProxy);
+				log.info("Activator using proxy " + httpProxy);
 				activator.setHttpProxy(httpProxy);
 
 				proxies.remove(0);
 				for (String backupProxyStr : proxies) {
 					HttpProxy backupProxy = HttpProxy.fromURI(backupProxyStr);
 					httpProxy.getOtherProxies().add(backupProxy);
-					log.info("with backup proxy " + backupProxy);
+					log.info("Activator with backup proxy " + backupProxy);
 				}
 
 			} else {
 				HttpProxy httpProxy = HttpProxy.fromURI(proxy);
-				log.info("Using proxy " + httpProxy);
+				log.info("Activator using proxy " + httpProxy);
 				activator.setHttpProxy(httpProxy);
 			}
 		}
