@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import okhttp3.CookieJar;
+import okhttp3.Interceptor;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,6 +189,10 @@ public class HttpProxy {
 	}
 
 	public OkHttpClient getClient() {
+		return getClient(null, null);
+	}
+
+	public OkHttpClient getClient(CookieJar cookieJar, Interceptor interceptor) {
 		Builder clientBuilder = new OkHttpClient.Builder();
 
 		// TimeOuts
@@ -199,6 +205,14 @@ public class HttpProxy {
 		// Authentication
 		if (StringUtils.isNotEmpty(login)) {
 			clientBuilder.proxyAuthenticator(new ProxyBasicAuthenticator(login, pass));
+		}
+
+		if (cookieJar != null){
+			clientBuilder.cookieJar(cookieJar);
+		}
+
+		if (interceptor != null){
+			clientBuilder.addInterceptor(interceptor);
 		}
 
 		return clientBuilder.build();

@@ -7,6 +7,7 @@ import com.kinancity.mail.SaveAllCookieJar;
 import com.kinancity.mail.mailchanger.password.PasswordProvider;
 import com.kinancity.mail.proxy.HttpProxy;
 import okhttp3.*;
+import okhttp3.logging.HttpLoggingInterceptor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -34,9 +35,15 @@ public class DirectEmailChanger implements EmailChanger{
 
     private SaveAllCookieJar cookieJar;
 
+    private HttpLoggingInterceptor logging;
+
+    private HttpLoggingInterceptor.Level logginLevel = HttpLoggingInterceptor.Level.BODY;
+
     public DirectEmailChanger(PasswordProvider passwordProvider) {
         cookieJar = new SaveAllCookieJar();
-        this.client = new OkHttpClient.Builder().cookieJar(cookieJar).build();
+        logging = new HttpLoggingInterceptor();
+        logging.setLevel(logginLevel);
+        this.client = new OkHttpClient.Builder().cookieJar(cookieJar).addInterceptor(logging).build();
         this.passwordProvider = passwordProvider;
     }
 
@@ -89,6 +96,7 @@ public class DirectEmailChanger implements EmailChanger{
 
                     Request acceptRequest = new Request.Builder()
                             .header(MailConstants.HEADER_USER_AGENT, MailConstants.CHROME_USER_AGENT)
+                            .header("ContentType", "application/x-www-form-urlencoded")
                             .header("Origin", "https://club.pokemon.com")
                             .header("referer", emailChangeRequest.getLink())
                             .url(emailChangeRequest.getLink())
@@ -106,7 +114,8 @@ public class DirectEmailChanger implements EmailChanger{
                             FileLogger.logStatus(emailChangeRequest, FileLogger.OK);
                             return true;
                         } else {
-                            logger.info("Email Change FAILED");
+                            logger.info("Email Change FAILED. Missing success message");
+
                             FileLogger.logStatus(emailChangeRequest, FileLogger.ERROR);
                             return false;
                         }
@@ -120,7 +129,6 @@ public class DirectEmailChanger implements EmailChanger{
 
             } else {
                 logger.error("Mail Change failed : Failed to call PTC");
-                logger.error("Mail Change Response : " + response.toString());
                 FileLogger.logStatus(emailChangeRequest, FileLogger.ERROR);
                 return false;
             }
@@ -156,7 +164,7 @@ public class DirectEmailChanger implements EmailChanger{
 
     public void setHttpProxy(HttpProxy httpProxy) {
         this.proxy = httpProxy;
-        this.client = httpProxy.getClient();
+        this.client = httpProxy.getClient(cookieJar, logging);
     }
 
 }
