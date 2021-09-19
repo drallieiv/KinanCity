@@ -94,6 +94,8 @@ public class Configuration {
 	// If true, everything will be mocked
 	private boolean dryRun = false;
 
+	private boolean emailOptIn = false;
+
 	private int dumpResult = PtcSession.NEVER;
 
 	/**
@@ -337,9 +339,10 @@ public class Configuration {
 
 				proxyPolicy = new TimeLimitPolicy(customCount, customPeriod);
 			}
-			
 
 			this.loadProxies(prop.getProperty("proxies"));
+
+			this.setEmailOptIn(prop.getProperty("option.emailoptin","false").equals("true"));
 
 		} catch (IOException e) {
 			logger.error("failed loading config.properties");
