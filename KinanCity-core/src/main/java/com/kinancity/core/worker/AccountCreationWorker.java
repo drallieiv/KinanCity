@@ -77,6 +77,9 @@ public class AccountCreationWorker implements Runnable {
 	private boolean dryRun = false;
 
 	@Setter
+	private boolean emailOptIn = false;
+
+	@Setter
 	private int dumpResult = PtcSession.NEVER;
 
 	// Wait at least this time before requesting a captcha
@@ -126,6 +129,7 @@ public class AccountCreationWorker implements Runnable {
 						PtcSession ptc = new PtcSession(httpclient);
 						ptc.setDryRun(dryRun);
 						ptc.setDumpResult(dumpResult);
+						ptc.getOptions().setEmailOptIn(emailOptIn);
 
 						// 1. Check password and username before we start
 						if (ptc.isAccountValid(account)) {

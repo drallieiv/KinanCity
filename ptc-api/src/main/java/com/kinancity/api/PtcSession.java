@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import javax.json.Json;
 import javax.json.JsonObject;
 
+import lombok.Getter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -77,6 +78,9 @@ public class PtcSession {
 	@Setter
 	private int dumpResult = 0;
 
+	@Getter
+	private CreationOptions options;
+
 	/**
 	 * Start a new PTC Session. Client must support cookies.
 	 * 
@@ -84,6 +88,7 @@ public class PtcSession {
 	 */
 	public PtcSession(OkHttpClient client) {
 		this.client = client;
+		this.options = new CreationOptions();
 	}
 
 	/**
@@ -311,7 +316,7 @@ public class PtcSession {
 
 		try {
 			// Create Request
-			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha);
+			Request request = this.buildAccountCreationRequest(account, crsfToken, captcha, options);
 
 			// Send Request
 			logger.debug("Execute Request [createAccount] on proxy {}", client.proxy());
@@ -470,8 +475,8 @@ public class PtcSession {
 	}
 
 	// Http Request form the account creation itself
-	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha) throws UnsupportedEncodingException {
-		RequestBody body = new FormBody.Builder()
+	private Request buildAccountCreationRequest(AccountData account, String crsfToken, String captcha, CreationOptions options) throws UnsupportedEncodingException {
+		FormBody.Builder builder = new FormBody.Builder()
 				// Given login and password
 				.add("username", account.getUsername())
 				.add("email", account.getEmail())
@@ -485,8 +490,17 @@ public class PtcSession {
 
 				.add("public_profile_opt_in", "False")
 				.add("screen_name", "")
-				.add("terms", "on")
-				.build();
+				.add("terms", "on");
+
+		if(options != null){
+			if(options.isEmailOptIn()) {
+				builder.add("email_opt_in", "on");
+			}
+		}
+
+		RequestBody body = builder.build();
+
+
 
 		Request request = new Request.Builder()
 				.url(url_ptc + pathSignup)
