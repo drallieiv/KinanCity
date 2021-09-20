@@ -108,6 +108,7 @@ public class PtcAccountCreator {
 			AccountCreationWorker worker = accountCreationWorkerFactory.createWorker(queue, captchaQueue, proxyManager, callbacks, bottleneck);
 			worker.setDryRun(config.isDryRun());
 			worker.setDumpResult(config.getDumpResult());
+			worker.setEmailOptIn(config.isEmailOptIn());
 			workerOverseer.addWorker(worker);
 		}
 
