@@ -1,5 +1,31 @@
 package com.kinancity.api;
 
+import com.kinancity.api.errors.FatalException;
+import com.kinancity.api.errors.TechnicalException;
+import com.kinancity.api.errors.fatal.AccountDuplicateException;
+import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
+import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
+import com.kinancity.api.errors.tech.HttpConnectionException;
+import com.kinancity.api.errors.tech.IpSoftBanException;
+import com.kinancity.api.model.AccountData;
+import lombok.Getter;
+import lombok.Setter;
+import okhttp3.FormBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.json.Json;
+import javax.json.JsonObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -14,34 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-
-import lombok.Getter;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.kinancity.api.errors.FatalException;
-import com.kinancity.api.errors.TechnicalException;
-import com.kinancity.api.errors.fatal.AccountDuplicateException;
-import com.kinancity.api.errors.fatal.EmailDuplicateOrBlockedException;
-import com.kinancity.api.errors.tech.AccountRateLimitExceededException;
-import com.kinancity.api.errors.tech.HttpConnectionException;
-import com.kinancity.api.errors.tech.IpSoftBanException;
-import com.kinancity.api.model.AccountData;
-
-import lombok.Setter;
-import okhttp3.FormBody;
-import okhttp3.Headers;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 /**
  * Session for creating a PTC account.
