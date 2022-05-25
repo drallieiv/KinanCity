@@ -95,6 +95,7 @@ will start Kinan Core in inderactive mode, where just have to follow prompts.
 # Additional parameters :
 
 * `-ck <captchaKey>` or `-captchaKey <captchaKey>` to give a specific apiKey add
+* `-cp <provider>` or `-captchaProvider <provider>` to choose a specific captcha provider (2captcha, imageTypers, antiCaptcha) imageTypers by default
 * `-px [proxy1,proxy2,...]` or `-proxies [proxy1,proxy2,...]` to use multiple proxies.  
 Or set them in the config file as `proxies=`  
 anonymous proxy format is `ip:port` like `127.0.0.1:80`
