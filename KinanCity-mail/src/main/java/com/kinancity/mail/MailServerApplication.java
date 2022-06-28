@@ -147,6 +147,17 @@ public class MailServerApplication {
 		} catch (IOException e) {
 			log.info("Error loading configuration file " + CONFIG_FILE);
 		}
+
+    if (config.getProperty("proxy") == null) {
+      String proxyEnvConfig = System.getenv("proxy");
+      if (proxyEnvConfig != null) {
+        log.info("Use proxy config from SytemEnv variable : " + proxyEnvConfig);
+        config.setProperty("proxy", proxyEnvConfig);
+      }
+    }
+
+    
+
 	}
 
 	private static EmailChanger getEmailChanger() {
