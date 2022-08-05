@@ -165,6 +165,7 @@ public class KinanCityCli {
 
 			HelpFormatter formatter = new HelpFormatter();
 			String cmdLineSyntax = " one of \n"
+					+ "  -i \n"
 					+ "  -m <email>  -u <username> -p <password> \n"
 					+ "  -a <accounts.csv> \n"
 					+ "  -m <email> -c <#ofAccounts> -f <format**> -p <password> (-s <first#>)\n"
