@@ -22,7 +22,7 @@ You then first have to fill some personal informations such as your country and 
 
 You also need to complete a Captcha task to prove that you are a human.
 
-One the subscription is done, the account still needs to be activated in the next 48 hours. An email will be sent to the given address with a link. You need to follow that link to activate the account.
+Once the subscription is done, the account still needs to be activated in the next 48 hours. An email will be sent to the given address with a link. You need to follow that link to activate the account.
 
 NOTE : You cannot use the same email twice for multiple PTC account, they each need their own email address.
 
