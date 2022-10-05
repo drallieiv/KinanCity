@@ -48,7 +48,7 @@ The advantages of KinanCity :
 
 ## How to install KinanCity ?
 
-If you just want to **use Kinan Core and/or Kinan Mail**, you can get the last stable build [here]{https://github.com/drallieiv/KinanCity/releases}
+If you just want to **use Kinan Core and/or Kinan Mail**, you can get the last stable build [here](https://github.com/drallieiv/KinanCity/releases)
 or
 To use the very last build of each module, you can **download** the latest version of each maven module [here](https://github.com/drallieiv/KinanCity/packages)
 or  
