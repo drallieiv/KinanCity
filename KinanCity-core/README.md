@@ -44,7 +44,7 @@ KinanCity needs to solve captchas and require a provider that will solve all cap
 
 
 **Running in command line**  
-The examples below only give the arguments that will follow the launch command : `java -jar KinanCity-core-<version>.jar` or `start.sh` for unix and `start.bat` for windows
+The examples below only give the arguments that will follow the launch command : `java -jar KinanCity-core-<version>.jar`
 
 Elements written between angle brackets (< >) are example values. Remove the brackets and use your own value.
 
