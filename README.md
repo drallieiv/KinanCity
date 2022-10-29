@@ -44,7 +44,7 @@ The advantages of KinanCity :
 * is cross platform compatible (Unix, Windows, Mac)
 * can work on headless systems without any need of a web driver
 * does parallel processing to be faster
-* can use multiple proxies to go over the limit of 30 accounts per hour (5 accounts per 10 minutes)
+* can use multiple proxies to go over the limit of 20 accounts per hour (5 accounts per 15 minutes)
 
 ## How to install KinanCity ?
 
