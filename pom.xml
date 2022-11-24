@@ -32,7 +32,8 @@
 		<module>KinanCity-captcha-AntiCaptcha</module>
 		<module>KinanCity-captcha-server</module>
 		<module>KinanCity-captcha-client</module>
-	</modules>
+        <module>KinanCity-captcha-captchaai</module>
+    </modules>
 	  
 	<distributionManagement>
 		<repository>

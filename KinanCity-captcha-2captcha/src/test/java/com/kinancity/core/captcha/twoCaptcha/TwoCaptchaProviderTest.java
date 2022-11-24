@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import com.kinancity.core.captcha.CaptchaProvider;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,17 +23,16 @@ public class TwoCaptchaProviderTest {
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
-	private Properties prop;
-
 	@Ignore
 	@Test
 	public void solvingTest() throws CaptchaException, TechnicalException, InterruptedException {
 
 		CaptchaQueue queue = new CaptchaQueue(new LogCaptchaCollector());
 
-		String apiKey = prop.getProperty("twoCaptcha.key");
+		String apiKey = System.getenv("apiKey") ;
+		String altUrl = System.getenv("altUrl") ;
 
-		TwoCaptchaProvider provider = new TwoCaptchaProvider(queue, apiKey);
+		CaptchaProvider provider = TwoCaptchaProvider.getInstance(queue, apiKey, altUrl);
 
 		logger.info("Start Provider");
 		new Thread(provider).start();
@@ -56,13 +56,4 @@ public class TwoCaptchaProviderTest {
 
 	}
 
-	@Before
-	public void loadConfig() throws IOException {
-		prop = new Properties();
-		File configFile = new File("config.properties");
-
-		InputStream in = new FileInputStream(configFile);
-		prop.load(in);
-		in.close();
-	}
 }

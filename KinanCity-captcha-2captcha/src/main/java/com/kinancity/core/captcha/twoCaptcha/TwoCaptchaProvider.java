@@ -99,8 +99,7 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	// URLs
 	private static final String PAGE_URL = "https://club.pokemon.com/us/pokemon-trainer-club/parents/sign-up";
 
-	private static final String CAPTCHA_IN = "http://2captcha.com/in.php";
-	private static final String CAPTCHA_OUT = "http://2captcha.com/res.php";
+	private String baseUrl = "http://2captcha.com";
 
 	private OkHttpClient captchaClient;
 
@@ -123,13 +122,20 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	private int normalBatchSize = 12;
 
 	public static CaptchaProvider getInstance(CaptchaQueue queue, String apiKey) throws CaptchaException {
-		return new TwoCaptchaProvider(queue, apiKey);
+		return new TwoCaptchaProvider(queue, apiKey, null);
 	}
 
-	public TwoCaptchaProvider(CaptchaQueue queue, String apiKey) throws CaptchaException {
+	public static CaptchaProvider getInstance(CaptchaQueue queue, String apiKey, String altBaseUrl) throws CaptchaException {
+		return new TwoCaptchaProvider(queue, apiKey, altBaseUrl);
+	}
+
+	public TwoCaptchaProvider(CaptchaQueue queue, String apiKey, String altBaseUrl) throws CaptchaException {
 		this.queue = queue;
 		this.apiKey = apiKey;
 		this.captchaClient = new OkHttpClient();
+		if (altBaseUrl != null) {
+			this.baseUrl = altBaseUrl;
+		}
 
 		if (this.apiKey == null || this.apiKey.isEmpty()) {
 			throw new CaptchaException("Missing 2captcha API key");
@@ -349,7 +355,7 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	 * @return
 	 */
 	private Request buildSendCaptchaRequest() {
-		HttpUrl url = HttpUrl.parse(CAPTCHA_IN).newBuilder()
+		HttpUrl url = HttpUrl.parse(getCaptchaInUrl()).newBuilder()
 				.addQueryParameter("key", apiKey)
 				.addQueryParameter("json", "1")
 				.addQueryParameter("method", "userrecaptcha")
@@ -371,7 +377,7 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	 * @return
 	 */
 	private Request buildReceiveCaptchaRequest(String catpchaId) {
-		HttpUrl url = HttpUrl.parse(CAPTCHA_OUT).newBuilder()
+		HttpUrl url = HttpUrl.parse(getCaptchaOutUrl()).newBuilder()
 				.addQueryParameter("key", apiKey)
 				.addQueryParameter("json", "1")
 				.addQueryParameter("action", ACTION_GET)
@@ -391,7 +397,7 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 	 * @return
 	 */
 	private Request buildBalanceCheckequest() {
-		HttpUrl url = HttpUrl.parse(CAPTCHA_OUT).newBuilder()
+		HttpUrl url = HttpUrl.parse(getCaptchaOutUrl()).newBuilder()
 				.addQueryParameter("key", apiKey)
 				.addQueryParameter("json", "1")
 				.addQueryParameter("action", ACTION_GETBALANCE)
@@ -401,6 +407,13 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 				.url(url)
 				.build();
 		return request;
+	}
+
+	private String getCaptchaInUrl() {
+		return this.baseUrl + "/in.php";
+	}
+	private String getCaptchaOutUrl() {
+		return this.baseUrl + "/res.php";
 	}
 
 }
