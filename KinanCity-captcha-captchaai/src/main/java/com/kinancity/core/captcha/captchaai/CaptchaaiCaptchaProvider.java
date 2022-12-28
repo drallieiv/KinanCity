@@ -17,6 +17,7 @@ import com.kinancity.core.captcha.captchaai.dto.response.GetTaskResulResponseDto
 import lombok.Setter;
 import okhttp3.*;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,11 @@ public class CaptchaaiCaptchaProvider extends CaptchaProvider {
 
     private boolean hasBalanceLeft = true;
 
+    private boolean addLoggingInterceptor = false;
+
+    @Setter
+    private boolean hasUnlimitedSubscription = false;
+
     /**
      * Wait at least that time (in seconds) before sending first resolve request. (default 5s)
      */
@@ -71,12 +77,14 @@ public class CaptchaaiCaptchaProvider extends CaptchaProvider {
         this.queue = queue;
         this.apiKey = apiKey;
 
-
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        builder.addInterceptor(logging);
+
+        if (addLoggingInterceptor) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            builder.addInterceptor(logging);
+        }
+
         this.captchaClient = builder.build();
 
         this.tasks = new ArrayList<>();
@@ -226,8 +234,11 @@ public class CaptchaaiCaptchaProvider extends CaptchaProvider {
             logger.debug("Task {} solved : {}", task.getTaskId(), captchaSolution);
             queue.addCaptcha(captchaSolution);
             tasks.remove(task);
+        } else if(taskResponse.getStatus() == null && StringUtils.isNotEmpty(taskResponse.getErrorCode())) {
+            logger.error("Error for task {} : {}, {}", task.getTaskId(), taskResponse.getErrorCode(), taskResponse.getErrorDescription());
+            tasks.remove(task);
         } else {
-            logger.debug("Unknown status : {}", taskResponse.getStatus());
+            logger.error("Unknown status : {}", taskResponse.getStatus());
         }
     }
 
