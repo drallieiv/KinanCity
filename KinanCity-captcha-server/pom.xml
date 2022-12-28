@@ -7,6 +7,7 @@
 	</parent>
 
 	<artifactId>kinancity-captcha-server</artifactId>
+  	<version>2.1.7</version>
 
 	<repositories>
 		<repository>
@@ -87,13 +88,14 @@
 		<dependency>
 			<groupId>com.kinancity</groupId>
 			<artifactId>kinancity-captcha-anticaptcha</artifactId>
-			<version>2.1.7-SNAPSHOT</version>
+			<version>2.1.7</version>
 		</dependency>
 
 		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>1.18.24</version>
 			<scope>provided</scope>
 		</dependency>
 
@@ -112,4 +114,8 @@
 		</dependency>
 
 	</dependencies>
+
+  <scm>
+    <tag>kinancity-parent-2.1.7</tag>
+  </scm>
 </project>
