@@ -173,6 +173,7 @@ public class AccountCreationWorker implements Runnable {
 
 						} else {
 							currentCreation.getFailures().add(new CreationFailure(ErrorCode.BAD_USERNAME_OR_PASSWORD));
+							proxySlot.freeSlot();
 							callbacks.onFailure(currentCreation);
 						}
 					} catch (IpSoftBanException e){
