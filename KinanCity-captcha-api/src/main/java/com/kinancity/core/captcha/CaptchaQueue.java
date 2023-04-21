@@ -40,11 +40,12 @@ public class CaptchaQueue {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public CaptchaRequest addRequest(CaptchaRequest request) {
+	public synchronized CaptchaRequest addRequest(CaptchaRequest request) {
 		if(request == null){
 			throw new IllegalArgumentException("Should not add null request in queue");
 		}
 		queue.add(request);
+		logFullQueueState();
 		return request;
 	}
 
@@ -53,7 +54,7 @@ public class CaptchaQueue {
 	 * 
 	 * @param responses
 	 */
-	public void addCaptchas(Collection<String> responses) {
+	public synchronized void addCaptchas(Collection<String> responses) {
 		responses.forEach(this::addCaptcha);
 	}
 
@@ -62,17 +63,25 @@ public class CaptchaQueue {
 	 * 
 	 * @param response
 	 */
-	public void addCaptcha(String response) {
+	public synchronized void addCaptcha(String response) {
 		CaptchaRequest firstInQueue = queue.poll();
 
 		if (firstInQueue == null) {
 			logger.debug("No first in queue, go to overflow");
 			logger.error("In most cases this should not happen. Current Queue Info : Size {}", queue.size());
+			logFullQueueState();
 			overFlowCollector.manageCaptchaOverflow(response);
 		} else {
 			logger.debug("First in queue is {}", firstInQueue);
 			firstInQueue.setResponse(response);
 			logger.debug("Queue has now {} elements", queue.size());
 		}
+	}
+
+	public void logFullQueueState() {
+		logger.debug("Full state of the queue:");
+		queue.forEach(cr -> {
+			logger.debug("Request : {}", cr);
+		});
 	}
 }

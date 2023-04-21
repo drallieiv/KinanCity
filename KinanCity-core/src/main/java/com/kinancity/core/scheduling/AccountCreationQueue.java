@@ -15,7 +15,7 @@ public class AccountCreationQueue extends ArrayDeque<AccountCreation> {
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public AccountCreation pop() {
+	public synchronized AccountCreation pop() {
 		try {
 			if (!this.isEmpty()) {
 				return super.pop();
