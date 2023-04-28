@@ -256,16 +256,13 @@ public class PtcSession {
 
 			logger.debug("Execute Request [sendAgeCheck] on proxy {}", client.proxy());
 			try (Response response = client.newCall(request).execute()) {
-
-				// Parse the response
-				Document doc = Jsoup.parse(response.body().string());
-				response.body().close();
-
 				// Parse Response
 				if (response.isSuccessful()) {
 					logger.debug("Age check done");
 					return;
 				}else{
+					Document doc = Jsoup.parse(response.body().string());
+					response.body().close();
 					manageError(account, response, doc, "Age check");
 				}
 			}
