@@ -33,7 +33,8 @@
 		<module>KinanCity-captcha-server</module>
 		<module>KinanCity-captcha-client</module>
         <module>KinanCity-captcha-captchaai</module>
-    </modules>
+		<module>KinanCity-captcha-deathbycaptcha</module>
+	</modules>
 	  
 	<distributionManagement>
 		<repository>
