@@ -2,6 +2,7 @@ package com.kinancity.mail.activator;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import com.kinancity.mail.activator.limiter.ActivationLimiter;
 import com.kinancity.mail.proxy.HttpProxy;
 
 import lombok.Setter;
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -51,7 +53,11 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	private ActivationLimiter limiter;
 
 	public QueueLinkActivator() {
-		client = new OkHttpClient.Builder().build();
+		new OkHttpClient.Builder()
+		.readTimeout(10,TimeUnit.SECONDS)
+		.retryOnConnectionFailure(false)
+		.connectionPool(new ConnectionPool(0,10,TimeUnit.SECONDS))
+		.build();
 		linkQueue = new ArrayDeque<>();
 	}
 	
@@ -86,6 +92,9 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 			while (!isFinal) {
 				Response response = client.newCall(request).execute();
 				String strResponse = response.body().string();
+
+				client.dispatcher().executorService().shutdown();
+				client.connectionPool().evictAll();
 
 				// By default, stop
 				isFinal = true;
