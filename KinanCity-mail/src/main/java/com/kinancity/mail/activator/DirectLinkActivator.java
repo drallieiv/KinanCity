@@ -1,6 +1,7 @@
 package com.kinancity.mail.activator;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import com.kinancity.mail.Activation;
 import com.kinancity.mail.FileLogger;
 import com.kinancity.mail.MailConstants;
 
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -30,7 +32,11 @@ public class DirectLinkActivator implements LinkActivator {
 	private okhttp3.OkHttpClient client;
 
 	public DirectLinkActivator() {
-		client = new OkHttpClient.Builder().build();
+		new OkHttpClient.Builder()
+		.readTimeout(10,TimeUnit.SECONDS)
+		.retryOnConnectionFailure(false)
+		.connectionPool(new ConnectionPool(0,0,TimeUnit.SECONDS))
+		.build();
 	}
 
 	public static void main(String[] args) throws IOException {
@@ -55,6 +61,9 @@ public class DirectLinkActivator implements LinkActivator {
 			Response response = client.newCall(request).execute();
 
 			String strResponse = response.body().string();
+
+			client.dispatcher().executorService().shutdown();
+			client.connectionPool().evictAll();
 
 			if (response.isSuccessful()) {
 				if (strResponse.contains(SUCCESS_MSG)) {
