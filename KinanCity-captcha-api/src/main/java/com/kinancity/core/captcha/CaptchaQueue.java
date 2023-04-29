@@ -3,6 +3,7 @@ package com.kinancity.core.captcha;
 import java.util.ArrayDeque;
 import java.util.Collection;
 
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +17,9 @@ public class CaptchaQueue {
 	public ArrayDeque<CaptchaRequest> queue = new ArrayDeque<>();
 
 	private OverFlowCaptchaCollector overFlowCollector;
+
+	@Setter
+	public boolean addDetailedLogs = false;
 
 	public CaptchaQueue() {
 		// Empty constructor
@@ -67,21 +71,25 @@ public class CaptchaQueue {
 		CaptchaRequest firstInQueue = queue.poll();
 
 		if (firstInQueue == null) {
-			logger.debug("No first in queue, go to overflow");
-			logger.error("In most cases this should not happen. Current Queue Info : Size {}", queue.size());
-			logFullQueueState();
+			if (addDetailedLogs) {
+				logger.debug("No first in queue, go to overflow");
+				logger.error("In most cases this should not happen. Current Queue Info : Size {}", queue.size());
+				logFullQueueState();
+			}
 			overFlowCollector.manageCaptchaOverflow(response);
 		} else {
-			logger.debug("First in queue is {}", firstInQueue);
+			if (addDetailedLogs) {logger.debug("First in queue is {}", firstInQueue);}
 			firstInQueue.setResponse(response);
-			logger.debug("Queue has now {} elements", queue.size());
+			if (addDetailedLogs) {logger.debug("Queue has now {} elements", queue.size());}
 		}
 	}
 
 	public void logFullQueueState() {
-		logger.debug("Full state of the queue:");
-		queue.forEach(cr -> {
-			logger.debug("Request : {}", cr);
-		});
+		if (addDetailedLogs) {
+			logger.debug("Full state of the queue:");
+			queue.forEach(cr -> {
+				logger.debug("Request : {}", cr);
+			});
+		}
 	}
 }

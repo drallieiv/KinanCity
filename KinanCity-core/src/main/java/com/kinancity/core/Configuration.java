@@ -54,6 +54,8 @@ public class Configuration {
 	public static final String PROVIDER_CAPSOLVER = "capsolver";
 	public static final String PROVIDER_CAPTCHAAI = "captchaai";
 
+	public static final String PROVIDER_DBC = "deathbycaptcha";
+
 	public static final String PROVIDER_LOCAL = "local";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
@@ -164,6 +166,10 @@ public class Configuration {
 							provider = ClientProvider.getInstance(captchaQueue);
 							providerThreadName = "localCaptchaServer";
 						} else if (PROVIDER_CAPSOLVER.equals(captchaProvider) || PROVIDER_CAPTCHAAI.equals(captchaProvider)) {
+							// Add imageTypers Provider
+							provider = CaptchaaiCaptchaProvider.getInstance(captchaQueue, captchaKey);
+							providerThreadName = PROVIDER_CAPTCHAAI+"/"+PROVIDER_CAPSOLVER;
+						} else if (PROVIDER_DBC.equals(captchaProvider)) {
 							// Add imageTypers Provider
 							provider = CaptchaaiCaptchaProvider.getInstance(captchaQueue, captchaKey);
 							providerThreadName = PROVIDER_CAPTCHAAI+"/"+PROVIDER_CAPSOLVER;
