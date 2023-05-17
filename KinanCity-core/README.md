@@ -32,7 +32,7 @@ To overcome that limit, Kinan Core includes an embedded cooldown system, and all
 
 KinanCity-core main class accepts configuration from :
 - a set of **Command Line parameters** given at runtime
-- a **config.properties** file you can create and customize from **config.example.properties**
+- a **config.properties** if it exists
 
 **Note :**  A usage help is shown if called without any parameters or an invalid set of parameters.
 
@@ -55,11 +55,36 @@ For all these examples, the usernames and password must follow theses rules :
 
 ## Create a sequence of accounts
 
-`-m <email@domain.com> -f <aa***bb> -p <Passw0rd!> -c 20`  
+`-m` or `--mail` to set the email address to use as a base. account name will be added to the email address  
+`-f` or `--format` to define a format use to generate the username. including space maked with stars to be replaced by an incremental number  
+`-p` or `--password` to set the password for all accounts in the sequence  
+`-c' or `--count` to set how many accounts to create  
+`-s` or `-startnum` to have the sequence start at a specific number. (optional, defaults to 1)  
 
-will create 20 accounts using the pattern given replacing the stars by a incremental number, giving usernames from `aa001bb` to `aa020bb` with matching + trick emails `email+aa***bb@domain.com`
+Basic example
 
-`-s 123` or `-startnum 123` will make the sequence start at 123 instead of 0.
+`-m @mydomain.com -f my***username -p Passw0rd! -c 3`  
+
+Will create
+
+* `my001username` with email `my001username@mydomain.com`
+* `my002username` with email `my002username@mydomain.com`
+* `my003username` with email `my003username@mydomain.com`
+
+Advanced example
+
+`-m prefix@mydomain.com -f my***username -p Passw0rd! -c 2 -s 42`  
+
+Will create
+
+* `my042username` with email `prefix+my042username@mydomain.com`
+* `my044username` with email `prefix+my043username@mydomain.com`
+
+`-m <email@domain.com> -f <aa***bb> -p <Passw0rd!> -c 20`
+
+**Note :** if the number of account and stating number will reach 3 digits, you need at least 3 stars in the format option.  
+If you have `-s 800 -c 250`. The incremental part of the username will go from `0800` to `1050` if you put `****`, from `00800` to `01050` if you put `*****` 
+and fail if you try with `***` or less.
 
 ## Create a batch from a csv file with a list of accounts
 
