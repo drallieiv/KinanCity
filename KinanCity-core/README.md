@@ -58,8 +58,8 @@ For all these examples, the usernames and password must follow theses rules :
 `-m` or `--mail` to set the email address to use as a base. account name will be added to the email address  
 `-f` or `--format` to define a format use to generate the username. including space maked with stars to be replaced by an incremental number  
 `-p` or `--password` to set the password for all accounts in the sequence  
-`-c' or `--count` to set how many accounts to create  
-`-s` or `-startnum` to have the sequence start at a specific number. (optional, defaults to 1)  
+`-c` or `--count` to set how many accounts to create  
+`-s` or `--startnum` to have the sequence start at a specific number. (optional, defaults to 1)  
 
 Basic example
 
