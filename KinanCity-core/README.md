@@ -80,10 +80,11 @@ Will create
 * `my042username` with email `prefix+my042username@mydomain.com`
 * `my044username` with email `prefix+my043username@mydomain.com`
 
-`-m <email@domain.com> -f <aa***bb> -p <Passw0rd!> -c 20`
 
-**Note :** if the number of account and stating number will reach 3 digits, you need at least 3 stars in the format option.  
-If you have `-s 800 -c 250`. The incremental part of the username will go from `0800` to `1050` if you put `****`, from `00800` to `01050` if you put `*****` 
+**Note :** the format must contain a group of `*` charagers big enough to fit the incremental number :  
+if the number of account and stating number will reach 3 digits, you need at least 3 stars in the format option.  
+If you have `-s 800 -c 250`, he incremental part of the username will go from `0800` to `1050`  
+if you put `****`, from `00800` to `01050` if you put `*****` 
 and fail if you try with `***` or less.
 
 ## Create a batch from a csv file with a list of accounts
