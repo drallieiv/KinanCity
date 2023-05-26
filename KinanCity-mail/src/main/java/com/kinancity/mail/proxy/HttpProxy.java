@@ -63,7 +63,7 @@ public class HttpProxy {
 	private List<HttpProxy> otherProxies = new ArrayList<>();
 
 	public static final String URI_REGEXP = "^(?:(?<protocol>[\\w\\.\\-\\+]+):\\/{2})?" +
-			"(?:(?<login>[\\w\\d\\.\\-%]+):(?<pass>[\\w\\d\\.\\-%]+)@)?" +
+			"(?:(?<login>[\\w\\d\\.\\-\\+%]+):(?<pass>[\\w\\d\\.\\-%]+)@)?" +
 			"(?:(?<host>[a-zA-Z0-9\\.\\-_]+)" +
 			"(?::(?<port>\\d{1,5}))?)$";
 
