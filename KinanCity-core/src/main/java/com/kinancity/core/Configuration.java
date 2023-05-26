@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import com.kinancity.core.captcha.captchaai.CaptchaaiCaptchaProvider;
+import com.kinancity.core.captcha.deathByCaptcha.DeathByCaptchaProvider;
 import org.apache.commons.lang.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,8 +172,8 @@ public class Configuration {
 							providerThreadName = PROVIDER_CAPTCHAAI+"/"+PROVIDER_CAPSOLVER;
 						} else if (PROVIDER_DBC.equals(captchaProvider)) {
 							// Add imageTypers Provider
-							provider = CaptchaaiCaptchaProvider.getInstance(captchaQueue, captchaKey);
-							providerThreadName = PROVIDER_CAPTCHAAI+"/"+PROVIDER_CAPSOLVER;
+							provider = DeathByCaptchaProvider.getInstance(captchaQueue, captchaKey);
+							providerThreadName = "DeathByCaptcha";
 						} else {
 							throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 						}
