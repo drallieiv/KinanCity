@@ -25,3 +25,5 @@ KinanCity-captcha-ImageTypers/config\.properties
 KinanCity-captcha-AntiCaptcha/config\.properties
 
 KinanCity-mail/config\.properties
+
+result.csv

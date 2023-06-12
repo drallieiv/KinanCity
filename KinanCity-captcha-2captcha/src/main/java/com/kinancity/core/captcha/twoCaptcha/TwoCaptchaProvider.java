@@ -194,9 +194,10 @@ public class TwoCaptchaProvider extends CaptchaProvider {
 									recoveryModeTimer = new StopWatch();
 									recoveryModeTimer.start();
 								} else {
-									if (missmatchRecovery && recoveryModeTimer.getSplitTime() < minTimeForRecovery * 1000) {
+									if (missmatchRecovery && recoveryModeTimer.getTime() < minTimeForRecovery * 1000) {
 										logger.info("Disable MissmatchRecovery mode");
 										missmatchRecovery = false;
+										recoveryModeTimer.stop();
 									}
 									int i = 0;
 									for (TwoCaptchaChallenge challenge : batch) {
