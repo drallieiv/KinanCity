@@ -42,6 +42,7 @@ KinanCity needs to solve captchas and require a provider that will solve all cap
 - Capsolver : https://dashboard.capsolver.com/passport/register?inviteCode=9q9A1XnPlPeu
 - ImageTypers : http://www.imagetyperz.com/
 - Anti Captcha : http://getcaptchasolution.com/2yh6yddsff
+- Death By Captcha : https://www.deathbycaptcha.com?refid=1237273650
 
 
 **Running in command line**  
