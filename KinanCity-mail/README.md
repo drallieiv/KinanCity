@@ -55,6 +55,12 @@ KinanCity-mail has multiple modes, that can be choosen by adding the following m
 
 example : `java -jar target/KinanCity-mail-<version>.jar log` for log mode.
 
+### Running on alternate port
+
+If you want to have Kinan Mail listen to another port the the default one (25) use a config.properties config file that contains a value for the key "port". Refert to config.example.properties for an example
+
+Note: you will have to use a third party service listening to port 25 that will be setup to redirect emails to Kinan Mail on that new custom port.
+
 ## Notes
 
 The server does not store received emails in any way. If the server is not running when the email is sent, or if it stopped before completing activation, then the activation link is lost forever.
