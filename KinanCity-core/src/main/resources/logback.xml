@@ -1,5 +1,4 @@
 <configuration>
-
 	<appender name="CLI" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
 			<pattern>%d{MM-dd HH:mm:ss} [%thread] %msg%n</pattern>
@@ -20,6 +19,16 @@
 			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
 		</encoder>
 	</appender>
+
+	<if condition='isDefined("DEBUG_CAPTCHA")'>
+		<then>
+			<logger name="com.kinancity.core.captcha" level="${CAPTCHA_LOG_LEVEL}" additivity="false">
+				<appender-ref ref="CLI" />
+				<appender-ref ref="FILE" />
+			</logger>
+		</then>
+	</if>
+
 		
 	<logger name="com.kinancity" level="INFO" additivity="false">
 		<appender-ref ref="CLI" />

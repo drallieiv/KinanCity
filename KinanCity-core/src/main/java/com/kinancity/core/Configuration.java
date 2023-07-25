@@ -106,6 +106,8 @@ public class Configuration {
 
 	private int dumpResult = PtcSession.NEVER;
 
+	private boolean debugCaptchaQueue = false;
+
 	/**
 	 * Custom values for batches processing
 	 */
@@ -130,6 +132,11 @@ public class Configuration {
 				try {
 
 					captchaQueue = new CaptchaQueue(new LogCaptchaCollector());
+
+					if(debugCaptchaQueue || System.getenv("DEBUG_CAPTCHA") != null) {
+						logger.info("Add Detailed Logs for Captcha Queue");
+						captchaQueue.setAddDetailedLogs(true);
+					}
 
 					if ((captchaKey == null || captchaKey.isEmpty()) && !"local".equals(captchaProvider)) {
 						throw new ConfigurationException("No Catpcha key given");
