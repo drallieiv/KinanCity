@@ -156,6 +156,10 @@ public abstract class BaseCaptchaProvider<T extends BaseSolvingTask> extends Cap
         }
     }
 
+    protected void onTaskSuccess(T task) {
+         tasks.remove(task);
+    }
+
     protected void sendSolutionToQueue(String captchaSolution) {
         queue.addCaptcha(captchaSolution);
     }

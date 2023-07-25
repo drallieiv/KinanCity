@@ -74,6 +74,7 @@ public class DeathByCaptchaProvider extends BaseCaptchaProvider<DeathByCaptchaTa
 
             if (captcha.isSolved()) {
                 if (captcha.isCorrect()) {
+                    this.onTaskSuccess(task);
                     this.sendSolutionToQueue(captcha.text);
                 } else {
                     log.error("Incorrect captcha solve : {}", captcha.text);
