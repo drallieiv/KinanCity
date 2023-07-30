@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>com.kinancity</groupId>
 		<artifactId>kinancity-parent</artifactId>
-		<version>2.1.14-SNAPSHOT</version>
+		<version>2.1.14</version>
 	</parent>
 	<artifactId>kinancity-captcha-2captcha</artifactId>
 
@@ -11,7 +11,7 @@
 		<dependency>
 			<groupId>com.kinancity</groupId>
 			<artifactId>kinancity-captcha-api</artifactId>
-			<version>2.1.14-SNAPSHOT</version>
+			<version>2.1.14</version>
 		</dependency>
 
 		<dependency>
