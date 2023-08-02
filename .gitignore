@@ -27,3 +27,5 @@ KinanCity-captcha-AntiCaptcha/config\.properties
 KinanCity-mail/config\.properties
 
 result.csv
+release.properties
+pom.xml.releaseBackup
