@@ -38,7 +38,7 @@
 		
 		<dependency>
 			<groupId>com.kinancity</groupId>
-			<artifactId>kinancity-captcha-captchaii</artifactId>
+			<artifactId>kinancity-captcha-capsolver</artifactId>
 			<version>2.1.15-SNAPSHOT</version>
 		</dependency>
 

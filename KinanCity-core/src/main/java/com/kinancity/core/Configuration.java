@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 
-import com.kinancity.core.captcha.captchaai.CaptchaaiCaptchaProvider;
+import com.kinancity.core.captcha.capsolver.CapsolverCaptchaProvider;
 import com.kinancity.core.captcha.deathByCaptcha.DeathByCaptchaProvider;
 import org.apache.commons.lang.math.NumberUtils;
 import org.slf4j.Logger;
@@ -53,7 +53,6 @@ public class Configuration {
 	public static final String PROVIDER_ANTICAPTCHA = "antiCaptcha";
 
 	public static final String PROVIDER_CAPSOLVER = "capsolver";
-	public static final String PROVIDER_CAPTCHAAI = "captchaai";
 
 	public static final String PROVIDER_DBC = "deathbycaptcha";
 
@@ -173,10 +172,10 @@ public class Configuration {
 							// Add local server provider
 							provider = ClientProvider.getInstance(captchaQueue);
 							providerThreadName = "localCaptchaServer";
-						} else if (PROVIDER_CAPSOLVER.equals(captchaProvider) || PROVIDER_CAPTCHAAI.equals(captchaProvider)) {
+						} else if (PROVIDER_CAPSOLVER.equals(captchaProvider) ) {
 							// Add imageTypers Provider
-							provider = CaptchaaiCaptchaProvider.getInstance(captchaQueue, captchaKey);
-							providerThreadName = PROVIDER_CAPTCHAAI+"/"+PROVIDER_CAPSOLVER;
+							provider = CapsolverCaptchaProvider.getInstance(captchaQueue, captchaKey);
+							providerThreadName = PROVIDER_CAPSOLVER;
 						} else if (PROVIDER_DBC.equals(captchaProvider)) {
 							// Add imageTypers Provider
 							provider = DeathByCaptchaProvider.getInstance(captchaQueue, captchaKey);
