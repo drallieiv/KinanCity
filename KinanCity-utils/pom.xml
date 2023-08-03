@@ -3,10 +3,10 @@
 	<parent>
 		<groupId>com.kinancity</groupId>
 		<artifactId>kinancity-parent</artifactId>
-		<version>2.1.15-SNAPSHOT</version>
+		<version>2.1.15</version>
 	</parent>
 	<artifactId>kinancity-utils</artifactId>
-  <version>2.1.15-SNAPSHOT</version>
+  <version>2.1.15</version>
 
 	<dependencies>
 		<!-- Lombok -->
