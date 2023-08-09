@@ -53,7 +53,7 @@ public class QueueLinkActivator implements LinkActivator, Runnable {
 	private ActivationLimiter limiter;
 
 	public QueueLinkActivator() {
-		new OkHttpClient.Builder()
+		this.client = new OkHttpClient.Builder()
 		.readTimeout(10,TimeUnit.SECONDS)
 		.retryOnConnectionFailure(false)
 		.connectionPool(new ConnectionPool(0,10,TimeUnit.SECONDS))
