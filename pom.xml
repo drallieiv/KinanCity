@@ -34,7 +34,8 @@
 		<module>KinanCity-captcha-client</module>
 		<module>KinanCity-captcha-capsolver</module>
 		<module>KinanCity-captcha-deathbycaptcha</module>
-	</modules>
+        <module>KinanCity-captcha-captchaai</module>
+    </modules>
 	  
 	<distributionManagement>
 		<repository>

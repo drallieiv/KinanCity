@@ -50,6 +50,12 @@
 
 		<dependency>
 			<groupId>com.kinancity</groupId>
+			<artifactId>kinancity-captcha-captchaai</artifactId>
+			<version>2.1.17-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.kinancity</groupId>
 			<artifactId>kinancity-captcha-deathbycaptcha</artifactId>
 			<version>2.1.17-SNAPSHOT</version>
 		</dependency>
