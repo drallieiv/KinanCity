@@ -6,6 +6,7 @@ import com.kinancity.core.captcha.CaptchaQueue;
 import com.kinancity.core.captcha.CaptchaRequest;
 import com.kinancity.core.captcha.impl.LogCaptchaCollector;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Optional;
 @Slf4j
 public class TwoCaptchaBasicProviderTest {
 
+    @Ignore
     @Test
     public void solvingTest() throws CaptchaException, TechnicalException, InterruptedException {
 

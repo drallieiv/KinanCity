@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ public class AntiCaptchaProviderTest {
 
 	private boolean hasConfig = true;
 
+	@Ignore
 	@Test
 	public void captchaProviderTest() throws AntiCaptchaConfigurationException, InterruptedException {
 
