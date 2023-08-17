@@ -13,6 +13,7 @@ import java.util.Properties;
 
 import com.kinancity.core.captcha.capsolver.CapsolverCaptchaProvider;
 import com.kinancity.core.captcha.deathByCaptcha.DeathByCaptchaProvider;
+import com.kinancity.core.captcha.twocaptchabasic.TwoCaptchaBasicProvider;
 import org.apache.commons.lang.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,8 @@ import lombok.Data;
 public class Configuration {
 
 	public static final String PROVIDER_2CAPTCHA = "2captcha";
+	public static final String PROVIDER_2CAPTCHA_BASIC = "2captchaBasic";
+	public static final String PROVIDER_CAPTCHAAI = "captchaai";
 	public static final String PROVIDER_IMAGETYPERS = "imageTypers";
 	public static final String PROVIDER_ANTICAPTCHA = "antiCaptcha";
 
@@ -102,6 +105,8 @@ public class Configuration {
 	private boolean dryRun = false;
 
 	private boolean emailOptIn = false;
+
+	private String twocaptchaAltHost = null;
 
 	private int dumpResult = PtcSession.NEVER;
 
@@ -180,6 +185,14 @@ public class Configuration {
 							// Add imageTypers Provider
 							provider = DeathByCaptchaProvider.getInstance(captchaQueue, captchaKey);
 							providerThreadName = "DeathByCaptcha";
+						} else if (PROVIDER_2CAPTCHA_BASIC.equals(captchaProvider)) {
+							// Add 2captcha Basic Provider
+							provider = TwoCaptchaBasicProvider.getInstance(captchaQueue, captchaKey, Optional.ofNullable(twocaptchaAltHost));
+							providerThreadName = "2CaptchaBasic";
+						} else if (PROVIDER_CAPTCHAAI.equals(captchaProvider)) {
+							// Add CaptchaAi Provider as 2captcha basic with custom host
+							provider = TwoCaptchaBasicProvider.getInstance(captchaQueue, captchaKey, Optional.of("ocr.captchaai.com"));
+							providerThreadName = "2CaptchaBasic_CaptchaAI";
 						} else {
 							throw new ConfigurationException("Unknown captcha provider " + captchaProvider);
 						}
@@ -344,6 +357,7 @@ public class Configuration {
 			Optional.ofNullable(prop.getProperty("batch.recovery.time")).ifPresent(value -> this.setCustomBatchMinTimeForRecovery(Integer.parseInt(value)));
 			Optional.ofNullable(prop.getProperty("batch.recovery.size")).ifPresent(value -> this.setCustomBatchMissmatchRecoverySize(Integer.parseInt(value)));
 			Optional.ofNullable(prop.getProperty("batch.normal.size")).ifPresent(value -> this.setCustomBatchNormalBatchSize(Integer.parseInt(value)));
+			Optional.ofNullable(prop.getProperty("2captcha.altHost")).ifPresent(this::setTwocaptchaAltHost);
 
 			this.setCaptchaMaxParallelChallenges(Integer.parseInt(prop.getProperty("captchaMaxParallelChallenges", String.valueOf(captchaMaxParallelChallenges))));
 
