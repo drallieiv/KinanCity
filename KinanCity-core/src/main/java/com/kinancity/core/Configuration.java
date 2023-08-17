@@ -152,7 +152,7 @@ public class Configuration {
 
 						if (PROVIDER_2CAPTCHA.equals(captchaProvider)) {
 							// Add 2 captcha Provider
-							TwoCaptchaProvider twocaptchaprovider = TwoCaptchaProvider.class.cast(TwoCaptchaProvider.getInstance(captchaQueue, captchaKey));
+							TwoCaptchaProvider twocaptchaprovider = (TwoCaptchaProvider) TwoCaptchaProvider.getInstance(captchaQueue, captchaKey);
 							if (customBatchMinTimeForRecovery != null) {
 								twocaptchaprovider.setMinTimeForRecovery(customBatchMinTimeForRecovery);
 							}
@@ -426,7 +426,7 @@ public class Configuration {
 	public void reloadProxyPolicy() {
 		if (proxyManager != null) {
 			ProxyPolicy policy = getProxyPolicyInstance();
-			proxyManager.getProxies().stream().forEach(proxy -> proxy.setProxyPolicy(getProxyPolicyInstance()));
+			proxyManager.getProxies().forEach(proxy -> proxy.setProxyPolicy(getProxyPolicyInstance()));
 			logger.info("ProxyManager reloaded with {} policy ", policy);
 		}
 
