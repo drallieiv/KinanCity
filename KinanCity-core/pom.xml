@@ -1,10 +1,9 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.kinancity</groupId>
         <artifactId>kinancity-parent</artifactId>
-        <version>2.1.17-SNAPSHOT</version>
+        <version>2.1.17</version>
     </parent>
 
     <artifactId>kinancity-core</artifactId>
@@ -22,55 +21,55 @@
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-utils</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-2captcha</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-imagetypers</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-capsolver</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-anticaptcha</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-deathbycaptcha</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-2captcha-basic</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>kinancity-captcha-client</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
             <groupId>com.kinancity</groupId>
             <artifactId>ptc-api</artifactId>
-            <version>2.1.17-SNAPSHOT</version>
+            <version>2.1.17</version>
         </dependency>
 
         <dependency>
@@ -165,8 +164,7 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.kinancity.core.KinanCityCli</mainClass>
                                 </transformer>
                             </transformers>
