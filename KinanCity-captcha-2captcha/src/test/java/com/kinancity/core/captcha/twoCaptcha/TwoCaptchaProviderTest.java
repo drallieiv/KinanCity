@@ -1,13 +1,7 @@
 package com.kinancity.core.captcha.twoCaptcha;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import com.kinancity.core.captcha.CaptchaProvider;
-import org.junit.Before;
+import junit.framework.TestCase;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
